@@ -1,0 +1,219 @@
+:root {
+  --bg-main: #231F20;
+  --bg-card: rgba(255, 255, 255, 0.05);
+
+  --text-primary: #EFF1ED;
+  --text-secondary: #91818A;
+
+  --accent: #508991;
+  --accent-hover: #5fa3ac;
+
+  --border-subtle: rgba(255, 255, 255, 0.1);
+  --warning: #A37871;
+}
+
+/* =====================
+   CSS RESET
+===================== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  background: var(--bg-main);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100%;
+}
+
+/* =====================
+   LAYOUT
+===================== */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 26px 24px 96px;
+}
+
+/* =====================
+   HEADER
+===================== */
+h1 {
+  font-size: 2.4rem;
+  font-weight: 700;
+  margin-bottom: 36px;
+}
+
+/* =====================
+   SEARCH BAR
+===================== */
+.search-bar {
+  display: grid;
+  grid-template-columns: 1fr 2fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 18px;
+  margin-bottom: 34px;
+}
+
+.search-bar input {
+  width: 100%;
+}
+
+.search-bar button {
+  height: 100%;
+  white-space: nowrap;
+}
+
+
+/* =====================
+   INPUTS
+===================== */
+input {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 0.95rem;
+}
+
+input::placeholder {
+  color: var(--text-secondary);
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* =====================
+   BUTTONS
+===================== */
+button {
+  background: var(--accent);
+  color: var(--bg-main);
+  border: none;
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--accent-hover);
+  color: black;
+}
+
+/* =====================
+   EMPTY / HERO STATE
+===================== */
+.hero {
+  margin-top: 96px;
+  text-align: center;
+}
+
+.hero h2 {
+  font-size: 1.6rem;
+  margin-bottom: 14px;
+}
+
+.hero p {
+  max-width: 520px;
+  margin: 0 auto;
+  color: var(--text-secondary);
+}
+
+/* =====================
+   SECTION CARDS
+===================== */
+.section {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 22px;
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+
+/* Section Header */
+.section-header {
+  padding: 16px 22px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* Section Content */
+.section-content {
+  padding: 28px;
+}
+
+/* =====================
+   STATS
+===================== */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 22px;
+}
+
+.stat {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 18px 20px;
+}
+
+.stat label {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.stat strong {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* =====================
+   TEXT
+===================== */
+p {
+  margin: 0 0 14px;
+}
+
+p:last-child {
+  margin-bottom: 0;
+}
+
+/* =====================
+   AFFORDABILITY STATUS
+===================== */
+.status-warning {
+  color: var(--warning);
+  font-weight: 600;
+}
+
+/* =====================
+   UTILITIES
+===================== */
+.muted {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}

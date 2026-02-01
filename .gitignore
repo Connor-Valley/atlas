@@ -1,0 +1,8 @@
+node_modules/
+.env
+.env.*
+.pnpm-store/
+dist/
+build/
+.vite/
+.DS_Store
