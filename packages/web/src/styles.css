@@ -145,6 +145,9 @@ button:hover {
 
 /* Section Header */
 .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding: 16px 22px;
   font-weight: 600;
   font-size: 0.85rem;

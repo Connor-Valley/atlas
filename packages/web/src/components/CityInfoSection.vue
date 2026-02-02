@@ -36,7 +36,7 @@
 </script>
 
 <template>
-    <Section title="City Info">
+    <Section :toggle="false" title="City Info">
         <p v-if="loading">Loading…</p>
         <p v-else-if="error">{{ error }}</p>
 

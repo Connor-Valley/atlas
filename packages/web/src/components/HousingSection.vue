@@ -5,6 +5,9 @@
 
     const props = defineProps<{ city: string; state: string }>();
 
+    // control open state explicitly so the section starts closed and still toggles
+    const open = ref(false);
+
     const data = ref<any>(null);
     const loading = ref(false);
     const error = ref<string | null>(null);
@@ -37,7 +40,7 @@
 </script>
 
 <template>
-    <Section title="Housing">
+    <Section v-model="open" :toggle="true" title="Housing">
         <p v-if="loading">Loading…</p>
         <p v-else-if="error">{{ error }}</p>
 
