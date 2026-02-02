@@ -95,6 +95,29 @@ input:focus {
   border-color: var(--accent);
 }
 
+select {
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary) !important;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  appearance: none; /* Remove default dropdown arrow */
+  background: rgba(0, 0, 0, 0.35) url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23EFF1ED' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e") no-repeat right 12px center;
+  background-size: 16px;
+  /* Space for custom arrow */
+  padding: 12px 40px 12px 14px;
+}
+
+select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+select option {
+  background: var(--bg-main) !important;
+  color: var(--text-primary) !important;
+}
+
 /* =====================
    BUTTONS
 ===================== */

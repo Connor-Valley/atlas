@@ -1,19 +1,12 @@
 import type { City } from './cities.types.js';
-
-const STATE_FIPS: Record<string, string> = {
-  MI: '26',
-  CA: '06',
-  WA: '53',
-  CO: '08',
-  AZ: '04',
-};
+import { STATE_FIPS, type SupportedState } from '../states/states.types.js';
 
 export async function getCity(
   state: string,
   citySlug: string,
   year: number,
 ): Promise<City> {
-  const stateCode = state.toUpperCase();
+  const stateCode = state.toUpperCase() as SupportedState;
   const stateFips = STATE_FIPS[stateCode];
 
   if (!stateFips) {
