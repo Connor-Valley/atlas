@@ -46,7 +46,9 @@ export async function getCity(
     placeCode,
   ] = match;
 
-  const cityName = fullName.split(',')[0];
+  let cityName = fullName.split(',')[0];
+
+  cityName = cityName.replace(/ city$/i, '');
 
   const { county, countyFips } = await getCountyFromPlace(
     year,
@@ -94,7 +96,8 @@ async function getCountyFromPlace(
     }
     const name = first[0] as string;
     const countyPart = first[3];
-    return { county: name.split(",")[0], countyFips: `${stateFips}${countyPart}` };
+    const countyName = name.split(",")[0].replace(/ \(part\)$/i, '');
+    return { county: countyName, countyFips: `${stateFips}${countyPart}` };
   };
 
   const result = await tryYear(year);
