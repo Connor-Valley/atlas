@@ -5,6 +5,8 @@
 
   const props = defineProps<{ city: string; state: string }>();
 
+  const open = ref(false);
+
   const data = ref<any>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -36,7 +38,7 @@
 </script>
 
 <template>
-  <Section title="Income">
+  <Section v-model="open" :toggle="true" title="Income">
     <p v-if="loading">Loading…</p>
     <p v-else-if="error">{{ error }}</p>
 

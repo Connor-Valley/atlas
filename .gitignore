@@ -6,3 +6,4 @@ dist/
 build/
 .vite/
 .DS_Store
+.idea/

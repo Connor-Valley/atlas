@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { ref, watch } from "vue";
+    import { ref, watch, onMounted } from "vue";
     import { fetchAffordability } from "../api/affordability";
     import Section from "./Section.vue";
 
@@ -7,6 +7,12 @@
     city: string;
     state: string;
     }>();
+
+    // explicit open state so the section starts closed and can be toggled
+    const open = ref(false);
+
+    watch(open, (v) => console.debug('[AffordabilitySection] open changed ->', v));
+    onMounted(() => console.debug('[AffordabilitySection] mounted open=', open.value));
 
     const data = ref<any>(null);
     const loading = ref(false);
@@ -39,30 +45,30 @@
 </script>
 
 <template>
-    <Section title="Affordability">
-        <p v-if="loading">Loading…</p>
-        <p v-else-if="error">{{ error }}</p>
+    <Section v-model="open" :toggle="true" title="Affordability">
+         <p v-if="loading">Loading…</p>
+         <p v-else-if="error">{{ error }}</p>
 
-        <div v-else-if="data" class="stat-grid">
-            <div class="stat">
-                <label>Median Rent</label>
-                <strong>${{ data.medianRent }}</strong>
-            </div>
+         <div v-else-if="data" class="stat-grid">
+             <div class="stat">
+                 <label>Median Rent</label>
+                 <strong>${{ data.medianRent }}</strong>
+             </div>
 
-            <div class="stat">
-                <label>Median Renter Income</label>
-                <strong>${{ data.medianRenterIncome }}</strong>
-            </div>
+             <div class="stat">
+                 <label>Median Renter Income</label>
+                 <strong>${{ data.medianRenterIncome }}</strong>
+             </div>
 
-            <div class="stat">
-                <label>Rent / Income</label>
-                <strong>{{ (data.rentToIncomeRatio * 100).toFixed(1) }}%</strong>
-            </div>
+             <div class="stat">
+                 <label>Rent / Income</label>
+                 <strong>{{ (data.rentToIncomeRatio * 100).toFixed(1) }}%</strong>
+             </div>
 
-            <div class="stat">
-                <label>Affordability Status</label>
-                <strong>{{ data.affordability }}</strong>
-            </div>
-        </div>
-    </Section>
+             <div class="stat">
+                 <label>Affordability Status</label>
+                 <strong>{{ data.affordability }}</strong>
+             </div>
+         </div>
+     </Section>
 </template>
