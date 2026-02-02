@@ -16,10 +16,8 @@ const emit = defineEmits<{ (e: 'update:modelValue', value: boolean): void }>();
 
 const isControlled = computed(() => props.modelValue !== undefined);
 
-// Toggle is explicitly defaulted to true above; use it directly
 const toggleEnabled = computed(() => Boolean(props.toggle));
 
-// Initialize internalOpen from defaultOpen prop (deterministic and not tied to other computed timing)
 const internalOpen = ref<boolean>(props.defaultOpen ?? false);
 
 const open = computed({
