@@ -13,8 +13,6 @@ export async function getCity(
     throw new Error(`Unsupported state: ${stateCode}`);
   }
 
-  console.log('fetching cencus places for state', stateCode);
-
   const response = await fetch(
     `https://api.census.gov/data/${year}/acs/acs5` +
       `?get=NAME,B01003_001E,B19013_001E` +
@@ -22,14 +20,11 @@ export async function getCity(
       (process.env.CENSUS_API_KEY ? `&key=${process.env.CENSUS_API_KEY}` : "")
   );
 
-  console.log('census response stats:', response.status);
-
   if (!response.ok) {
     throw new Error("Failed to fetch Census data");
   }
 
   const data = (await response.json()) as string[][];
-  console.log('census rows:', data.length);
   const [, ...rows] = data;
 
   const normalizedCity = citySlug.replace(/-/g, ' ').toLowerCase();
