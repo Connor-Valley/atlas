@@ -1,9 +1,11 @@
 <script setup lang="ts">
     import { ref, watch } from "vue";
+    import { useRouter } from "vue-router";
     import { fetchHousing } from "../api/housing";
     import Section from "./Section.vue";
 
     const props = defineProps<{ city: string; state: string }>();
+    const router = useRouter();
 
     // control open state explicitly so the section starts closed and still toggles
     const open = ref(false);
@@ -29,6 +31,10 @@
         }
     }
 
+    function navigateToHousingDetails() {
+        router.push(`/housing/${props.state}/${props.city}`);
+    }
+
     watch(
     () => [props.city, props.state],
     ([city, state]) => {
@@ -41,6 +47,16 @@
 
 <template>
     <Section v-model="open" :toggle="true" title="Housing">
+        <template #header-action>
+            <button
+                v-if="data && !loading && !error"
+                @click="navigateToHousingDetails"
+                class="section-action"
+            >
+                View Details →
+            </button>
+        </template>
+
         <p v-if="loading">Loading…</p>
         <p v-else-if="error">{{ error }}</p>
 

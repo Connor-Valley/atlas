@@ -167,6 +167,14 @@ button:hover {
 }
 
 /* Section Header */
+.section-header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
 .section-header {
   display: flex;
   justify-content: space-between;
@@ -177,8 +185,49 @@ button:hover {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-secondary);
-  background: rgba(255, 255, 255, 0.06);
-  border-bottom: 1px solid var(--border-subtle);
+  background: none;
+  border: none;
+  cursor: pointer;
+  /* Take full width when no action button, otherwise just content space */
+  flex: 1;
+  min-width: 0;
+}
+
+/* When there's a header action, the header should not take full width */
+.section-header-container:has(.section-header-action) .section-header {
+  flex: 0 1 auto;
+}
+
+.section-header-action {
+  flex-shrink: 0;
+  /* Remove padding from container, let button handle it */
+}
+
+/* Section Action Button */
+.section-action {
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  justify-content: flex-end;
+  /* Match the same padding as section-header for consistent height */
+  padding: 16px 22px;
+  /* Set explicit height to match header */
+  height: 56px; /* 16px top + 24px content + 16px bottom */
+}
+
+.section-action:hover {
+  color: rgba(255, 255, 255, 0.9);
+  transform: translateX(2px);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 /* Section Content */

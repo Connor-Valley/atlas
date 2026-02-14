@@ -44,18 +44,24 @@ function toggleOpen() {
 
 <template>
   <div class="section">
-    <button
-        class="section-header"
-        @click="toggleOpen"
-        :aria-expanded="open"
-        :aria-disabled="!toggleEnabled"
-        tabindex="0"
-    >
-      {{ title }}
-      <svg v-if="toggleEnabled" width="24" height="24" viewBox="0 0 24 24">
-        <path :d="open ? mdiChevronDown : mdiChevronRight" fill="currentColor"/>
-      </svg>
-    </button>
+    <div class="section-header-container">
+      <button
+          class="section-header"
+          @click="toggleOpen"
+          :aria-expanded="open"
+          :aria-disabled="!toggleEnabled"
+          tabindex="0"
+      >
+        {{ title }}
+        <svg v-if="toggleEnabled" width="24" height="24" viewBox="0 0 24 24">
+          <path :d="open ? mdiChevronDown : mdiChevronRight" fill="currentColor"/>
+        </svg>
+      </button>
+
+      <div v-if="$slots['header-action']" class="section-header-action">
+        <slot name="header-action" />
+      </div>
+    </div>
 
     <div v-if="open" class="section-content">
       <slot />
