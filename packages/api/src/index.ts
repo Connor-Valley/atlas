@@ -8,6 +8,7 @@ import housingRouter from "./housing/housing.route.js";
 import incomeRouter from "./income/income.route.js"
 import affordabilityRouter from "./affordability/affordability.route.js"
 import statesRouter from "./states/states.route.js"
+import { initializeHpiCache } from "./housing/housing.service.js";
 
 // Load .env from repo root (monorepo) or cwd
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -31,6 +32,9 @@ app.use('/housing', housingRouter);
 app.use('/income', incomeRouter);
 app.use('/affordability', affordabilityRouter);
 app.use('/states', statesRouter);
+
+// Initialize FHFA data cache at startup
+initializeHpiCache();
 
 app.listen(port, () => {
   console.log(`API listening on http://localhost:${port}`);
