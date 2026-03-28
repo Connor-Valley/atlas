@@ -1,7 +1,6 @@
 <script setup lang="ts">
     import { ref, watch } from "vue";
     import { fetchCity } from "../api/cities";
-    import Section from "./Section.vue";
 
     const props = defineProps<{ city: string; state: string }>();
 
@@ -36,25 +35,25 @@
 </script>
 
 <template>
-    <Section :toggle="false" title="City Info">
-        <p v-if="loading">Loading…</p>
-        <p v-else-if="error">{{ error }}</p>
+    <div class="city-info-row">
+        <p v-if="loading" class="muted">Loading…</p>
+        <p v-else-if="error" class="muted">{{ error }}</p>
 
-        <div v-else-if="data" class="stat-grid">
-            <div class="stat">
-                <label>City:</label>
-                <strong>{{ data.name }}</strong>
+        <template v-else-if="data">
+            <div class="city-info-stat">
+                <span class="city-info-stat__label">City</span>
+                <span class="city-info-stat__value">{{ data.name }}</span>
             </div>
-
-            <div class="stat">
-                <label>County:</label>
-                <strong>{{ data.county }}</strong>
+            <div class="city-info-stat">
+                <span class="city-info-stat__label">County</span>
+                <span class="city-info-stat__value">{{ data.county }}</span>
             </div>
-
-            <div class="stat">
-                <label>Population</label>
-                <strong>{{ data.population.toLocaleString() }}</strong>
+            <div class="city-info-stat">
+                <span class="city-info-stat__label">Population</span>
+                <span class="city-info-stat__value city-info-stat__value--big">
+                    {{ data.population.toLocaleString() }}
+                </span>
             </div>
-        </div>
-    </Section>
+        </template>
+    </div>
 </template>

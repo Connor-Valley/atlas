@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { ref, watch, onMounted } from "vue";
+    import { ref, watch } from "vue";
     import { fetchAffordability } from "../api/affordability";
     import Section from "./Section.vue";
 
@@ -7,12 +7,6 @@
     city: string;
     state: string;
     }>();
-
-    // explicit open state so the section starts closed and can be toggled
-    const open = ref(false);
-
-    watch(open, (v) => console.debug('[AffordabilitySection] open changed ->', v));
-    onMounted(() => console.debug('[AffordabilitySection] mounted open=', open.value));
 
     const data = ref<any>(null);
     const loading = ref(false);
@@ -45,19 +39,14 @@
 </script>
 
 <template>
-    <Section v-model="open" :toggle="true" title="Affordability">
+    <Section :toggle="false" title="Affordability" accent="affordability">
          <p v-if="loading">Loading…</p>
          <p v-else-if="error">{{ error }}</p>
 
          <div v-else-if="data" class="stat-grid">
              <div class="stat">
                  <label>Median Rent</label>
-                 <strong>${{ data.medianRent }}</strong>
-             </div>
-
-             <div class="stat">
-                 <label>Median Renter Income</label>
-                 <strong>${{ data.medianRenterIncome }}</strong>
+                 <strong>${{ data.medianRent.toLocaleString() }}</strong>
              </div>
 
              <div class="stat">
@@ -66,8 +55,10 @@
              </div>
 
              <div class="stat">
-                 <label>Affordability Status</label>
-                 <strong>{{ data.affordability }}</strong>
+                 <label>Status</label>
+                 <strong :class="data.affordability === 'Affordable' ? 'positive' : 'status-warning'">
+                     {{ data.affordability }}
+                 </strong>
              </div>
          </div>
      </Section>

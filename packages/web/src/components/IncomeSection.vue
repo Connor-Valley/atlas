@@ -5,8 +5,6 @@
 
   const props = defineProps<{ city: string; state: string }>();
 
-  const open = ref(false);
-
   const data = ref<any>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -38,19 +36,19 @@
 </script>
 
 <template>
-  <Section v-model="open" :toggle="true" title="Income">
+  <Section :toggle="false" title="Income" accent="income">
     <p v-if="loading">Loading…</p>
     <p v-else-if="error">{{ error }}</p>
 
     <div v-else-if="data" class="stat-grid">
       <div class="stat">
         <label>Median Household Income</label>
-        <strong>${{ data.medianHouseholdIncome }}</strong>
+        <strong>${{ data.medianHouseholdIncome.toLocaleString() }}</strong>
       </div>
 
       <div class="stat">
         <label>Median Renter Income</label>
-        <strong>${{ data.medianRenterIncome }}</strong>
+        <strong>${{ data.medianRenterIncome.toLocaleString() }}</strong>
       </div>
 
       <div class="stat">
