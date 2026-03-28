@@ -11,6 +11,12 @@ const router = createRouter({
       component: Home
     },
     {
+      path: '/city/:state/:city',
+      name: 'city',
+      component: Home,
+      props: true
+    },
+    {
       path: '/housing/:state/:city',
       name: 'housing',
       component: Housing,

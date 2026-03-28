@@ -1,19 +1,42 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import CitySearch from "../components/CitySearch.vue";
 import CityInfoSection from "../components/CityInfoSection.vue";
 import HousingSection from "../components/HousingSection.vue";
 import IncomeSection from "../components/IncomeSection.vue";
 import AffordabilitySection from "../components/AffordabilitySection.vue";
 
+const props = defineProps<{
+  state?: string;
+  city?: string;
+}>();
+
+const route = useRoute();
+const router = useRouter();
+
 const city = ref("");
 const state = ref("");
 const hasSearched = ref(false);
+
+// Initialize with route params if available
+onMounted(() => {
+  if (props.state && props.city) {
+    state.value = props.state;
+    city.value = props.city;
+    hasSearched.value = true;
+  }
+});
 
 function onSearch(payload: { city: string; state: string }) {
   city.value = payload.city;
   state.value = payload.state;
   hasSearched.value = true;
+
+  // Update URL to preserve state
+  if (route.name === 'home') {
+    router.replace(`/city/${payload.state}/${payload.city}`);
+  }
 }
 
 </script>
@@ -22,7 +45,11 @@ function onSearch(payload: { city: string; state: string }) {
   <div class="container">
     <h1>Atlas</h1>
 
-    <CitySearch @search="onSearch" />
+    <CitySearch
+      :initial-city="city"
+      :initial-state="state"
+      @search="onSearch"
+    />
 
     <div v-if="hasSearched">
       <CityInfoSection :city="city" :state="state" />

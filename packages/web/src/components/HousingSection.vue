@@ -32,7 +32,13 @@
     }
 
     function navigateToHousingDetails() {
-        router.push(`/housing/${props.state}/${props.city}`);
+        router.push({
+            name: 'housing',
+            params: {
+                state: props.state,
+                city: props.city
+            }
+        });
     }
 
     watch(
