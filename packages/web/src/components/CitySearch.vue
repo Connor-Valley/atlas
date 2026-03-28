@@ -2,16 +2,36 @@
 import {onMounted, ref, computed, watch} from "vue";
 import { getStates, type StateOption, getCitiesForState } from "../api/states";
 
+const props = defineProps<{
+  initialCity?: string;
+  initialState?: string;
+}>();
+
 const emit = defineEmits<{
   (e: "search", payload: { city: string; state: string }): void;
 }>();
 
-const localCity = ref("");
-const localState = ref("");
+const localCity = ref(props.initialCity || "");
+const localState = ref(props.initialState || "");
 const states = ref<StateOption[]>([]);
 const cities = ref<{ name: string; slug: string }[]>([]);
-const searchQuery = ref("");
+const searchQuery = ref(props.initialCity || "");
 const showSuggestions = ref(false);
+
+// Watch for changes in initial props
+watch(() => props.initialCity, (newCity) => {
+  if (newCity) {
+    localCity.value = newCity;
+    searchQuery.value = newCity;
+  }
+});
+
+watch(() => props.initialState, (newState) => {
+  if (newState) {
+    localState.value = newState;
+    fetchCities();
+  }
+});
 
 const filteredCities = computed(() => {
   if (!searchQuery.value || searchQuery.value.length < 2) return [];
