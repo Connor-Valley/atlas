@@ -1,65 +1,85 @@
 <script setup lang="ts">
-    import { ref, watch } from "vue";
-    import { fetchAffordability } from "../api/affordability";
-    import Section from "./Section.vue";
+import { ref, computed, watch } from "vue";
+import { fetchAffordability } from "../api/affordability";
 
-    const props = defineProps<{
-    city: string;
-    state: string;
-    }>();
+const props = defineProps<{ city: string; state: string }>();
+const emit = defineEmits<{ (e: 'score', value: number): void }>();
 
-    const data = ref<any>(null);
-    const loading = ref(false);
-    const error = ref<string | null>(null);
+const data = ref<any>(null);
+const loading = ref(false);
+const error = ref<string | null>(null);
 
-    async function load() {
-    if (!props.city || !props.state) return;
+const score = computed(() => {
+  if (!data.value) return null;
+  return Math.min(100, Math.round(((0.5 - data.value.rentToIncomeRatio) / 0.5) * 100));
+});
 
-    loading.value = true;
-    error.value = null;
-    data.value = null;
+async function load() {
+  if (!props.city || !props.state) return;
 
-    try {
-        data.value = await fetchAffordability(props.state, props.city);
-    } catch {
-        error.value = "Failed to load affordability data";
-    } finally {
-        loading.value = false;
+  loading.value = true;
+  error.value = null;
+  data.value = null;
+
+  try {
+    data.value = await fetchAffordability(props.state, props.city);
+    if (score.value !== null) {
+      emit('score', score.value);
     }
-    }
+  } catch {
+    error.value = "Failed to load affordability data";
+  } finally {
+    loading.value = false;
+  }
+}
 
-    watch(
-    () => [props.city, props.state],
-    ([city, state]) => {
-        if (!city || !state) return;
-        load();
-    },
-    { immediate: true }
-    );
+watch(
+  () => [props.city, props.state],
+  ([city, state]) => {
+    if (!city || !state) return;
+    load();
+  },
+  { immediate: true }
+);
 </script>
 
 <template>
-    <Section :toggle="false" title="Affordability" accent="affordability">
-         <p v-if="loading">Loading…</p>
-         <p v-else-if="error">{{ error }}</p>
+  <div class="data-card data-card--wide">
+    <div class="data-card__header">
+      <div class="data-card__title">
+        <span class="data-card__icon mdi mdi-scale-balance"></span>
+        <span class="data-card__name">Affordability</span>
+      </div>
+      <span v-if="score !== null" class="data-card__score">{{ score }}</span>
+    </div>
 
-         <div v-else-if="data" class="stat-grid">
-             <div class="stat">
-                 <label>Median Rent</label>
-                 <strong>${{ data.medianRent.toLocaleString() }}</strong>
-             </div>
+    <div v-if="score !== null" class="data-card__bar-row">
+      <div class="data-card__bar">
+        <div class="data-card__bar-fill" :style="{ width: Math.max(0, score) + '%' }"></div>
+      </div>
+      <span class="data-card__bar-label">{{ Math.max(0, score) }}/100</span>
+    </div>
 
-             <div class="stat">
-                 <label>Rent / Income</label>
-                 <strong>{{ (data.rentToIncomeRatio * 100).toFixed(1) }}%</strong>
-             </div>
+    <div class="data-card__body">
+      <p v-if="loading" class="muted">Loading…</p>
+      <p v-else-if="error" class="muted">{{ error }}</p>
 
-             <div class="stat">
-                 <label>Status</label>
-                 <strong :class="data.affordability === 'Affordable' ? 'positive' : 'status-warning'">
-                     {{ data.affordability }}
-                 </strong>
-             </div>
-         </div>
-     </Section>
+      <div v-else-if="data" class="data-card__metrics">
+        <div class="metric">
+          <span class="metric__label">Median Rent</span>
+          <span class="metric__value">${{ data.medianRent.toLocaleString() }}</span>
+        </div>
+        <div class="metric">
+          <span class="metric__label">Rent / Income</span>
+          <span class="metric__value">{{ (data.rentToIncomeRatio * 100).toFixed(1) }}%</span>
+        </div>
+        <div class="metric">
+          <span class="metric__label">Status</span>
+          <span class="metric__value" :class="data.affordability === 'Affordable' ? 'positive' : 'status-warning'">
+            {{ data.affordability }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
