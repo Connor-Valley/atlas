@@ -777,7 +777,7 @@ async function closeExpandedSection() {
     </header>
 
     <!-- Score pills bar -->
-    <div ref="scorePills" class="score-pills">
+    <div v-if="!cityNotFound" ref="scorePills" class="score-pills">
       <div
         class="score-pill"
         :class="{ 'score-pill--top': topCategory === 'economic' }"
