@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 
-const isDark = ref(false);
+const isDark = ref(true);
 
 export function useTheme() {
   function apply(dark: boolean) {
@@ -18,9 +18,9 @@ export function useTheme() {
     if (saved) {
       apply(saved === 'dark');
     } else {
-      apply(window.matchMedia('(prefers-color-scheme: dark)').matches);
+      apply(true);
     }
   }
 
-  return { isDark, toggle, init };
+  return { isDark, toggle, init, apply };
 }

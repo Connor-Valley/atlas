@@ -299,7 +299,7 @@ const loadingStructureRows = [1, 2, 3, 4];
     </div>
 
     <div v-if="loading" class="housing-exp__grid" aria-hidden="true">
-      <section class="data-card housing-exp__panel">
+      <section class="data-card housing-exp__panel housing-exp__panel--compact housing-exp__panel--affordability">
         <div class="housing-exp__panel-head">
           <span class="data-card__icon mdi mdi-scale-balance"></span>
           <span class="housing-exp__panel-title">Affordability</span>
@@ -321,7 +321,7 @@ const loadingStructureRows = [1, 2, 3, 4];
         <p class="muted housing-exp__note housing-exp__note--skeleton skeleton-line"></p>
       </section>
 
-      <section class="data-card housing-exp__panel">
+      <section class="data-card housing-exp__panel housing-exp__panel--compact">
         <div class="housing-exp__panel-head">
           <span class="data-card__icon mdi mdi-office-building-outline"></span>
           <span class="housing-exp__panel-title">Housing Structure</span>
@@ -362,7 +362,7 @@ const loadingStructureRows = [1, 2, 3, 4];
     </div>
 
     <div v-else-if="data" class="housing-exp__grid">
-      <section class="data-card housing-exp__panel">
+      <section class="data-card housing-exp__panel housing-exp__panel--compact housing-exp__panel--affordability">
             <div class="housing-exp__panel-head">
               <span class="data-card__icon mdi mdi-scale-balance"></span>
               <span class="housing-exp__panel-title">Affordability</span>
@@ -390,7 +390,7 @@ const loadingStructureRows = [1, 2, 3, 4];
             </p>
       </section>
 
-      <section v-if="donutSegments.length" class="data-card housing-exp__panel">
+      <section v-if="donutSegments.length" class="data-card housing-exp__panel housing-exp__panel--compact">
             <div class="housing-exp__panel-head">
               <span class="data-card__icon mdi mdi-office-building-outline"></span>
               <span class="housing-exp__panel-title">Housing Structure</span>

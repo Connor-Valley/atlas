@@ -321,10 +321,22 @@ body {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
+  align-items: start;
 }
 
 .housing-exp__panel {
   padding: 18px;
+}
+
+.housing-exp__panel--compact {
+  align-self: start;
+  padding: 18px 18px 14px;
+  height: auto;
+  min-height: 0;
+}
+
+.housing-exp__panel--affordability {
+  display: block;
 }
 
 .housing-exp__panel-head {
@@ -335,7 +347,7 @@ body {
 }
 
 .housing-exp__panel-title {
-  font-size: 0.82rem;
+  font-size: 0.86rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -357,8 +369,16 @@ body {
 }
 
 .housing-exp__note {
-  margin-top: 12px;
-  font-size: 0.73rem;
+  margin-top: 10px;
+  font-size: 0.79rem;
+  line-height: 1.45;
+}
+
+.housing-exp__panel--affordability .housing-exp__note {
+  margin-top: 10px;
+  padding: 0;
+  border: 0;
+  background: none;
 }
 
 .housing-exp__note--skeleton {
@@ -366,6 +386,57 @@ body {
   width: min(320px, 72%);
   height: 12px;
   border-radius: 999px;
+}
+
+.housing-exp .data-card.housing-exp__panel--compact {
+  min-height: 178px;
+}
+
+.progress-state-card {
+  min-height: 380px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 40px 32px;
+  text-align: center;
+}
+
+.progress-state-card__icon-wrap {
+  width: 72px;
+  height: 72px;
+  border-radius: 22px;
+  display: grid;
+  place-items: center;
+  background:
+    linear-gradient(135deg, rgba(20, 184, 166, 0.18) 0%, rgba(20, 184, 166, 0.08) 100%);
+  border: 1px solid rgba(20, 184, 166, 0.22);
+}
+
+.progress-state-card__icon {
+  font-size: 2rem;
+  color: var(--accent);
+}
+
+.progress-state-card__title {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.5vw, 1.8rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+}
+
+.progress-state-card__body {
+  max-width: 420px;
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.progress-state-card__action {
+  margin-top: 6px;
 }
 
 /* ── Market Snapshot card ───────────────────────────── */
@@ -558,12 +629,12 @@ body {
 .struct-donut-wrap {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 12px;
 }
 
 .struct-donut {
-  width: 120px;
-  height: 120px;
+  width: 112px;
+  height: 112px;
   flex-shrink: 0;
 }
 
@@ -591,8 +662,8 @@ body {
 }
 
 .struct-legend__dot {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -603,10 +674,11 @@ body {
 }
 
 .struct-legend__label {
-  font-size: 0.76rem;
+  font-size: 0.84rem;
   color: var(--text-secondary);
   flex: 1;
   min-width: 0;
+  line-height: 1.35;
 }
 
 .struct-legend__label--skeleton {
@@ -616,8 +688,8 @@ body {
 }
 
 .struct-legend__pct {
-  font-size: 0.76rem;
-  font-weight: 600;
+  font-size: 0.84rem;
+  font-weight: 700;
   color: var(--text-primary);
 }
 
@@ -834,7 +906,7 @@ body {
 ===================== */
 .site-header {
   display: grid;
-  grid-template-columns: max-content minmax(320px, 1fr);
+  grid-template-columns: max-content auto minmax(320px, 1fr);
   align-items: center;
   column-gap: 28px;
   row-gap: 12px;
@@ -843,6 +915,15 @@ body {
   border-bottom: 1px solid var(--border-subtle);
   position: relative;
   z-index: 5;
+}
+
+.site-header__controls {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.site-header__search {
+  min-width: 0;
 }
 
 .site-logo {
@@ -1197,6 +1278,11 @@ button:hover {
   min-height: 252px;
   transition: box-shadow 0.2s ease, transform 0.2s ease;
   position: relative;
+}
+
+.housing-exp .data-card.housing-exp__panel--compact {
+  min-height: 178px;
+  height: 100%;
 }
 
 .data-card::before {
@@ -1882,6 +1968,11 @@ p:last-child {
     grid-template-columns: 1fr;
     column-gap: 0;
   }
+
+  .site-header__controls {
+    justify-content: flex-start;
+  }
+
   .site-header .search-bar {
     justify-self: stretch;
   }

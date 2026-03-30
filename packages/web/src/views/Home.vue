@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted, onUnmounted, nextTick } from "vue";
+import { ref, computed, reactive, onMounted, onUnmounted, nextTick, watch } from "vue";
 import { useRouter } from "vue-router";
 import CitySearch from "../components/CitySearch.vue";
 import CityInfoSection from "../components/CityInfoSection.vue";
@@ -9,9 +9,11 @@ import IncomeSection from "../components/IncomeSection.vue";
 import IncomeExpandedView from "../components/IncomeExpandedView.vue";
 import AffordabilitySection from "../components/AffordabilitySection.vue";
 import AffordabilityExpandedView from "../components/AffordabilityExpandedView.vue";
+import ThemeToggle from "../components/ThemeToggle.vue";
 import { prefetchDetailedHousing } from "../api/housing";
 import { prefetchIncome } from "../api/income";
 import { prefetchAffordability } from "../api/affordability";
+import { useTheme } from "../composables/useTheme";
 
 const props = defineProps<{
   state?: string;
@@ -19,6 +21,7 @@ const props = defineProps<{
 }>();
 
 const router = useRouter();
+const { apply: applyTheme } = useTheme();
 
 const city = ref("");
 const state = ref("");
@@ -209,6 +212,12 @@ onMounted(() => {
 
   typeTagline();
 });
+
+watch(showLanding, (isLandingVisible) => {
+  if (isLandingVisible) {
+    applyTheme(true);
+  }
+}, { immediate: true });
 
 onUnmounted(() => {
   if (typeTimer) clearTimeout(typeTimer);
@@ -631,6 +640,8 @@ async function animateSectionTransition(section: ExpandableSection, expand: bool
     });
 
     expandedPhase.value = "expanded";
+    await nextTick();
+    exits.forEach((animation) => animation.cancel());
 
   } else {
     // FLIP the selected panel back to its dashboard position, slide others back in
@@ -671,6 +682,9 @@ async function animateSectionTransition(section: ExpandableSection, expand: bool
     await Promise.allSettled([sectionAnimation.finished, ...enters.map(a => a.finished)]);
     expandedPhase.value = "collapsed";
     expandedSection.value = null;
+    await nextTick();
+    sectionAnimation.cancel();
+    enters.forEach((animation) => animation.cancel());
   }
 }
 
@@ -750,7 +764,10 @@ async function closeExpandedSection() {
         <span class="site-logo">Atlas</span>
         <span class="site-logo-accent" aria-hidden="true"></span>
       </span>
-      <div ref="headerSearch">
+      <div class="site-header__controls">
+        <ThemeToggle v-if="hasSearched && !transitioningToLanding" />
+      </div>
+      <div ref="headerSearch" class="site-header__search">
         <CitySearch
           :initial-city="city"
           :initial-state="state"
