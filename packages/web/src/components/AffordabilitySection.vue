@@ -62,9 +62,28 @@ watch(
       </div>
       <span class="data-card__bar-label">{{ Math.max(0, score) }}/100</span>
     </div>
+    <div v-else class="data-card__bar-row">
+      <div class="data-card__bar data-card__bar--placeholder">
+        <div class="data-card__bar-fill data-card__bar-fill--placeholder" style="width: 54%"></div>
+      </div>
+      <span class="data-card__bar-label skeleton-line skeleton-line--label"></span>
+    </div>
 
     <div class="data-card__body">
-      <p v-if="loading" class="muted">Loading…</p>
+      <div v-if="loading" class="data-card__metrics">
+        <div class="metric skeleton-block skeleton-block--hero">
+          <span class="metric__label skeleton-line skeleton-line--label"></span>
+          <span class="metric__value skeleton-line skeleton-line--value"></span>
+        </div>
+        <div class="metric skeleton-block">
+          <span class="metric__label skeleton-line skeleton-line--label"></span>
+          <span class="metric__value skeleton-line skeleton-line--value-sm"></span>
+        </div>
+        <div class="metric skeleton-block">
+          <span class="metric__label skeleton-line skeleton-line--label"></span>
+          <span class="metric__value skeleton-line skeleton-line--value-sm"></span>
+        </div>
+      </div>
       <p v-else-if="error" class="muted">{{ error }}</p>
 
       <div v-else-if="data" class="data-card__metrics">
@@ -85,8 +104,8 @@ watch(
       </div>
     </div>
 
-    <div v-if="data" class="data-card__footer">
-      <button class="data-card__link" @click="emit('expand')">View Details →</button>
+    <div class="data-card__footer">
+      <button class="data-card__link" :disabled="!data" @click="emit('expand')">View Details →</button>
     </div>
   </div>
 </template>

@@ -24,6 +24,8 @@ const city = ref("");
 const state = ref("");
 const hasSearched = ref(false);
 const cityNotFound = ref(false);
+const transitioningToDashboard = ref(false);
+const transitioningToLanding = ref(false);
 type ExpandableSection = "economic" | "housing" | "affordability";
 const expandedSection = ref<ExpandableSection | null>(null);
 const expandedPhase = ref<"collapsed" | "expanding" | "expanded" | "collapsing">("collapsed");
@@ -36,6 +38,15 @@ const heroPanel = ref<HTMLElement | null>(null);
 const incomePanel = ref<HTMLElement | null>(null);
 const housingPanel = ref<HTMLElement | null>(null);
 const affordabilityPanel = ref<HTMLElement | null>(null);
+const landingStage = ref<HTMLElement | null>(null);
+const landingContent = ref<HTMLElement | null>(null);
+const heroDots = ref<HTMLElement | null>(null);
+const landingSearch = ref<HTMLElement | null>(null);
+const dashboardStage = ref<HTMLElement | null>(null);
+const headerSearch = ref<HTMLElement | null>(null);
+const scorePills = ref<HTMLElement | null>(null);
+const dashboardShell = ref<HTMLElement | null>(null);
+const cityNotFoundPanel = ref<HTMLElement | null>(null);
 
 const scores = reactive({
   economic: null as number | null,
@@ -53,6 +64,12 @@ const sectionExpanded = computed(
 );
 const expandedLayoutSection = computed(() =>
   sectionExpanded.value ? expandedSection.value : null
+);
+const showLanding = computed(
+  () => !hasSearched.value || transitioningToDashboard.value || transitioningToLanding.value
+);
+const showDashboard = computed(
+  () => hasSearched.value || transitioningToLanding.value
 );
 
 const topCategory = computed(() => {
@@ -199,9 +216,12 @@ onUnmounted(() => {
 });
 
 function onSearch(payload: { city: string; state: string }) {
+  const shouldAnimateLandingTransition =
+    !hasSearched.value &&
+    !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
   city.value = payload.city;
   state.value = payload.state;
-  hasSearched.value = true;
 
   scores.economic = null;
   scores.housing = null;
@@ -215,12 +235,24 @@ function onSearch(payload: { city: string; state: string }) {
   openedSections.affordability = false;
 
   router.replace(`/city/${payload.state}/${payload.city}`);
+
+  if (shouldAnimateLandingTransition) {
+    void animateLandingToDashboard();
+    return;
+  }
+
+  hasSearched.value = true;
 }
 
-function resetSearch() {
+function clearSearchState() {
   hasSearched.value = false;
   city.value = '';
   state.value = '';
+  cityNotFound.value = false;
+  scores.economic = null;
+  scores.housing = null;
+  scores.affordability = null;
+  scores.people = null;
   expandedSection.value = null;
   expandedPhase.value = "collapsed";
   openedSections.economic = false;
@@ -229,10 +261,303 @@ function resetSearch() {
   router.replace('/');
 }
 
+function resetSearch() {
+  const shouldAnimateReturn =
+    hasSearched.value &&
+    !transitioningToLanding.value &&
+    !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  if (shouldAnimateReturn) {
+    void animateDashboardToLanding();
+    return;
+  }
+
+  clearSearchState();
+}
+
 function getPanelElement(section: ExpandableSection) {
   if (section === "economic") return incomePanel.value;
   if (section === "housing") return housingPanel.value;
   return affordabilityPanel.value;
+}
+
+function getDashboardEnterElements() {
+  return [
+    dashboardStage.value?.querySelector(".site-logo-wrap") as HTMLElement | null,
+    scorePills.value,
+    dashboardShell.value,
+    cityNotFoundPanel.value,
+  ].filter((element): element is HTMLElement => Boolean(element));
+}
+
+function getSearchBarElement(container: HTMLElement | null) {
+  return container?.querySelector(".search-bar") as HTMLElement | null;
+}
+
+async function animateLandingToDashboard() {
+  const source = getSearchBarElement(landingSearch.value);
+  if (!source) {
+    hasSearched.value = true;
+    return;
+  }
+
+  const sourceRect = source.getBoundingClientRect();
+  transitioningToDashboard.value = true;
+  hasSearched.value = true;
+  await nextTick();
+
+  const target = getSearchBarElement(headerSearch.value);
+  if (!target) {
+    transitioningToDashboard.value = false;
+    return;
+  }
+
+  const targetRect = target.getBoundingClientRect();
+  const ghost = source.cloneNode(true) as HTMLElement;
+  Object.assign(ghost.style, {
+    position: "fixed",
+    left: `${sourceRect.left}px`,
+    top: `${sourceRect.top}px`,
+    width: `${sourceRect.width}px`,
+    height: `${sourceRect.height}px`,
+    margin: "0",
+    zIndex: "40",
+    pointerEvents: "none",
+  });
+  document.body.appendChild(ghost);
+
+  source.style.opacity = "0";
+  target.style.opacity = "0";
+
+  const landingAnimations: Animation[] = [];
+  const landingElements = [
+    landingStage.value,
+    heroDots.value,
+    ...(landingStage.value
+      ? Array.from(landingStage.value.querySelectorAll(".hero-chip")) as HTMLElement[]
+      : []),
+  ].filter((element): element is HTMLElement => Boolean(element));
+
+  landingElements.forEach((element, index) => {
+    landingAnimations.push(
+      element.animate(
+        [
+          { opacity: 1, transform: "translateY(0px)" },
+          { opacity: index === 0 ? 0 : 0, transform: index === 0 ? "translateY(0px)" : "translateY(-20px)" },
+        ],
+        {
+          duration: 760,
+          delay: index === 0 ? 180 : 40,
+          easing: "cubic-bezier(0.2, 0.9, 0.24, 1)",
+          fill: "both",
+        },
+      ),
+    );
+  });
+
+  if (landingContent.value) {
+    landingAnimations.push(
+      landingContent.value.animate(
+        [
+          { opacity: 1, transform: "translateY(0px)" },
+          { opacity: 0, transform: "translateY(-26px)" },
+        ],
+        {
+          duration: 680,
+          easing: "cubic-bezier(0.2, 0.9, 0.24, 1)",
+          fill: "both",
+        },
+      ),
+    );
+  }
+
+  const searchDeltaX = targetRect.left - sourceRect.left;
+  const searchDeltaY = targetRect.top - sourceRect.top;
+  const ghostAnimation = ghost.animate(
+    [
+      {
+        transform: "translate(0px, 0px)",
+        width: `${sourceRect.width}px`,
+        height: `${sourceRect.height}px`,
+        opacity: 1,
+      },
+      {
+        transform: `translate(${searchDeltaX}px, ${searchDeltaY}px)`,
+        width: `${targetRect.width}px`,
+        height: `${targetRect.height}px`,
+        opacity: 1,
+      },
+    ],
+    {
+      duration: 980,
+      easing: "cubic-bezier(0.2, 0.9, 0.24, 1)",
+      fill: "both",
+    },
+  );
+
+  const dashboardAnimations = getDashboardEnterElements().map((element, index) =>
+    element.animate(
+      [
+        { opacity: 0, transform: "translateY(56px)" },
+        { opacity: 1, transform: "translateY(0px)" },
+      ],
+      {
+        duration: 860,
+        delay: 320 + index * 40,
+        easing: "cubic-bezier(0.2, 0.9, 0.24, 1)",
+        fill: "both",
+      },
+    ),
+  );
+
+  await Promise.allSettled([
+    ghostAnimation.finished,
+    ...landingAnimations.map((animation) => animation.finished),
+    ...dashboardAnimations.map((animation) => animation.finished),
+  ]);
+
+  ghost.remove();
+  source.style.opacity = "";
+  target.style.opacity = "";
+  transitioningToDashboard.value = false;
+}
+
+async function animateDashboardToLanding() {
+  const source = getSearchBarElement(headerSearch.value);
+  if (!source) {
+    clearSearchState();
+    return;
+  }
+
+  transitioningToLanding.value = true;
+  await nextTick();
+
+  const target = getSearchBarElement(landingSearch.value);
+  if (!target) {
+    transitioningToLanding.value = false;
+    clearSearchState();
+    return;
+  }
+
+  const sourceRect = source.getBoundingClientRect();
+  const targetRect = target.getBoundingClientRect();
+  const ghost = source.cloneNode(true) as HTMLElement;
+  Object.assign(ghost.style, {
+    position: "fixed",
+    left: `${sourceRect.left}px`,
+    top: `${sourceRect.top}px`,
+    width: `${sourceRect.width}px`,
+    height: `${sourceRect.height}px`,
+    margin: "0",
+    zIndex: "40",
+    pointerEvents: "none",
+  });
+  document.body.appendChild(ghost);
+
+  source.style.opacity = "0";
+  target.style.opacity = "0";
+
+  const dashboardElements = [
+    dashboardStage.value?.querySelector(".site-logo-wrap") as HTMLElement | null,
+    scorePills.value,
+    dashboardShell.value,
+    cityNotFoundPanel.value,
+  ].filter((element): element is HTMLElement => Boolean(element));
+
+  const dashboardAnimations = dashboardElements.map((element, index) =>
+    element.animate(
+      [
+        { opacity: 1, transform: "translateY(0px)" },
+        { opacity: 0, transform: "translateY(36px)" },
+      ],
+      {
+        duration: 620,
+        delay: index * 40,
+        easing: "cubic-bezier(0.2, 0.9, 0.24, 1)",
+        fill: "both",
+      },
+    ),
+  );
+
+  const landingElements = [
+    landingStage.value,
+    heroDots.value,
+    ...(landingStage.value
+      ? Array.from(landingStage.value.querySelectorAll(".hero-chip")) as HTMLElement[]
+      : []),
+  ].filter((element): element is HTMLElement => Boolean(element));
+
+  const landingAnimations: Animation[] = [];
+  landingElements.forEach((element, index) => {
+    landingAnimations.push(
+      element.animate(
+        [
+          { opacity: index === 0 ? 0 : 0, transform: index === 0 ? "translateY(0px)" : "translateY(18px)" },
+          { opacity: 1, transform: "translateY(0px)" },
+        ],
+        {
+          duration: 760,
+          delay: index === 0 ? 120 : 220,
+          easing: "cubic-bezier(0.2, 0.9, 0.24, 1)",
+          fill: "both",
+        },
+      ),
+    );
+  });
+
+  if (landingContent.value) {
+    landingAnimations.push(
+      landingContent.value.animate(
+        [
+          { opacity: 0, transform: "translateY(26px)" },
+          { opacity: 1, transform: "translateY(0px)" },
+        ],
+        {
+          duration: 680,
+          delay: 180,
+          easing: "cubic-bezier(0.2, 0.9, 0.24, 1)",
+          fill: "both",
+        },
+      ),
+    );
+  }
+
+  const searchDeltaX = targetRect.left - sourceRect.left;
+  const searchDeltaY = targetRect.top - sourceRect.top;
+  const ghostAnimation = ghost.animate(
+    [
+      {
+        transform: "translate(0px, 0px)",
+        width: `${sourceRect.width}px`,
+        height: `${sourceRect.height}px`,
+        opacity: 1,
+      },
+      {
+        transform: `translate(${searchDeltaX}px, ${searchDeltaY}px)`,
+        width: `${targetRect.width}px`,
+        height: `${targetRect.height}px`,
+        opacity: 1,
+      },
+    ],
+    {
+      duration: 980,
+      easing: "cubic-bezier(0.2, 0.9, 0.24, 1)",
+      fill: "both",
+    },
+  );
+
+  await Promise.allSettled([
+    ghostAnimation.finished,
+    ...dashboardAnimations.map((animation) => animation.finished),
+    ...landingAnimations.map((animation) => animation.finished),
+  ]);
+
+  ghost.remove();
+  landingAnimations.forEach((animation) => animation.cancel());
+  source.style.opacity = "";
+  target.style.opacity = "";
+  transitioningToLanding.value = false;
+  clearSearchState();
 }
 
 function getPrefetcher(section: ExpandableSection) {
@@ -365,9 +690,17 @@ async function closeExpandedSection() {
 
 <template>
   <!-- Before search: full hero landing -->
-  <div v-if="!hasSearched" class="hero-landing">
+  <div
+    v-if="showLanding"
+    ref="landingStage"
+    class="hero-landing"
+    :class="{
+      'hero-landing--transitioning': transitioningToDashboard || transitioningToLanding,
+      'hero-landing--returning': transitioningToLanding,
+    }"
+  >
     <!-- Dot grid (drifting layer) -->
-    <div class="hero-dots"></div>
+    <div ref="heroDots" class="hero-dots"></div>
 
     <!-- Floating city chips -->
     <div
@@ -382,7 +715,7 @@ async function closeExpandedSection() {
       <span class="hero-chip__stat">{{ slot.stat }}</span>
     </div>
 
-    <div class="hero-content">
+    <div ref="landingContent" class="hero-content">
       <span class="hero-logo">Atlas</span>
       <h1 class="hero-headline">Compare cities. Make informed decisions.</h1>
       <p class="hero-tagline">
@@ -400,30 +733,34 @@ async function closeExpandedSection() {
           :class="{ 'hero-tagline__cursor--done': typewriterDone }"
         >|</span>
       </p>
-      <CitySearch
-        :initial-city="city"
-        :initial-state="state"
-        @search="onSearch"
-      />
+      <div ref="landingSearch">
+        <CitySearch
+          :initial-city="city"
+          :initial-state="state"
+          @search="onSearch"
+        />
+      </div>
     </div>
   </div>
 
   <!-- After search: city data view -->
-  <div v-else class="container">
+  <div v-if="showDashboard" ref="dashboardStage" class="container">
     <header class="site-header">
       <span class="site-logo-wrap" @click="resetSearch">
         <span class="site-logo">Atlas</span>
         <span class="site-logo-accent" aria-hidden="true"></span>
       </span>
-      <CitySearch
-        :initial-city="city"
-        :initial-state="state"
-        @search="onSearch"
-      />
+      <div ref="headerSearch">
+        <CitySearch
+          :initial-city="city"
+          :initial-state="state"
+          @search="onSearch"
+        />
+      </div>
     </header>
 
     <!-- Score pills bar -->
-    <div class="score-pills">
+    <div ref="scorePills" class="score-pills">
       <div
         class="score-pill"
         :class="{ 'score-pill--top': topCategory === 'economic' }"
@@ -455,7 +792,7 @@ async function closeExpandedSection() {
     </div>
 
     <!-- City not found state -->
-    <div v-if="cityNotFound" class="city-not-found">
+    <div v-if="cityNotFound" ref="cityNotFoundPanel" class="city-not-found">
       <span class="city-not-found__icon mdi mdi-map-search-outline"></span>
       <h2 class="city-not-found__heading">No data found</h2>
       <p class="city-not-found__body">
@@ -468,6 +805,7 @@ async function closeExpandedSection() {
     <!-- Data cards grid -->
     <div
       v-if="!cityNotFound"
+      ref="dashboardShell"
       class="dashboard-shell"
       :class="{
         'dashboard-shell--section-active': sectionExpanded,
@@ -479,7 +817,7 @@ async function closeExpandedSection() {
           :city="city"
           :state="state"
           @score="scores.people = $event"
-          @error="cityNotFound = true"
+          @not-found="cityNotFound = true"
         />
       </div>
 

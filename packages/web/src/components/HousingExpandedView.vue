@@ -176,6 +176,9 @@ const donutSegments = computed(() => {
     return { ...seg, dash, dashOffset };
   });
 });
+
+const loadingInsightCards = [1, 2, 3];
+const loadingStructureRows = [1, 2, 3, 4];
 </script>
 
 <template>
@@ -189,7 +192,21 @@ const donutSegments = computed(() => {
     </div>
 
     <!-- Insight callouts -->
-    <div v-if="insights.length" class="housing-exp__insights">
+    <div v-if="loading" class="housing-exp__insights">
+      <div
+        v-for="card in loadingInsightCards"
+        :key="card"
+        class="insight-card insight-card--skeleton"
+      >
+        <span class="insight-card__icon insight-card__icon--skeleton skeleton-line"></span>
+        <div class="insight-card__body">
+          <span class="insight-card__headline insight-card__headline--skeleton skeleton-line"></span>
+          <span class="insight-card__detail insight-card__detail--skeleton skeleton-line"></span>
+          <span class="insight-card__detail insight-card__detail--skeleton insight-card__detail--skeleton-short skeleton-line"></span>
+        </div>
+      </div>
+    </div>
+    <div v-else-if="insights.length" class="housing-exp__insights">
       <div
         v-for="insight in insights"
         :key="insight!.headline"
@@ -210,8 +227,35 @@ const donutSegments = computed(() => {
         <span class="housing-exp__snapshot-title">Market Snapshot</span>
       </div>
 
-      <div v-if="loading" class="housing-exp__state">
-        <p class="muted">Loading housing details…</p>
+      <div v-if="loading" class="housing-exp__snapshot-skeleton" aria-hidden="true">
+        <div class="housing-exp__snapshot-primary">
+          <div class="snap-metric snap-metric--primary snap-metric--skeleton">
+            <span class="snap-metric__label snap-metric__label--skeleton skeleton-line"></span>
+            <span class="snap-metric__value snap-metric__value--skeleton snap-metric__value--skeleton-lg skeleton-line"></span>
+          </div>
+          <div class="snap-metric snap-metric--primary snap-metric--skeleton">
+            <span class="snap-metric__label snap-metric__label--skeleton skeleton-line"></span>
+            <span class="snap-metric__value snap-metric__value--skeleton snap-metric__value--skeleton-lg skeleton-line"></span>
+          </div>
+          <div class="snap-metric snap-metric--primary snap-metric--skeleton">
+            <span class="snap-metric__label snap-metric__label--skeleton skeleton-line"></span>
+            <span class="snap-metric__value snap-metric__value--skeleton snap-metric__value--skeleton-lg skeleton-line"></span>
+          </div>
+        </div>
+        <div class="housing-exp__snapshot-secondary">
+          <div class="snap-metric snap-metric--secondary snap-metric--skeleton">
+            <span class="snap-metric__label snap-metric__label--skeleton skeleton-line"></span>
+            <span class="snap-metric__value snap-metric__value--skeleton skeleton-line"></span>
+          </div>
+          <div class="snap-metric snap-metric--secondary snap-metric--skeleton">
+            <span class="snap-metric__label snap-metric__label--skeleton skeleton-line"></span>
+            <span class="snap-metric__value snap-metric__value--skeleton skeleton-line"></span>
+          </div>
+          <div class="snap-metric snap-metric--secondary snap-metric--skeleton">
+            <span class="snap-metric__label snap-metric__label--skeleton skeleton-line"></span>
+            <span class="snap-metric__value snap-metric__value--skeleton skeleton-line"></span>
+          </div>
+        </div>
       </div>
       <div v-else-if="error" class="housing-exp__state">
         <p class="muted">{{ error }}</p>
@@ -254,7 +298,70 @@ const donutSegments = computed(() => {
       </template>
     </div>
 
-    <div v-if="data" class="housing-exp__grid">
+    <div v-if="loading" class="housing-exp__grid" aria-hidden="true">
+      <section class="data-card housing-exp__panel">
+        <div class="housing-exp__panel-head">
+          <span class="data-card__icon mdi mdi-scale-balance"></span>
+          <span class="housing-exp__panel-title">Affordability</span>
+        </div>
+        <div class="housing-exp__panel-metrics">
+          <div class="metric skeleton-block skeleton-block--hero">
+            <span class="metric__label skeleton-line skeleton-line--label"></span>
+            <span class="metric__value skeleton-line skeleton-line--value"></span>
+          </div>
+          <div class="metric skeleton-block">
+            <span class="metric__label skeleton-line skeleton-line--label"></span>
+            <span class="metric__value skeleton-line skeleton-line--value-sm"></span>
+          </div>
+          <div class="metric skeleton-block">
+            <span class="metric__label skeleton-line skeleton-line--label"></span>
+            <span class="metric__value skeleton-line skeleton-line--value-sm"></span>
+          </div>
+        </div>
+        <p class="muted housing-exp__note housing-exp__note--skeleton skeleton-line"></p>
+      </section>
+
+      <section class="data-card housing-exp__panel">
+        <div class="housing-exp__panel-head">
+          <span class="data-card__icon mdi mdi-office-building-outline"></span>
+          <span class="housing-exp__panel-title">Housing Structure</span>
+        </div>
+        <div class="struct-donut-wrap">
+          <div class="struct-donut struct-donut--skeleton skeleton-line"></div>
+          <div class="struct-legend struct-legend--vertical">
+            <div v-for="row in loadingStructureRows" :key="row" class="struct-legend__item">
+              <span class="struct-legend__dot struct-legend__dot--skeleton skeleton-line"></span>
+              <span class="struct-legend__label struct-legend__label--skeleton skeleton-line"></span>
+              <span class="struct-legend__pct struct-legend__pct--skeleton skeleton-line"></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="data-card housing-exp__panel housing-exp__panel--wide">
+        <div class="housing-exp__panel-head">
+          <span class="data-card__icon mdi mdi-chart-line"></span>
+          <span class="housing-exp__panel-title">Home Price Trends</span>
+        </div>
+        <div class="housing-exp__panel-metrics">
+          <div class="metric skeleton-block">
+            <span class="metric__label skeleton-line skeleton-line--label"></span>
+            <span class="metric__value skeleton-line skeleton-line--value-sm"></span>
+          </div>
+          <div class="metric skeleton-block">
+            <span class="metric__label skeleton-line skeleton-line--label"></span>
+            <span class="metric__value skeleton-line skeleton-line--value-sm"></span>
+          </div>
+          <div class="metric skeleton-block">
+            <span class="metric__label skeleton-line skeleton-line--label"></span>
+            <span class="metric__value skeleton-line skeleton-line--value-sm"></span>
+          </div>
+        </div>
+        <p class="muted housing-exp__note housing-exp__note--skeleton skeleton-line"></p>
+      </section>
+    </div>
+
+    <div v-else-if="data" class="housing-exp__grid">
       <section class="data-card housing-exp__panel">
             <div class="housing-exp__panel-head">
               <span class="data-card__icon mdi mdi-scale-balance"></span>

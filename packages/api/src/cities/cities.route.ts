@@ -12,6 +12,9 @@ router.get('/:state/:city', async (req, res) => {
         res.json(snapshot);
     } catch (error) {
         console.error(error);
+        const message = error instanceof Error ? error.message : "Failed to fetch city";
+        const status = message === "City not found" ? 404 : 500;
+        res.status(status).json({ error: message });
     }
 });
 

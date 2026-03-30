@@ -6,6 +6,7 @@ const props = defineProps<{ city: string; state: string }>();
 const emit = defineEmits<{
   (e: 'score', value: number): void;
   (e: 'error'): void;
+  (e: 'not-found'): void;
 }>();
 
 const data = ref<any>(null);
@@ -30,7 +31,16 @@ async function load() {
     if (peopleScore.value !== null) {
       emit('score', peopleScore.value);
     }
-  } catch {
+  } catch (err) {
+    const status = typeof err === "object" && err !== null && "status" in err
+      ? (err as { status?: number }).status
+      : undefined;
+
+    if (status === 404) {
+      emit('not-found');
+      return;
+    }
+
     error.value = "Failed to load city info";
     emit('error');
   } finally {
@@ -141,7 +151,26 @@ watch(
 
 <template>
   <div class="hero-section">
-    <p v-if="loading" class="muted">Loading…</p>
+    <div v-if="loading" class="city-hero-card city-hero-card--loading" aria-hidden="true">
+      <div class="city-hero-card__content">
+        <span class="city-hero-card__name city-hero-card__name--skeleton skeleton-line"></span>
+        <span class="city-hero-card__sub city-hero-card__sub--skeleton skeleton-line"></span>
+      </div>
+      <div class="city-hero-card__stats">
+        <div class="city-hero-card__stat">
+          <span class="city-hero-card__stat-label skeleton-line skeleton-line--label"></span>
+          <span class="city-hero-card__stat-value city-hero-card__stat-value--skeleton skeleton-line"></span>
+        </div>
+        <div class="city-hero-card__stat">
+          <span class="city-hero-card__stat-label skeleton-line skeleton-line--label"></span>
+          <span class="city-hero-card__stat-value city-hero-card__stat-value--skeleton skeleton-line"></span>
+        </div>
+        <div class="city-hero-card__stat">
+          <span class="city-hero-card__stat-label skeleton-line skeleton-line--label"></span>
+          <span class="city-hero-card__stat-value city-hero-card__stat-value--skeleton skeleton-line"></span>
+        </div>
+      </div>
+    </div>
     <p v-else-if="error" class="muted">{{ error }}</p>
 
     <div

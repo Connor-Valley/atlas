@@ -87,6 +87,17 @@ body {
   overflow: hidden;
 }
 
+.hero-landing--transitioning {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.hero-landing--returning {
+  z-index: 30;
+}
+
 .hero-content {
   width: 100%;
   max-width: 580px;
@@ -151,18 +162,21 @@ body {
 
 .dashboard-panel--expanded {
   grid-column: 1 / -1;
-  grid-row: 1 / span 3;
+  grid-row: 1;
   z-index: 6;
 }
 
 .dashboard-shell--section-settled .dashboard-panel:not(.dashboard-panel--expanded) {
   opacity: 0;
   pointer-events: none;
+  position: absolute;
+  inset: 0;
 }
 
 .expansion-slot {
   min-height: 0;
   position: relative;
+  overflow: clip;
 }
 
 .expansion-slot__layer {
@@ -172,6 +186,7 @@ body {
 
 .expansion-slot--selected.expansion-slot--expanded {
   min-height: calc(100% - 4px);
+  overflow: visible;
 }
 
 /* Overview visible whenever not in the settled-expanded state */
@@ -185,15 +200,18 @@ body {
 
 .expansion-slot--selected.expansion-slot--expanded .expansion-slot__layer--overview {
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
   position: absolute;
   inset: 0;
+  transition: none;
 }
 
 .expansion-slot:not(.expansion-slot--selected) .expansion-slot__layer--details,
 .expansion-slot--collapsed .expansion-slot__layer--details,
 .expansion-slot--expanding .expansion-slot__layer--details {
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
   position: absolute;
   inset: 0;
@@ -201,30 +219,20 @@ body {
 
 .expansion-slot--selected.expansion-slot--expanded .expansion-slot__layer--details {
   opacity: 1;
+  visibility: visible;
   position: relative;
   z-index: 2;
+  transition: none;
 }
 
 /* Sections burst outward from the center to their spots.
    Top items start below center and slide up; bottom starts above and slides down;
    left/right columns cross toward their edges. Stagger radiates from center out. */
-.expansion-slot--selected.expansion-slot--expanded .housing-exp__snapshot {
-  animation: exp-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-.expansion-slot--selected.expansion-slot--expanded .housing-exp__grid > :nth-child(1) {
-  animation: exp-left 0.7s 0.07s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-.expansion-slot--selected.expansion-slot--expanded .housing-exp__grid > :nth-child(2) {
-  animation: exp-right 0.7s 0.07s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-.expansion-slot--selected.expansion-slot--expanded .housing-exp__panel--wide {
-  animation: exp-down 0.7s 0.11s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-.expansion-slot--selected.expansion-slot--expanded .housing-exp__insights {
-  animation: exp-up 0.7s 0.11s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-.expansion-slot--selected.expansion-slot--expanded .housing-exp__nav {
-  animation: exp-up 0.65s 0.14s cubic-bezier(0.22, 1, 0.36, 1) both;
+.expansion-slot--selected.expansion-slot--expanded .housing-exp__nav,
+.expansion-slot--selected.expansion-slot--expanded .housing-exp__insights,
+.expansion-slot--selected.expansion-slot--expanded .housing-exp__snapshot,
+.expansion-slot--selected.expansion-slot--expanded .housing-exp__grid > * {
+  animation: exp-up 0.56s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes exp-up {
@@ -295,6 +303,11 @@ body {
   justify-content: center;
 }
 
+.housing-exp__snapshot-skeleton {
+  display: grid;
+  gap: 8px;
+}
+
 .housing-exp__summary {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -348,6 +361,13 @@ body {
   font-size: 0.73rem;
 }
 
+.housing-exp__note--skeleton {
+  display: block;
+  width: min(320px, 72%);
+  height: 12px;
+  border-radius: 999px;
+}
+
 /* ── Market Snapshot card ───────────────────────────── */
 .housing-exp__snapshot {
   padding: 18px 20px;
@@ -396,6 +416,10 @@ body {
   border: 1px solid var(--border-subtle);
 }
 
+.snap-metric--skeleton {
+  pointer-events: none;
+}
+
 .snap-metric__label {
   display: flex;
   align-items: center;
@@ -419,6 +443,23 @@ body {
   letter-spacing: -0.03em;
   color: var(--text-primary);
   line-height: 1;
+}
+
+.snap-metric__label--skeleton {
+  display: block;
+  width: 88px;
+  height: 10px;
+}
+
+.snap-metric__value--skeleton {
+  display: block;
+  width: 96px;
+  height: 18px;
+}
+
+.snap-metric__value--skeleton-lg {
+  width: 132px;
+  height: 24px;
 }
 
 .snap-metric--secondary .snap-metric__value {
@@ -482,10 +523,35 @@ body {
   line-height: 1.3;
 }
 
+.insight-card--skeleton {
+  min-height: 96px;
+}
+
+.insight-card__icon--skeleton {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  margin-top: 2px;
+}
+
+.insight-card__headline--skeleton {
+  width: 82%;
+  height: 14px;
+}
+
 .insight-card__detail {
   font-size: 0.74rem;
   color: var(--text-secondary);
   line-height: 1.4;
+}
+
+.insight-card__detail--skeleton {
+  width: 100%;
+  height: 10px;
+}
+
+.insight-card__detail--skeleton-short {
+  width: 68%;
 }
 
 /* ── Housing structure donut chart ──────────────────── */
@@ -499,6 +565,10 @@ body {
   width: 120px;
   height: 120px;
   flex-shrink: 0;
+}
+
+.struct-donut--skeleton {
+  border-radius: 50%;
 }
 
 .struct-legend {
@@ -527,6 +597,11 @@ body {
   flex-shrink: 0;
 }
 
+.struct-legend__dot--skeleton {
+  width: 10px;
+  height: 10px;
+}
+
 .struct-legend__label {
   font-size: 0.76rem;
   color: var(--text-secondary);
@@ -534,10 +609,22 @@ body {
   min-width: 0;
 }
 
+.struct-legend__label--skeleton {
+  display: block;
+  width: 112px;
+  height: 10px;
+}
+
 .struct-legend__pct {
   font-size: 0.76rem;
   font-weight: 600;
   color: var(--text-primary);
+}
+
+.struct-legend__pct--skeleton {
+  display: block;
+  width: 42px;
+  height: 10px;
 }
 
 
@@ -754,6 +841,8 @@ body {
   margin-bottom: 28px;
   padding-bottom: 20px;
   border-bottom: 1px solid var(--border-subtle);
+  position: relative;
+  z-index: 5;
 }
 
 .site-logo {
@@ -801,7 +890,7 @@ body {
   min-width: 0;
   margin-bottom: 0;
   position: relative;
-  z-index: 0;
+  z-index: 6;
   padding: 10px;
   justify-self: stretch;
 }
@@ -812,7 +901,7 @@ body {
 .container {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 32px 32px 96px;
+  padding: 32px 32px 40px;
 }
 
 /* =====================
@@ -991,9 +1080,15 @@ button:hover {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  min-height: 232px;
   box-shadow: 0 8px 32px rgba(14, 165, 148, 0.3), 0 2px 8px rgba(0, 0, 0, 0.15);
   position: relative;
   overflow: hidden;
+}
+
+.city-hero-card--loading {
+  background-image:
+    linear-gradient(140deg, rgba(10, 125, 114, 0.94) 0%, rgba(20, 184, 166, 0.88) 100%);
 }
 
 .city-hero-card::before {
@@ -1034,10 +1129,23 @@ button:hover {
   margin-bottom: 6px;
 }
 
+.city-hero-card__name--skeleton {
+  display: block;
+  width: min(280px, 72%);
+  height: clamp(34px, 4vw, 48px);
+}
+
 .city-hero-card__sub {
   font-size: 0.9rem;
   font-weight: 400;
   opacity: 0.7;
+}
+
+.city-hero-card__sub--skeleton {
+  display: block;
+  width: min(180px, 48%);
+  height: 14px;
+  opacity: 1;
 }
 
 .city-hero-card__stats {
@@ -1070,6 +1178,12 @@ button:hover {
   max-width: 200px;
 }
 
+.city-hero-card__stat-value--skeleton {
+  width: 110px;
+  height: 20px;
+  max-width: none;
+}
+
 /* =====================
    DATA CARDS
 ===================== */
@@ -1080,6 +1194,7 @@ button:hover {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  min-height: 252px;
   transition: box-shadow 0.2s ease, transform 0.2s ease;
   position: relative;
 }
@@ -1226,7 +1341,12 @@ button:hover {
 }
 
 .data-card--wide {
-  min-height: 220px;
+  min-height: 252px;
+}
+
+.housing-exp .data-card--wide,
+.housing-exp__panel--wide {
+  min-height: 0;
 }
 
 .data-card--wide .data-card__bar-row {
@@ -1769,7 +1889,7 @@ p:last-child {
 
 @media (max-width: 640px) {
   .container {
-    padding: 20px 16px 64px;
+    padding: 20px 16px 32px;
   }
 
   .search-bar {
