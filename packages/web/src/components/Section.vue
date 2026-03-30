@@ -7,6 +7,7 @@ const props = withDefaults(defineProps<{
   modelValue?: boolean;
   toggle?: boolean;
   defaultOpen?: boolean;
+  accent?: 'housing' | 'income' | 'affordability' | 'demographics';
 }>(), {
   toggle: true,
   defaultOpen: false,
@@ -43,7 +44,7 @@ function toggleOpen() {
 </script>
 
 <template>
-  <div class="section">
+  <div class="section" :class="accent ? `section--${accent}` : ''">
     <div class="section-header-container">
       <button
           class="section-header"

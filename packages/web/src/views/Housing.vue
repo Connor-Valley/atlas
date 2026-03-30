@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { computed, ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { fetchDetailedHousing } from "../api/housing";
-import { mdiChevronLeft } from "@mdi/js";
+import { mdiChevronLeft, mdiOfficeBuildingOutline } from "@mdi/js";
 
 const props = defineProps<{
   state: string;
@@ -43,6 +43,20 @@ function formatChange(ratio: number): string {
   const sign = ratio >= 0 ? "+" : "";
   return `${sign}${(ratio * 100).toFixed(2)}%`;
 }
+
+const housingStructureSegments = computed(() => {
+  const structure = data.value?.housing?.housingStructure;
+  if (!structure) return [];
+
+  return [
+    { key: "single-family", label: "Single Family", value: structure.singleFamily * 100, shade: "structure-segment--1" },
+    { key: "duplex", label: "Duplex", value: structure.duplex * 100, shade: "structure-segment--2" },
+    { key: "small-apartment", label: "Small Apartment (3–9)", value: structure.smallApartment * 100, shade: "structure-segment--3" },
+    { key: "large-apartment", label: "Large Apartment (10+)", value: structure.largeApartment * 100, shade: "structure-segment--4" },
+    { key: "mobile-home", label: "Mobile Home", value: structure.mobile * 100, shade: "structure-segment--5" },
+    { key: "other", label: "Other", value: structure.other * 100, shade: "structure-segment--6" },
+  ].filter((segment) => segment.value > 0);
+});
 
 onMounted(() => {
   loadDetailedHousing();
@@ -143,33 +157,40 @@ onMounted(() => {
       <!-- Housing Structure -->
       <div class="section" v-if="data.housing?.housingStructure">
         <div class="section-header-container">
-          <div class="section-header">Housing Structure</div>
+          <div class="section-header">
+            <svg width="18" height="18" viewBox="0 0 24 24">
+              <path :d="mdiOfficeBuildingOutline" fill="currentColor" />
+            </svg>
+            <span>Housing Structure</span>
+          </div>
         </div>
         <div class="section-content">
-          <div class="stat-grid">
-            <div class="stat">
-              <label>Single Family</label>
-              <strong>{{ (data.housing.housingStructure.singleFamily * 100).toFixed(1) }}%</strong>
+          <div class="structure-chart" role="img" aria-label="Housing structure distribution">
+            <div class="structure-chart__bar">
+              <div
+                v-for="segment in housingStructureSegments"
+                :key="segment.key"
+                class="structure-chart__segment"
+                :class="segment.shade"
+                :style="{ width: `${segment.value}%` }"
+                :title="`${segment.label}: ${segment.value.toFixed(1)}%`"
+              >
+                <span v-if="segment.value >= 5" class="structure-chart__segment-label">
+                  {{ segment.value.toFixed(1) }}%
+                </span>
+              </div>
             </div>
-            <div class="stat">
-              <label>Duplex</label>
-              <strong>{{ (data.housing.housingStructure.duplex * 100).toFixed(1) }}%</strong>
-            </div>
-            <div class="stat">
-              <label>Small Apartment (3–9 units)</label>
-              <strong>{{ (data.housing.housingStructure.smallApartment * 100).toFixed(1) }}%</strong>
-            </div>
-            <div class="stat">
-              <label>Large Apartment (10+ units)</label>
-              <strong>{{ (data.housing.housingStructure.largeApartment * 100).toFixed(1) }}%</strong>
-            </div>
-            <div class="stat">
-              <label>Mobile Home</label>
-              <strong>{{ (data.housing.housingStructure.mobile * 100).toFixed(1) }}%</strong>
-            </div>
-            <div class="stat">
-              <label>Other</label>
-              <strong>{{ (data.housing.housingStructure.other * 100).toFixed(1) }}%</strong>
+
+            <div class="structure-chart__legend">
+              <div
+                v-for="segment in housingStructureSegments"
+                :key="`${segment.key}-legend`"
+                class="structure-chart__legend-item"
+              >
+                <span class="structure-chart__legend-swatch" :class="segment.shade"></span>
+                <span class="structure-chart__legend-label">{{ segment.label }}</span>
+                <span class="structure-chart__legend-value">{{ segment.value.toFixed(1) }}%</span>
+              </div>
             </div>
           </div>
         </div>

@@ -1,62 +1,109 @@
 <script setup lang="ts">
-  import { ref, watch } from "vue";
-  import Section from "./Section.vue";
-  import { fetchIncome } from "../api/income";
+import { ref, computed, watch } from "vue";
+import { fetchIncome } from "../api/income";
 
-  const props = defineProps<{ city: string; state: string }>();
+const props = defineProps<{ city: string; state: string }>();
+const emit = defineEmits<{
+  (e: 'score', value: number): void;
+  (e: 'expand'): void;
+}>();
 
-  const open = ref(false);
+const data = ref<any>(null);
+const loading = ref(false);
+const error = ref<string | null>(null);
 
-  const data = ref<any>(null);
-  const loading = ref(false);
-  const error = ref<string | null>(null);
+const score = computed(() => {
+  if (!data.value) return null;
+  return Math.min(100, Math.round((data.value.medianHouseholdIncome / 150000) * 100));
+});
 
-  async function load() {
-    if (!props.city || !props.state) return;
+async function load() {
+  if (!props.city || !props.state) return;
 
-    loading.value = true;
-    error.value = null;
-    data.value = null;
+  loading.value = true;
+  error.value = null;
+  data.value = null;
 
-    try {
-      data.value = await fetchIncome(props.state, props.city);
-    } catch {
-      error.value = "Failed to load income data";
-    } finally {
-      loading.value = false;
+  try {
+    data.value = await fetchIncome(props.state, props.city);
+    if (score.value !== null) {
+      emit('score', score.value);
     }
+  } catch {
+    error.value = "Failed to load income data";
+  } finally {
+    loading.value = false;
   }
+}
 
-  watch(
-    () => [props.city, props.state],
-    ([city, state]) => {
-      if (!city || !state) return;
-      load();
-    },
-    { immediate: true }
-  );
+watch(
+  () => [props.city, props.state],
+  ([city, state]) => {
+    if (!city || !state) return;
+    load();
+  },
+  { immediate: true }
+);
 </script>
 
 <template>
-  <Section v-model="open" :toggle="true" title="Income">
-    <p v-if="loading">Loading…</p>
-    <p v-else-if="error">{{ error }}</p>
-
-    <div v-else-if="data" class="stat-grid">
-      <div class="stat">
-        <label>Median Household Income</label>
-        <strong>${{ data.medianHouseholdIncome }}</strong>
+  <div class="data-card">
+    <div class="data-card__header">
+      <div class="data-card__title">
+        <span class="data-card__icon mdi mdi-trending-up"></span>
+        <span class="data-card__name">Economic</span>
       </div>
+      <span v-if="score !== null" class="data-card__score">{{ score }}</span>
+    </div>
 
-      <div class="stat">
-        <label>Median Renter Income</label>
-        <strong>${{ data.medianRenterIncome }}</strong>
+    <div v-if="score !== null" class="data-card__bar-row">
+      <div class="data-card__bar">
+        <div class="data-card__bar-fill" :style="{ width: score + '%' }"></div>
       </div>
+      <span class="data-card__bar-label">{{ score }}/100</span>
+    </div>
+    <div v-else class="data-card__bar-row">
+      <div class="data-card__bar data-card__bar--placeholder">
+        <div class="data-card__bar-fill data-card__bar-fill--placeholder" style="width: 58%"></div>
+      </div>
+      <span class="data-card__bar-label skeleton-line skeleton-line--label"></span>
+    </div>
 
-      <div class="stat">
-        <label>Poverty Rate</label>
-        <strong>{{ data.povertyRate.toFixed(1) }}%</strong>
+    <div class="data-card__body">
+      <div v-if="loading" class="data-card__metrics">
+        <div class="metric skeleton-block skeleton-block--hero">
+          <span class="metric__label skeleton-line skeleton-line--label"></span>
+          <span class="metric__value skeleton-line skeleton-line--value"></span>
+        </div>
+        <div class="metric skeleton-block">
+          <span class="metric__label skeleton-line skeleton-line--label"></span>
+          <span class="metric__value skeleton-line skeleton-line--value-sm"></span>
+        </div>
+        <div class="metric skeleton-block">
+          <span class="metric__label skeleton-line skeleton-line--label"></span>
+          <span class="metric__value skeleton-line skeleton-line--value-sm"></span>
+        </div>
+      </div>
+      <p v-else-if="error" class="muted">{{ error }}</p>
+
+      <div v-else-if="data" class="data-card__metrics">
+        <div class="metric">
+          <span class="metric__label">Median Household Income</span>
+          <span class="metric__value">${{ data.medianHouseholdIncome.toLocaleString() }}</span>
+        </div>
+        <div class="metric">
+          <span class="metric__label">Median Renter Income</span>
+          <span class="metric__value">${{ data.medianRenterIncome.toLocaleString() }}</span>
+        </div>
+        <div class="metric">
+          <span class="metric__label">Poverty Rate</span>
+          <span class="metric__value">{{ data.povertyRate.toFixed(1) }}%</span>
+        </div>
       </div>
     </div>
-  </Section>
+
+    <div class="data-card__footer">
+      <button class="data-card__link" :disabled="!data" @click="emit('expand')">View Details →</button>
+    </div>
+  </div>
 </template>

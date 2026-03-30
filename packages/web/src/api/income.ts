@@ -1,7 +1,34 @@
+const incomeCache = new Map<string, Promise<any>>();
+
+function createKey(state: string, city: string) {
+  return `${state.toLowerCase()}::${city.toLowerCase()}`;
+}
+
+async function fetchJson(path: string) {
+  const API_BASE = import.meta.env.VITE_API_BASE;
+  const res = await fetch(`${API_BASE}${path}`);
+  if (!res.ok) throw new Error(`Failed to fetch ${path}`);
+  return res.json();
+}
+
+function getCached(key: string, loader: () => Promise<any>) {
+  const cached = incomeCache.get(key);
+  if (cached) return cached;
+
+  const request = loader().catch((error) => {
+    incomeCache.delete(key);
+    throw error;
+  });
+
+  incomeCache.set(key, request);
+  return request;
+}
+
 export async function fetchIncome(state: string, city: string) {
-    const API_BASE = import.meta.env.VITE_API_BASE;
-    const res = await fetch(`${API_BASE}/income/${state}/${city}`);
-    if (!res.ok) throw new Error("Failed to fetch income");
-    return res.json();
-  }
-  
+  const key = createKey(state, city);
+  return getCached(key, () => fetchJson(`/income/${state}/${city}`));
+}
+
+export function prefetchIncome(state: string, city: string) {
+  return fetchIncome(state, city);
+}

@@ -11,18 +11,23 @@ const emit = defineEmits<{
   (e: "search", payload: { city: string; state: string }): void;
 }>();
 
-const localCity = ref(props.initialCity || "");
+function slugToDisplay(slug: string) {
+  return slug.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
+
+const localCity = ref(slugToDisplay(props.initialCity || ""));
 const localState = ref(props.initialState || "");
 const states = ref<StateOption[]>([]);
 const cities = ref<{ name: string; slug: string }[]>([]);
-const searchQuery = ref(props.initialCity || "");
+const searchQuery = ref(slugToDisplay(props.initialCity || ""));
 const showSuggestions = ref(false);
 
 // Watch for changes in initial props
 watch(() => props.initialCity, (newCity) => {
   if (newCity) {
-    localCity.value = newCity;
-    searchQuery.value = newCity;
+    const display = slugToDisplay(newCity);
+    localCity.value = display;
+    searchQuery.value = display;
   }
 });
 
@@ -103,7 +108,7 @@ function submit() {
   });
 }
 
-watch(() => localState.value, fetchCities);
+watch(() => localState.value, fetchCities, { immediate: true });
 </script>
 
 <template>
