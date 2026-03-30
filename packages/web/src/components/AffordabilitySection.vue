@@ -3,7 +3,10 @@ import { ref, computed, watch } from "vue";
 import { fetchAffordability } from "../api/affordability";
 
 const props = defineProps<{ city: string; state: string }>();
-const emit = defineEmits<{ (e: 'score', value: number): void }>();
+const emit = defineEmits<{
+  (e: 'score', value: number): void;
+  (e: 'expand'): void;
+}>();
 
 const data = ref<any>(null);
 const loading = ref(false);
@@ -80,6 +83,10 @@ watch(
           </span>
         </div>
       </div>
+    </div>
+
+    <div v-if="data" class="data-card__footer">
+      <button class="data-card__link" @click="emit('expand')">View Details →</button>
     </div>
   </div>
 </template>

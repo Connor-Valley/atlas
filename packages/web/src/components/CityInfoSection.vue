@@ -3,7 +3,10 @@ import { ref, computed, watch } from "vue";
 import { fetchCity } from "../api/cities";
 
 const props = defineProps<{ city: string; state: string }>();
-const emit = defineEmits<{ (e: 'score', value: number): void }>();
+const emit = defineEmits<{
+  (e: 'score', value: number): void;
+  (e: 'error'): void;
+}>();
 
 const data = ref<any>(null);
 const loading = ref(false);
@@ -29,6 +32,7 @@ async function load() {
     }
   } catch {
     error.value = "Failed to load city info";
+    emit('error');
   } finally {
     loading.value = false;
   }

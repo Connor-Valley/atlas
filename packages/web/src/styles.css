@@ -105,7 +105,7 @@ body {
   background-size: 30px 30px;
   pointer-events: none;
   z-index: 0;
-  animation: dots-drift 18s linear infinite;
+  animation: dots-drift 12s linear infinite;
   will-change: background-position;
 }
 
@@ -113,6 +113,530 @@ body {
   from { background-position: 0 0; }
   to   { background-position: 0 30px; }
 }
+
+/* =====================
+   DASHBOARD STAGE / HOUSING EXPANSION
+===================== */
+.dashboard-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  position: relative;
+  align-items: start;
+}
+
+.dashboard-panel {
+  min-width: 0;
+  transition: opacity 0.28s ease, transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dashboard-panel--hero {
+  grid-column: 1 / -1;
+}
+
+.dashboard-panel--income {
+  grid-column: 1;
+}
+
+.dashboard-panel--housing {
+  grid-column: 2;
+  grid-row: 2;
+  position: relative;
+  z-index: 2;
+}
+
+.dashboard-panel--affordability {
+  grid-column: 1 / -1;
+}
+
+.dashboard-panel--expanded {
+  grid-column: 1 / -1;
+  grid-row: 1 / span 3;
+  z-index: 6;
+}
+
+.dashboard-shell--section-settled .dashboard-panel:not(.dashboard-panel--expanded) {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.expansion-slot {
+  min-height: 0;
+  position: relative;
+}
+
+.expansion-slot__layer {
+  min-width: 0;
+  transition: opacity 0.22s ease;
+}
+
+.expansion-slot--selected.expansion-slot--expanded {
+  min-height: calc(100% - 4px);
+}
+
+/* Overview visible whenever not in the settled-expanded state */
+.expansion-slot--collapsed .expansion-slot__layer--overview,
+.expansion-slot--expanding .expansion-slot__layer--overview,
+.expansion-slot--collapsing .expansion-slot__layer--overview {
+  opacity: 1;
+  position: relative;
+  z-index: 1;
+}
+
+.expansion-slot--selected.expansion-slot--expanded .expansion-slot__layer--overview {
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+}
+
+.expansion-slot:not(.expansion-slot--selected) .expansion-slot__layer--details,
+.expansion-slot--collapsed .expansion-slot__layer--details,
+.expansion-slot--expanding .expansion-slot__layer--details {
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+}
+
+.expansion-slot--selected.expansion-slot--expanded .expansion-slot__layer--details {
+  opacity: 1;
+  position: relative;
+  z-index: 2;
+}
+
+/* Sections burst outward from the center to their spots.
+   Top items start below center and slide up; bottom starts above and slides down;
+   left/right columns cross toward their edges. Stagger radiates from center out. */
+.expansion-slot--selected.expansion-slot--expanded .housing-exp__snapshot {
+  animation: exp-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.expansion-slot--selected.expansion-slot--expanded .housing-exp__grid > :nth-child(1) {
+  animation: exp-left 0.7s 0.07s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.expansion-slot--selected.expansion-slot--expanded .housing-exp__grid > :nth-child(2) {
+  animation: exp-right 0.7s 0.07s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.expansion-slot--selected.expansion-slot--expanded .housing-exp__panel--wide {
+  animation: exp-down 0.7s 0.11s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.expansion-slot--selected.expansion-slot--expanded .housing-exp__insights {
+  animation: exp-up 0.7s 0.11s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.expansion-slot--selected.expansion-slot--expanded .housing-exp__nav {
+  animation: exp-up 0.65s 0.14s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes exp-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes exp-down {
+  from { opacity: 0; transform: translateY(-20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes exp-left {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes exp-right {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.expansion-slot--selected.expansion-slot--collapsing .expansion-slot__layer--details {
+  opacity: 1;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  animation: housing-details-fade-out 0.22s ease forwards;
+}
+
+@keyframes housing-details-fade-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+
+/* =====================
+   HOUSING EXPANDED VIEW
+===================== */
+.housing-exp {
+  min-height: 100%;
+  display: grid;
+  gap: 16px;
+}
+
+.housing-exp__nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.housing-exp__subtitle {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+}
+
+.housing-exp__state {
+  min-height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.housing-exp__summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.housing-exp__summary-metric {
+}
+
+.housing-exp__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.housing-exp__panel {
+  padding: 18px;
+}
+
+.housing-exp__panel-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.housing-exp__panel-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.housing-exp__panel-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.housing-exp__structure-metrics {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.housing-exp__panel--wide {
+  grid-column: 1 / -1;
+}
+
+.housing-exp__note {
+  margin-top: 12px;
+  font-size: 0.73rem;
+}
+
+/* ── Market Snapshot card ───────────────────────────── */
+.housing-exp__snapshot {
+  padding: 18px 20px;
+}
+
+.housing-exp__snapshot-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.housing-exp__snapshot-icon {
+  font-size: 1rem;
+  color: var(--accent);
+}
+
+.housing-exp__snapshot-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.housing-exp__snapshot-primary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.housing-exp__snapshot-secondary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.snap-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-subtle);
+}
+
+.snap-metric__label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.snap-metric__icon {
+  font-size: 0.78rem;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.snap-metric--primary .snap-metric__value {
+  font-size: clamp(1.2rem, 2vw, 1.45rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.snap-metric--secondary .snap-metric__value {
+  font-size: 1.05rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+/* ── Insight callouts ───────────────────────────────── */
+.housing-exp__insights {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.insight-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border-card);
+  background: var(--bg-card);
+}
+
+.insight-card--positive {
+  border-color: rgba(16, 185, 129, 0.25);
+  background: rgba(16, 185, 129, 0.06);
+}
+.insight-card--warning {
+  border-color: rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.05);
+}
+.insight-card--neutral {
+  border-color: rgba(20, 184, 166, 0.2);
+  background: rgba(20, 184, 166, 0.05);
+}
+
+.insight-card__icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.insight-card--positive .insight-card__icon { color: var(--positive); }
+.insight-card--warning  .insight-card__icon { color: var(--warning); }
+.insight-card--neutral  .insight-card__icon { color: var(--accent); }
+
+.insight-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.insight-card__headline {
+  font-size: 0.82rem;
+  font-weight: 650;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.insight-card__detail {
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* ── Housing structure donut chart ──────────────────── */
+.struct-donut-wrap {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.struct-donut {
+  width: 120px;
+  height: 120px;
+  flex-shrink: 0;
+}
+
+.struct-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+}
+
+.struct-legend--vertical {
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.struct-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.struct-legend__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.struct-legend__label {
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+  flex: 1;
+  min-width: 0;
+}
+
+.struct-legend__pct {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+
+.breadcrumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.breadcrumb:hover {
+  color: var(--accent);
+  border-color: rgba(20, 184, 166, 0.4);
+  background: rgba(20, 184, 166, 0.06);
+}
+
+@media (max-width: 700px) {
+  .housing-exp__snapshot-primary,
+  .housing-exp__snapshot-secondary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .housing-exp__insights {
+    grid-template-columns: 1fr;
+  }
+
+  .housing-exp__summary,
+  .housing-exp__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .housing-exp__panel-metrics,
+  .housing-exp__structure-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .housing-exp__summary,
+  .housing-exp__grid,
+  .housing-exp__panel-metrics,
+  .housing-exp__structure-metrics {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =====================
+   CITY NOT FOUND STATE
+===================== */
+.city-not-found {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 64px 24px 48px;
+  gap: 16px;
+}
+
+.city-not-found__icon {
+  font-size: 3rem;
+  color: var(--text-secondary);
+  opacity: 0.45;
+}
+
+.city-not-found__heading {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.city-not-found__body {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  max-width: 420px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.city-not-found__btn {
+  margin-top: 8px;
+  padding: 10px 24px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.city-not-found__btn:hover { opacity: 0.88; }
 
 /* =====================
    FLOATING CITY CHIPS
@@ -547,19 +1071,6 @@ button:hover {
 }
 
 /* =====================
-   DATA GRID (asymmetric)
-===================== */
-.data-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.data-grid__wide {
-  grid-column: 1 / -1;
-}
-
-/* =====================
    DATA CARDS
 ===================== */
 .data-card {
@@ -755,6 +1266,12 @@ button:hover {
   transition: color 0.15s;
 }
 
+.data-card__link:disabled {
+  color: var(--text-muted);
+  cursor: default;
+  opacity: 0.55;
+}
+
 .data-card__link:hover {
   color: var(--accent-hover);
   background: none;
@@ -818,6 +1335,60 @@ button:hover {
 
 .metric__value--positive { color: var(--positive); }
 .metric__value--warning { color: var(--warning); }
+
+.data-card__bar--placeholder {
+  background: color-mix(in srgb, var(--progress-bg) 82%, var(--bg-card-subtle));
+}
+
+.data-card__bar-fill--placeholder {
+  opacity: 0.55;
+}
+
+.skeleton-block {
+  pointer-events: none;
+}
+
+.skeleton-block--hero {
+  min-height: 110px;
+}
+
+.skeleton-line {
+  display: block;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(255, 255, 255, 0.09) 50%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
+  background-size: 220% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+.skeleton-line--label {
+  width: 72px;
+  height: 10px;
+  margin-bottom: 10px;
+}
+
+.skeleton-line--value {
+  width: 128px;
+  height: 22px;
+}
+
+.skeleton-line--value-sm {
+  width: 92px;
+  height: 18px;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
 
 /* =====================
    SECTION CARDS (detail pages — Housing.vue)
@@ -950,6 +1521,81 @@ button:hover {
   text-overflow: ellipsis;
 }
 
+.structure-chart {
+  display: grid;
+  gap: 16px;
+}
+
+.structure-chart__bar {
+  display: flex;
+  width: 100%;
+  min-height: 46px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--bg-card-subtle);
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+}
+
+.structure-chart__segment {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  transition: filter 0.18s ease;
+}
+
+.structure-chart__segment:hover {
+  filter: brightness(1.06);
+}
+
+.structure-chart__segment-label {
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.structure-chart__legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px 16px;
+}
+
+.structure-chart__legend-item {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.structure-chart__legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+}
+
+.structure-chart__legend-label {
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+  font-weight: 500;
+}
+
+.structure-chart__legend-value {
+  color: var(--text-primary);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.structure-segment--1 { background: linear-gradient(90deg, #0f766e 0%, #14b8a6 100%); }
+.structure-segment--2 { background: linear-gradient(90deg, #0f8f86 0%, #1ccfc2 100%); }
+.structure-segment--3 { background: linear-gradient(90deg, #1199a0 0%, #35d7d0 100%); }
+.structure-segment--4 { background: linear-gradient(90deg, #0e728a 0%, #26b8d6 100%); }
+.structure-segment--5 { background: linear-gradient(90deg, #0c8c7a 0%, #2ed3ae 100%); }
+.structure-segment--6 { background: linear-gradient(90deg, #167c6b 0%, #3ac8a2 100%); }
+
 /* =====================
    TEXT
 ===================== */
@@ -1080,41 +1726,23 @@ p:last-child {
   color: var(--text-primary);
 }
 
-.breadcrumb {
-  background: none;
-  color: rgba(0, 0, 0, 0.4);
-  border: none;
-  padding: 0;
-  font-size: 0.9rem;
-  font-weight: 400;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  line-height: 1;
-  flex-shrink: 0;
-  transform: translateY(-3px);
-}
-
-.breadcrumb:hover {
-  color: rgba(0, 0, 0, 0.7);
-  transform: translateY(-3px) translateX(-2px);
-  background: none;
-}
-
-.breadcrumb svg {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-}
-
 /* =====================
    RESPONSIVE
 ===================== */
 @media (max-width: 960px) {
-  .data-grid {
+  .dashboard-shell {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-panel--income,
+  .dashboard-panel--housing,
+  .dashboard-panel--affordability {
+    grid-column: 1;
+  }
+
+  .dashboard-panel--expanded {
+    grid-column: 1;
+    grid-row: 1 / span 4;
   }
 
   .data-card--wide .data-card__bar-row {
@@ -1199,38 +1827,54 @@ p:last-child {
   background: var(--bg-card);
   border: 1px solid var(--border-card);
   border-radius: 100px;
-  padding: 6px 10px;
+  padding: 7px 11px;
   cursor: pointer;
   font-family: inherit;
   box-shadow: var(--card-shadow);
   display: flex;
   align-items: center;
-  gap: 7px;
-  transition: box-shadow 0.15s;
+  gap: 9px;
+  transition: box-shadow 0.15s, border-color 0.15s ease, background 0.15s ease;
 }
 
 .theme-toggle:hover {
   background: var(--bg-card);
+  border-color: rgba(20, 184, 166, 0.28);
   box-shadow: var(--card-shadow-md);
 }
 
 .theme-toggle__icon {
-  font-size: 0.75rem;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
   line-height: 1;
-  opacity: 0.4;
-  transition: opacity 0.2s;
+  border-radius: 999px;
+  color: var(--text-muted);
+  background: transparent;
+  opacity: 1;
+  transition: color 0.2s ease, background 0.2s ease, transform 0.2s ease;
 }
 
 .theme-toggle__icon--sun {
-  opacity: 1;
+  color: #b7791f;
+  background: rgba(245, 158, 11, 0.12);
 }
 
 .theme-toggle--dark .theme-toggle__icon--sun {
-  opacity: 0.4;
+  color: rgba(241, 245, 249, 0.42);
+  background: transparent;
+}
+
+.theme-toggle__icon--moon {
+  color: rgba(71, 85, 105, 0.72);
 }
 
 .theme-toggle--dark .theme-toggle__icon--moon {
-  opacity: 1;
+  color: #cbd5f5;
+  background: rgba(148, 163, 184, 0.16);
 }
 
 .theme-toggle__track {

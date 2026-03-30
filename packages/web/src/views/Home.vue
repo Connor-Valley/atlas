@@ -1,23 +1,41 @@
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted, onUnmounted } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { ref, computed, reactive, onMounted, onUnmounted, nextTick } from "vue";
+import { useRouter } from "vue-router";
 import CitySearch from "../components/CitySearch.vue";
 import CityInfoSection from "../components/CityInfoSection.vue";
 import HousingSection from "../components/HousingSection.vue";
+import HousingExpandedView from "../components/HousingExpandedView.vue";
 import IncomeSection from "../components/IncomeSection.vue";
+import IncomeExpandedView from "../components/IncomeExpandedView.vue";
 import AffordabilitySection from "../components/AffordabilitySection.vue";
+import AffordabilityExpandedView from "../components/AffordabilityExpandedView.vue";
+import { prefetchDetailedHousing } from "../api/housing";
+import { prefetchIncome } from "../api/income";
+import { prefetchAffordability } from "../api/affordability";
 
 const props = defineProps<{
   state?: string;
   city?: string;
 }>();
 
-const route = useRoute();
 const router = useRouter();
 
 const city = ref("");
 const state = ref("");
 const hasSearched = ref(false);
+const cityNotFound = ref(false);
+type ExpandableSection = "economic" | "housing" | "affordability";
+const expandedSection = ref<ExpandableSection | null>(null);
+const expandedPhase = ref<"collapsed" | "expanding" | "expanded" | "collapsing">("collapsed");
+const openedSections = reactive<Record<ExpandableSection, boolean>>({
+  economic: false,
+  housing: false,
+  affordability: false,
+});
+const heroPanel = ref<HTMLElement | null>(null);
+const incomePanel = ref<HTMLElement | null>(null);
+const housingPanel = ref<HTMLElement | null>(null);
+const affordabilityPanel = ref<HTMLElement | null>(null);
 
 const scores = reactive({
   economic: null as number | null,
@@ -28,6 +46,13 @@ const scores = reactive({
 
 const cityDisplayName = computed(() =>
   city.value.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+);
+
+const sectionExpanded = computed(
+  () => expandedPhase.value === "expanded"
+);
+const expandedLayoutSection = computed(() =>
+  sectionExpanded.value ? expandedSection.value : null
 );
 
 const topCategory = computed(() => {
@@ -149,7 +174,13 @@ function selectTagline() {
   typeTimer = setTimeout(step, 120);
 }
 
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape' && expandedPhase.value === 'expanded') closeExpandedSection();
+}
+
 onMounted(() => {
+  window.addEventListener('keydown', onKeydown);
+
   if (props.state && props.city) {
     state.value = props.state;
     city.value = props.city;
@@ -164,6 +195,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (typeTimer) clearTimeout(typeTimer);
+  window.removeEventListener('keydown', onKeydown);
 });
 
 function onSearch(payload: { city: string; state: string }) {
@@ -175,6 +207,12 @@ function onSearch(payload: { city: string; state: string }) {
   scores.housing = null;
   scores.affordability = null;
   scores.people = null;
+  cityNotFound.value = false;
+  expandedSection.value = null;
+  expandedPhase.value = "collapsed";
+  openedSections.economic = false;
+  openedSections.housing = false;
+  openedSections.affordability = false;
 
   router.replace(`/city/${payload.state}/${payload.city}`);
 }
@@ -183,7 +221,145 @@ function resetSearch() {
   hasSearched.value = false;
   city.value = '';
   state.value = '';
+  expandedSection.value = null;
+  expandedPhase.value = "collapsed";
+  openedSections.economic = false;
+  openedSections.housing = false;
+  openedSections.affordability = false;
   router.replace('/');
+}
+
+function getPanelElement(section: ExpandableSection) {
+  if (section === "economic") return incomePanel.value;
+  if (section === "housing") return housingPanel.value;
+  return affordabilityPanel.value;
+}
+
+function getPrefetcher(section: ExpandableSection) {
+  if (section === "economic") return prefetchIncome;
+  if (section === "housing") return prefetchDetailedHousing;
+  return prefetchAffordability;
+}
+
+function getPanelKeyframes(
+  selectedSection: ExpandableSection,
+  panel: "hero" | ExpandableSection,
+  expand: boolean,
+) {
+  // Selected panel slides out/in from its own natural direction
+  if (panel === selectedSection) {
+    const dirs: Record<ExpandableSection, [number, number]> = {
+      economic:     [-56, 0],
+      housing:      [ 56, 0],
+      affordability: [0, 48],
+    };
+    const [x, y] = dirs[selectedSection];
+    const gone = { transform: `translate(${x}px, ${y}px)`, opacity: 0 };
+    const home = { transform: "translate(0,0)", opacity: 1 };
+    return expand ? [home, gone] : [gone, home];
+  }
+  if (panel === "hero") {
+    return expand
+      ? [{ transform: "translateY(0px)", opacity: 1 }, { transform: "translateY(-48px)", opacity: 0 }]
+      : [{ transform: "translateY(-48px)", opacity: 0 }, { transform: "translateY(0px)", opacity: 1 }];
+  }
+  if (panel === "economic") {
+    return expand
+      ? [{ transform: "translateX(0px)", opacity: 1 }, { transform: "translateX(-56px)", opacity: 0 }]
+      : [{ transform: "translateX(-56px)", opacity: 0 }, { transform: "translateX(0px)", opacity: 1 }];
+  }
+  if (panel === "housing") {
+    return expand
+      ? [{ transform: "translateX(0px)", opacity: 1 }, { transform: "translateX(56px)", opacity: 0 }]
+      : [{ transform: "translateX(56px)", opacity: 0 }, { transform: "translateX(0px)", opacity: 1 }];
+  }
+  return expand
+    ? [{ transform: "translateY(0px)", opacity: 1 }, { transform: "translateY(48px)", opacity: 0 }]
+    : [{ transform: "translateY(48px)", opacity: 0 }, { transform: "translateY(0px)", opacity: 1 }];
+}
+
+async function animateSectionTransition(section: ExpandableSection, expand: boolean) {
+  if (expand) {
+    // Slide all panels out from their dashboard positions, then CSS reveals expanded content
+    expandedPhase.value = "expanding";
+    await nextTick();
+    // Grid stays in dashboard layout during exit (sectionExpanded only true at 'expanded')
+
+    const panelItems = [
+      { element: heroPanel.value,         keyframes: getPanelKeyframes(section, "hero", true) },
+      { element: incomePanel.value,        keyframes: getPanelKeyframes(section, "economic", true) },
+      { element: housingPanel.value,       keyframes: getPanelKeyframes(section, "housing", true) },
+      { element: affordabilityPanel.value, keyframes: getPanelKeyframes(section, "affordability", true) },
+    ].filter((p): p is { element: HTMLElement; keyframes: Keyframe[] } => Boolean(p.element && p.keyframes));
+
+    const exits = panelItems.map(({ element, keyframes }) =>
+      element.animate(keyframes, { duration: 260, easing: "ease-in", fill: "both" })
+    );
+
+    await Promise.allSettled(exits.map(a => a.finished));
+
+    // Cancel the selected panel's animation so CSS (not the JS fill) controls
+    // its opacity in the expanded view — other panels stay hidden via CSS
+    const selectedEl = getPanelElement(section);
+    panelItems.forEach(({ element }, i) => {
+      if (element === selectedEl) exits[i].cancel();
+    });
+
+    expandedPhase.value = "expanded";
+
+  } else {
+    // FLIP the selected panel back to its dashboard position, slide others back in
+    const panel = getPanelElement(section);
+    if (!panel) {
+      expandedPhase.value = "collapsed";
+      expandedSection.value = null;
+      return;
+    }
+
+    const firstRect = panel.getBoundingClientRect();
+    expandedPhase.value = "collapsing";
+    await nextTick();
+
+    const lastRect = panel.getBoundingClientRect();
+    const sectionAnimation = panel.animate(
+      [
+        {
+          transformOrigin: "top left",
+          transform: `translate(${firstRect.left - lastRect.left}px, ${firstRect.top - lastRect.top}px) scale(${firstRect.width / lastRect.width}, ${firstRect.height / lastRect.height})`,
+        },
+        { transformOrigin: "top left", transform: "translate(0,0) scale(1,1)" },
+      ],
+      { duration: 520, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "both" }
+    );
+
+    const enters = [
+      { element: heroPanel.value,         keyframes: getPanelKeyframes(section, "hero", false) },
+      { element: incomePanel.value,        keyframes: getPanelKeyframes(section, "economic", false) },
+      { element: housingPanel.value,       keyframes: getPanelKeyframes(section, "housing", false) },
+      { element: affordabilityPanel.value, keyframes: getPanelKeyframes(section, "affordability", false) },
+    ]
+      .filter((p): p is { element: HTMLElement; keyframes: Keyframe[] } => Boolean(p.element && p.keyframes))
+      .map(({ element, keyframes }) =>
+        element.animate(keyframes, { duration: 440, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "both" })
+      );
+
+    await Promise.allSettled([sectionAnimation.finished, ...enters.map(a => a.finished)]);
+    expandedPhase.value = "collapsed";
+    expandedSection.value = null;
+  }
+}
+
+async function openSectionDetails(section: ExpandableSection) {
+  if (expandedPhase.value !== "collapsed") return;
+  expandedSection.value = section;
+  openedSections[section] = true;
+  getPrefetcher(section)(state.value, city.value);
+  await animateSectionTransition(section, true);
+}
+
+async function closeExpandedSection() {
+  if (expandedPhase.value !== "expanded" || !expandedSection.value) return;
+  await animateSectionTransition(expandedSection.value, false);
 }
 </script>
 
@@ -278,31 +454,122 @@ function resetSearch() {
       </div>
     </div>
 
-    <!-- Hero city info section -->
-    <CityInfoSection
-      :city="city"
-      :state="state"
-      @score="scores.people = $event"
-    />
+    <!-- City not found state -->
+    <div v-if="cityNotFound" class="city-not-found">
+      <span class="city-not-found__icon mdi mdi-map-search-outline"></span>
+      <h2 class="city-not-found__heading">No data found</h2>
+      <p class="city-not-found__body">
+        We don't have data for <strong>{{ cityDisplayName }}, {{ state.toUpperCase() }}</strong> yet.
+        Try searching for a larger nearby city, or check that the spelling is correct.
+      </p>
+      <button class="city-not-found__btn" @click="resetSearch">Try Another City</button>
+    </div>
 
     <!-- Data cards grid -->
-    <div class="data-grid">
-      <IncomeSection
-        :city="city"
-        :state="state"
-        @score="scores.economic = $event"
-      />
-      <HousingSection
-        :city="city"
-        :state="state"
-        @score="scores.housing = $event"
-      />
-      <AffordabilitySection
-        class="data-grid__wide"
-        :city="city"
-        :state="state"
-        @score="scores.affordability = $event"
-      />
+    <div
+      v-if="!cityNotFound"
+      class="dashboard-shell"
+      :class="{
+        'dashboard-shell--section-active': sectionExpanded,
+        'dashboard-shell--section-settled': expandedPhase === 'expanded',
+      }"
+    >
+      <div ref="heroPanel" class="dashboard-panel dashboard-panel--hero">
+        <CityInfoSection
+          :city="city"
+          :state="state"
+          @score="scores.people = $event"
+          @error="cityNotFound = true"
+        />
+      </div>
+
+      <div
+        ref="incomePanel"
+        class="dashboard-panel dashboard-panel--income expansion-slot"
+        :class="[
+          { 'dashboard-panel--expanded': expandedLayoutSection === 'economic' },
+          { 'expansion-slot--selected': expandedSection === 'economic' },
+          `expansion-slot--${expandedPhase}`,
+        ]"
+      >
+        <div class="expansion-slot__layer expansion-slot__layer--overview">
+          <IncomeSection
+            :city="city"
+            :state="state"
+            @score="scores.economic = $event"
+            @expand="openSectionDetails('economic')"
+          />
+        </div>
+        <div
+          v-if="openedSections.economic"
+          class="expansion-slot__layer expansion-slot__layer--details"
+        >
+          <IncomeExpandedView
+            :city="city"
+            :state="state"
+            @close="closeExpandedSection"
+          />
+        </div>
+      </div>
+
+      <div
+        ref="housingPanel"
+        class="dashboard-panel dashboard-panel--housing expansion-slot"
+        :class="[
+          { 'dashboard-panel--expanded': expandedLayoutSection === 'housing' },
+          { 'expansion-slot--selected': expandedSection === 'housing' },
+          `expansion-slot--${expandedPhase}`,
+        ]"
+      >
+        <div class="expansion-slot__layer expansion-slot__layer--overview">
+          <HousingSection
+            :city="city"
+            :state="state"
+            @score="scores.housing = $event"
+            @expand="openSectionDetails('housing')"
+          />
+        </div>
+
+        <div
+          v-if="openedSections.housing"
+          class="expansion-slot__layer expansion-slot__layer--details"
+        >
+          <HousingExpandedView
+            :city="city"
+            :state="state"
+            @close="closeExpandedSection"
+          />
+        </div>
+      </div>
+
+      <div
+        ref="affordabilityPanel"
+        class="dashboard-panel dashboard-panel--affordability expansion-slot"
+        :class="[
+          { 'dashboard-panel--expanded': expandedLayoutSection === 'affordability' },
+          { 'expansion-slot--selected': expandedSection === 'affordability' },
+          `expansion-slot--${expandedPhase}`,
+        ]"
+      >
+        <div class="expansion-slot__layer expansion-slot__layer--overview">
+          <AffordabilitySection
+            :city="city"
+            :state="state"
+            @score="scores.affordability = $event"
+            @expand="openSectionDetails('affordability')"
+          />
+        </div>
+        <div
+          v-if="openedSections.affordability"
+          class="expansion-slot__layer expansion-slot__layer--details"
+        >
+          <AffordabilityExpandedView
+            :city="city"
+            :state="state"
+            @close="closeExpandedSection"
+          />
+        </div>
+      </div>
     </div>
   </div>
 </template>

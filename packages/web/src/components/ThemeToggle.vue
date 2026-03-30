@@ -10,10 +10,10 @@ const { isDark, toggle } = useTheme();
     @click="toggle"
     :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
   >
-    <span class="theme-toggle__icon theme-toggle__icon--sun">☀️</span>
+    <span class="theme-toggle__icon theme-toggle__icon--sun mdi mdi-weather-sunny"></span>
     <span class="theme-toggle__track">
       <span class="theme-toggle__thumb" />
     </span>
-    <span class="theme-toggle__icon theme-toggle__icon--moon">🌙</span>
+    <span class="theme-toggle__icon theme-toggle__icon--moon mdi mdi-weather-night"></span>
   </button>
 </template>
