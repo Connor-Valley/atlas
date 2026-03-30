@@ -4,8 +4,7 @@
   "version": "1.0.0",
   "packageManager": "pnpm@10.24.0",
   "scripts": {
-    "dev": "pnpm --filter @nxtstop/web dev",
-    "build": "pnpm --filter @nxtstop/web build"
+    "dev": "./dev.sh"
   },
   "dependencies": {
     "@mdi/js": "^7.4.47"

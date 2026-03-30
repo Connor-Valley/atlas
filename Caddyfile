@@ -1,0 +1,11 @@
+atlas.local {
+    # API routes
+    handle /api* {
+        reverse_proxy localhost:3000
+    }
+
+    # Frontend (default)
+    handle {
+        reverse_proxy localhost:5173
+    }
+}
