@@ -4,14 +4,6 @@ const emit = defineEmits<{ (e: "close"): void }>();
 
 <template>
   <div class="housing-exp">
-    <div class="housing-exp__nav">
-      <button class="breadcrumb" @click="emit('close')">
-        <span class="mdi mdi-arrow-left" style="font-size: 1rem;"></span>
-        Overview
-      </button>
-      <span class="housing-exp__subtitle">Affordability Details</span>
-    </div>
-
     <section class="data-card progress-state-card">
       <div class="progress-state-card__icon-wrap">
         <span class="mdi mdi-hammer-wrench progress-state-card__icon"></span>

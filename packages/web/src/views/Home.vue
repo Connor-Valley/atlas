@@ -819,6 +819,7 @@ async function closeExpandedSection() {
 
     <!-- Score pills bar -->
     <div v-if="!cityNotFound" ref="scorePills" class="score-pills">
+      <div class="score-pills__pills">
       <div
         class="score-pill"
         :class="{ 'score-pill--top': topCategory === 'economic' }"
@@ -846,6 +847,20 @@ async function closeExpandedSection() {
       >
         <span class="score-pill__label">People</span>
         <span class="score-pill__value">{{ scores.people !== null ? scores.people : '—' }}</span>
+      </div>
+      </div>
+      <div v-if="sectionExpanded" class="score-pills__nav">
+        <span class="housing-exp__subtitle">{{
+          expandedSection === 'economic' ? 'Income Details' :
+          expandedSection === 'housing' ? 'Housing Details' :
+          'Affordability Details'
+        }}</span>
+        <button class="breadcrumb" @click="closeExpandedSection">
+          <span class="breadcrumb__arr breadcrumb__arr--1 mdi mdi-arrow-left"></span>
+          <span class="breadcrumb__text">Back</span>
+          <span class="breadcrumb__arr breadcrumb__arr--2 mdi mdi-arrow-left"></span>
+          <span class="breadcrumb__circle"></span>
+        </button>
       </div>
     </div>
 

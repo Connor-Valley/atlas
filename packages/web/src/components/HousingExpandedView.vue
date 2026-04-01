@@ -183,13 +183,6 @@ const loadingStructureRows = [1, 2, 3, 4];
 
 <template>
   <div class="housing-exp">
-    <div class="housing-exp__nav">
-      <button class="breadcrumb" @click="emit('close')">
-        <span class="mdi mdi-arrow-left" style="font-size: 1rem;"></span>
-        Overview
-      </button>
-      <span class="housing-exp__subtitle">Housing Details</span>
-    </div>
 
     <!-- Insight callouts -->
     <div v-if="loading" class="housing-exp__insights">
