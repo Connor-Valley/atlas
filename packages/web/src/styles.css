@@ -1126,6 +1126,10 @@ body {
   text-underline-offset: 2px;
 }
 
+.hero-auth__login-btn:hover {
+  background: none;
+}
+
 .hero-auth__welcome {
   font-size: 0.85rem;
   color: var(--text-secondary);
@@ -1355,6 +1359,10 @@ body {
   padding: 0;
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+
+.auth-modal__switch-btn:hover {
+  background: none;
 }
 
 .site-header__search {

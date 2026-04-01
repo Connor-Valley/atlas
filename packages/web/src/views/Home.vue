@@ -714,6 +714,8 @@ async function closeExpandedSection() {
 </script>
 
 <template>
+  <AuthModal v-if="showAuthModal" :mode="authModalMode" @close="showAuthModal = false" />
+
   <!-- Before search: full hero landing -->
   <div
     v-if="showLanding"
@@ -774,6 +776,7 @@ async function closeExpandedSection() {
       </div>
       <div v-else class="hero-auth">
         <span class="hero-auth__welcome">Welcome back, {{ displayName() ?? 'there' }}</span>
+        <button class="hero-auth__login-btn" @click="signOut">Sign out</button>
       </div>
     </div>
   </div>
@@ -812,7 +815,6 @@ async function closeExpandedSection() {
           <span class="auth-btn__label">Sign in</span>
         </button>
       </div>
-      <AuthModal v-if="showAuthModal" :mode="authModalMode" @close="showAuthModal = false" />
     </header>
 
     <!-- Score pills bar -->
