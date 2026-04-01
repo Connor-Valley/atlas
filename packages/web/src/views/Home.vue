@@ -10,6 +10,8 @@ import IncomeExpandedView from "../components/IncomeExpandedView.vue";
 import AffordabilitySection from "../components/AffordabilitySection.vue";
 import AffordabilityExpandedView from "../components/AffordabilityExpandedView.vue";
 import ThemeToggle from "../components/ThemeToggle.vue";
+import AuthModal from "../components/AuthModal.vue";
+import { useAuth } from "../composables/useAuth";
 import { prefetchDetailedHousing } from "../api/housing";
 import { prefetchIncome } from "../api/income";
 import { prefetchAffordability } from "../api/affordability";
@@ -22,6 +24,15 @@ const props = defineProps<{
 
 const router = useRouter();
 const { apply: applyTheme } = useTheme();
+const { user, displayName, signOut } = useAuth();
+const showAuthModal  = ref(false);
+const authModalMode  = ref<'login' | 'register'>('register');
+const userMenuOpen   = ref(false);
+
+function openAuth(mode: 'login' | 'register') {
+  authModalMode.value = mode;
+  showAuthModal.value = true;
+}
 
 const city = ref("");
 const state = ref("");
@@ -754,6 +765,16 @@ async function closeExpandedSection() {
           @search="onSearch"
         />
       </div>
+      <div v-if="!user" class="hero-auth">
+        <button class="hero-auth__register" @click="openAuth('register')">Create a free account</button>
+        <span class="hero-auth__login">
+          Already have an account?
+          <button class="hero-auth__login-btn" @click="openAuth('login')">Sign in</button>
+        </span>
+      </div>
+      <div v-else class="hero-auth">
+        <span class="hero-auth__welcome">Welcome back, {{ displayName() ?? 'there' }}</span>
+      </div>
     </div>
   </div>
 
@@ -764,9 +785,6 @@ async function closeExpandedSection() {
         <span class="site-logo">Atlas</span>
         <span class="site-logo-accent" aria-hidden="true"></span>
       </span>
-      <div class="site-header__controls">
-        <ThemeToggle v-if="hasSearched && !transitioningToLanding" />
-      </div>
       <div ref="headerSearch" class="site-header__search">
         <CitySearch
           :initial-city="city"
@@ -774,6 +792,27 @@ async function closeExpandedSection() {
           @search="onSearch"
         />
       </div>
+      <div class="site-header__controls">
+        <ThemeToggle v-if="hasSearched && !transitioningToLanding" />
+        <div v-if="user" class="user-menu">
+          <button class="user-menu__btn" @click="userMenuOpen = !userMenuOpen">
+            <span class="mdi mdi-account-circle-outline user-menu__icon"></span>
+            <span class="user-menu__name">{{ displayName() ?? 'Account' }}</span>
+            <span class="mdi mdi-chevron-down user-menu__chevron" :class="{ 'user-menu__chevron--open': userMenuOpen }"></span>
+          </button>
+          <div v-if="userMenuOpen" class="user-menu__dropdown" @click="userMenuOpen = false">
+            <button class="user-menu__item" @click="signOut">
+              <span class="mdi mdi-logout user-menu__item-icon"></span>
+              Sign out
+            </button>
+          </div>
+        </div>
+        <button v-else class="auth-btn" @click="openAuth('login')">
+          <span class="mdi mdi-account-outline"></span>
+          <span class="auth-btn__label">Sign in</span>
+        </button>
+      </div>
+      <AuthModal v-if="showAuthModal" :mode="authModalMode" @close="showAuthModal = false" />
     </header>
 
     <!-- Score pills bar -->
