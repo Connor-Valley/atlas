@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { getCity } from "../cities/cities.service.js";
 import { getCityIncome } from "./income.service.js";
+import { CURRENT_ACS_YEAR } from "../constants.js";
 
 const router: Router = Router();
 
@@ -9,7 +10,7 @@ router.get("/:state/:city", async (req, res) => {
   try {
     const { state, city } = req.params;
 
-    const year = 2024;
+    const year = CURRENT_ACS_YEAR;
 
     // 1. Resolve city + geography
     const resolvedCity = await getCity(state, city, year);

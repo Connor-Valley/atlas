@@ -1,11 +1,12 @@
 import { Router } from "express";
 import { getCity } from "./cities.service.js";
+import { CURRENT_ACS_YEAR } from "../constants.js";
 
 const router: Router = Router();
 
 router.get('/:state/:city', async (req, res) => {
     const { state, city } = req.params;
-    const year = 2024;
+    const year = CURRENT_ACS_YEAR;
 
     try {
         const snapshot = await getCity(state, city, year);

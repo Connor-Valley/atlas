@@ -1,13 +1,14 @@
 import { Router } from "express";
 import { getCity } from "../cities/cities.service.js";
 import { getCityAffordability } from "./affordability.service.js";
+import { CURRENT_ACS_YEAR } from "../constants.js";
 
 const router: Router = Router();
 
 router.get("/:state/:city", async (req, res, next) => {
   try {
     const { state, city } = req.params;
-    const year = Number(req.query.year) || 2022;
+    const year = Number(req.query.year) || CURRENT_ACS_YEAR;
 
     const cityData = await getCity(state, city, year);
     const affordability = await getCityAffordability(cityData, year);
