@@ -51,7 +51,7 @@ watch(
     <div class="data-card__header">
       <div class="data-card__title">
         <span class="data-card__icon mdi mdi-trending-up"></span>
-        <span class="data-card__name">Economic</span>
+        <span class="data-card__name">Income</span>
       </div>
       <span v-if="score !== null" class="data-card__score">{{ score }}</span>
     </div>

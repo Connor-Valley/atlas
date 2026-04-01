@@ -782,7 +782,7 @@ async function closeExpandedSection() {
         class="score-pill"
         :class="{ 'score-pill--top': topCategory === 'economic' }"
       >
-        <span class="score-pill__label">Economic</span>
+        <span class="score-pill__label">Income</span>
         <span class="score-pill__value">{{ scores.economic !== null ? scores.economic : '—' }}</span>
       </div>
       <div

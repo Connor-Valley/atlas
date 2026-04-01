@@ -286,7 +286,10 @@ export async function getDetailedCityHousing(city: City, year: number): Promise<
     "B25077_001E", // median home value
     // Additional detailed data
     "B19013_001E", // median household income
-    "B25070_010E", // renter households paying 30%+ of income on rent
+    "B25070_007E", // renter households paying 30–34.9% of income on rent
+    "B25070_008E", // renter households paying 35–39.9%
+    "B25070_009E", // renter households paying 40–49.9%
+    "B25070_010E", // renter households paying 50%+
     "B25070_001E", // total renter households (for rent burden calculation)
     "B25002_001E", // total housing units
     "B25002_003E", // vacant housing units
@@ -405,11 +408,16 @@ function parseDetailedHousingData(rawData: string[]) {
 
   const [
     medianRent, totalUnits, renterUnits, medianHomeValue,
-    medianHouseholdIncome, rentBurdenedHouseholds, totalRenterHouseholds,
+    medianHouseholdIncome,
+    burden30to35, burden35to40, burden40to50, burden50plus,
+    totalRenterHouseholds,
     totalHousingUnits, vacantUnits, singleDetached, singleAttached,
     duplex, units3to4, units5to9, units10to19, units20to49,
     units50plus, mobile, other, medianYearBuilt,
   ] = rawData;
+
+  const rentBurdened30Plus =
+    n(burden30to35) + n(burden35to40) + n(burden40to50) + n(burden50plus);
 
   return {
     medianRent: n(medianRent),
@@ -418,7 +426,7 @@ function parseDetailedHousingData(rawData: string[]) {
     medianYearBuilt: n(medianYearBuilt),
     renterShare: calculateRenterShare(totalUnits, renterUnits),
     rentBurdenPercent: n(totalRenterHouseholds) > 0
-      ? parseFloat((n(rentBurdenedHouseholds) / n(totalRenterHouseholds)).toFixed(4))
+      ? parseFloat((rentBurdened30Plus / n(totalRenterHouseholds)).toFixed(4))
       : 0,
     vacancyRate: n(totalHousingUnits) > 0
       ? parseFloat((n(vacantUnits) / n(totalHousingUnits)).toFixed(4))

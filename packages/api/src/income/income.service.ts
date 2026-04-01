@@ -1,5 +1,5 @@
 import type { City } from '../cities/cities.types.js';
-import type { CityIncome } from './income.types.js'
+import type { CityIncome, DetailedCityIncome, EarningsByEducation, IncomeAffordabilityMetrics, IndustrySector, PovertyDepth, RawIncomeDistribution } from './income.types.js'
 
 export async function getCityIncome(city: City, year: number): Promise<CityIncome> {
     const url =
@@ -112,4 +112,227 @@ export async function getCityIncome(city: City, year: number): Promise<CityIncom
     },
     povertyRate,
   };
+}
+
+// =============================================================================
+// Detailed Income
+// =============================================================================
+
+const INDUSTRY_NAMES = [
+  'Agriculture, Forestry & Mining',
+  'Construction',
+  'Manufacturing',
+  'Wholesale Trade',
+  'Retail Trade',
+  'Transportation & Utilities',
+  'Information',
+  'Finance, Insurance & Real Estate',
+  'Professional & Management Services',
+  'Education, Health & Social Services',
+  'Arts, Entertainment & Food Services',
+  'Other Services',
+  'Public Administration',
+] as const;
+
+export async function getDetailedCityIncome(city: City, year: number): Promise<DetailedCityIncome> {
+  const baseUrl = `https://api.census.gov/data/${year}/acs/acs5`;
+  const geo = `&for=place:${city.placeCode}&in=state:${city.stateFips}`;
+  const key = process.env.CENSUS_API_KEY ? `&key=${process.env.CENSUS_API_KEY}` : '';
+
+  const [incomeRow, industryRow] = await Promise.all([
+    fetchCensusRow(
+      `${baseUrl}?get=` + [
+        // Headline income
+        'B19013_001E', // median household income
+        'B25119_002E', // median owner household income
+        'B25119_003E', // median renter household income
+        'B19301_001E', // per capita income
+        'B19083_001E', // gini coefficient
+        // Earnings by education (B20004)
+        'B20004_002E', // less than HS
+        'B20004_003E', // HS graduate
+        'B20004_004E', // some college / associate's
+        'B20004_005E', // bachelor's degree
+        'B20004_006E', // graduate or professional degree
+        // Poverty depth (C17002)
+        'C17002_001E', // total population
+        'C17002_002E', // < 0.50x FPL (deep poverty)
+        'C17002_003E', // 0.50–0.99x FPL
+        'C17002_004E', // 1.00–1.24x FPL
+        'C17002_005E', // 1.25–1.49x FPL
+        'C17002_006E', // 1.50–1.84x FPL
+        'C17002_007E', // 1.85–1.99x FPL
+        'C17002_008E', // 2.00x+ FPL
+        // Full income distribution (B19001) — all 16 brackets
+        'B19001_001E',
+        'B19001_002E', 'B19001_003E', 'B19001_004E', 'B19001_005E',
+        'B19001_006E', 'B19001_007E', 'B19001_008E', 'B19001_009E',
+        'B19001_010E', 'B19001_011E', 'B19001_012E', 'B19001_013E',
+        'B19001_014E', 'B19001_015E', 'B19001_016E', 'B19001_017E',
+        // Housing vars for derived affordability metrics
+        'B25064_001E', // median gross rent
+        'B25077_001E', // median home value
+      ].join(',') + geo + key
+    ),
+    fetchCensusRow(
+      `${baseUrl}?get=` + [
+        'C24030_001E', // total civilian employed 16+
+        // Male sectors (_003E–_015E)
+        'C24030_003E', 'C24030_004E', 'C24030_005E', 'C24030_006E', 'C24030_007E',
+        'C24030_008E', 'C24030_009E', 'C24030_010E', 'C24030_011E', 'C24030_012E',
+        'C24030_013E', 'C24030_014E', 'C24030_015E',
+        // Female sectors (_017E–_029E)
+        'C24030_017E', 'C24030_018E', 'C24030_019E', 'C24030_020E', 'C24030_021E',
+        'C24030_022E', 'C24030_023E', 'C24030_024E', 'C24030_025E', 'C24030_026E',
+        'C24030_027E', 'C24030_028E', 'C24030_029E',
+      ].join(',') + geo + key
+    ),
+  ]);
+
+  const n = (v: string | undefined) => {
+    const num = Number(v);
+    return Number.isFinite(num) ? num : 0;
+  };
+  const nullable = (v: string | undefined): number | null => {
+    const num = Number(v);
+    return num > 0 ? num : null;
+  };
+
+  // ── Parse income row ───────────────────────────────────────────────────────
+  const [
+    medianHHIncome, medianOwnerIncome, medianRenterIncome,
+    perCapitaIncome, giniRaw,
+    edu_ltHS, edu_hs, edu_someCollege, edu_bachelors, edu_graduate,
+    pov_total, pov_deep, pov_poverty, pov_nearPoverty, pov_low, pov_moderate, pov_nearMiddle, pov_above200,
+    totalHouseholds,
+    d002, d003, d004, d005, d006, d007, d008, d009, d010,
+    d011, d012, d013, d014, d015, d016, d017,
+    medianRent, medianHomeValue,
+  ] = incomeRow;
+
+  // ── Parse industry row ─────────────────────────────────────────────────────
+  const [
+    totalEmployed,
+    m_agri, m_constr, m_mfg, m_wholesale, m_retail, m_transport,
+    m_info, m_finance, m_prof, m_edu, m_arts, m_other, m_pubAdmin,
+    f_agri, f_constr, f_mfg, f_wholesale, f_retail, f_transport,
+    f_info, f_finance, f_prof, f_edu, f_arts, f_other, f_pubAdmin,
+  ] = industryRow;
+
+  const employed = n(totalEmployed);
+  const maleSectors = [m_agri, m_constr, m_mfg, m_wholesale, m_retail, m_transport, m_info, m_finance, m_prof, m_edu, m_arts, m_other, m_pubAdmin];
+  const femaleSectors = [f_agri, f_constr, f_mfg, f_wholesale, f_retail, f_transport, f_info, f_finance, f_prof, f_edu, f_arts, f_other, f_pubAdmin];
+
+  const industryBreakdown: IndustrySector[] = INDUSTRY_NAMES.map((name, i) => {
+    const count = n(maleSectors[i]) + n(femaleSectors[i]);
+    return {
+      name,
+      count,
+      share: employed > 0 ? parseFloat((count / employed).toFixed(4)) : 0,
+    };
+  }).sort((a, b) => b.share - a.share);
+
+  // ── Poverty depth ──────────────────────────────────────────────────────────
+  const povertyDepth: PovertyDepth = {
+    total: n(pov_total),
+    deepPoverty: n(pov_deep),
+    poverty: n(pov_poverty),
+    nearPoverty: n(pov_nearPoverty),
+    low: n(pov_low),
+    moderate: n(pov_moderate),
+    nearMiddle: n(pov_nearMiddle),
+    above200pct: n(pov_above200),
+  };
+
+  // ── Earnings by education ──────────────────────────────────────────────────
+  const earningsByEducation: EarningsByEducation = {
+    lessThanHS: nullable(edu_ltHS),
+    hsGraduate: nullable(edu_hs),
+    someCollege: nullable(edu_someCollege),
+    bachelors: nullable(edu_bachelors),
+    graduate: nullable(edu_graduate),
+  };
+
+  // ── Raw income distribution ────────────────────────────────────────────────
+  const rawIncomeDistribution: RawIncomeDistribution = {
+    under10k: n(d002),
+    from10to15k: n(d003),
+    from15to20k: n(d004),
+    from20to25k: n(d005),
+    from25to30k: n(d006),
+    from30to35k: n(d007),
+    from35to40k: n(d008),
+    from40to45k: n(d009),
+    from45to50k: n(d010),
+    from50to60k: n(d011),
+    from60to75k: n(d012),
+    from75to100k: n(d013),
+    from100to125k: n(d014),
+    from125to150k: n(d015),
+    from150to200k: n(d016),
+    over200k: n(d017),
+  };
+
+  // ── Affordability derived metrics ──────────────────────────────────────────
+  const rent = n(medianRent);
+  const homeValue = n(medianHomeValue);
+  const hhIncome = n(medianHHIncome);
+  const renterIncome = n(medianRenterIncome);
+  const ownerIncome = n(medianOwnerIncome);
+
+  const incomeNeededForRent = rent > 0 ? (rent * 12) / 0.30 : 0;
+
+  // Estimated monthly mortgage (20% down, 6.5% rate, 30yr)
+  let estimatedMortgage = 0;
+  if (homeValue > 0) {
+    const loanAmount = homeValue * 0.80;
+    const monthlyRate = 0.065 / 12;
+    const payments = 360;
+    const compound = Math.pow(1 + monthlyRate, payments);
+    estimatedMortgage = Math.round(loanAmount * (monthlyRate * compound) / (compound - 1));
+  }
+
+  const affordabilityMetrics: IncomeAffordabilityMetrics = {
+    rentToIncomeRatio: renterIncome > 0 ? parseFloat(((rent * 12) / renterIncome).toFixed(4)) : null,
+    incomeNeededForRent,
+    affordabilityGap: renterIncome > 0 ? Math.round(renterIncome - incomeNeededForRent) : null,
+    priceToIncomeRatio: hhIncome > 0 && homeValue > 0 ? parseFloat((homeValue / hhIncome).toFixed(2)) : null,
+    downPaymentSavingsYears: hhIncome > 0 && homeValue > 0
+      ? parseFloat(((homeValue * 0.20) / (hhIncome * 0.10)).toFixed(1))
+      : null,
+    ownerRenterIncomeGap: renterIncome > 0 && ownerIncome > 0
+      ? parseFloat((ownerIncome / renterIncome).toFixed(2))
+      : null,
+    incomeNeededForMortgage: estimatedMortgage > 0
+      ? Math.round((estimatedMortgage * 12) / 0.28)
+      : null,
+  };
+
+  return {
+    city: city.name.replace(/\s+city$/i, ''),
+    state: city.state,
+    medianHouseholdIncome: hhIncome,
+    medianRenterIncome: renterIncome,
+    medianOwnerIncome: ownerIncome > 0 ? ownerIncome : null,
+    perCapitaIncome: n(perCapitaIncome),
+    giniCoefficient: nullable(giniRaw),
+    totalHouseholds: n(totalHouseholds),
+    rawIncomeDistribution,
+    earningsByEducation,
+    povertyDepth,
+    industryBreakdown,
+    affordabilityMetrics,
+  };
+}
+
+async function fetchCensusRow(url: string): Promise<string[]> {
+  const res = await fetch(url);
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Failed to fetch Census data: ${res.status} ${text}`);
+  }
+  const data = (await res.json()) as string[][];
+  const row = data[1];
+  if (!row) throw new Error('Census response missing data row');
+  return row;
 }

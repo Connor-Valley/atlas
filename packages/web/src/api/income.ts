@@ -1,4 +1,5 @@
 const incomeCache = new Map<string, Promise<any>>();
+const detailedIncomeCache = new Map<string, Promise<any>>();
 
 function createKey(state: string, city: string) {
   return `${state.toLowerCase()}::${city.toLowerCase()}`;
@@ -31,4 +32,16 @@ export async function fetchIncome(state: string, city: string) {
 
 export function prefetchIncome(state: string, city: string) {
   return fetchIncome(state, city);
+}
+
+export async function fetchDetailedIncome(state: string, city: string) {
+  const key = createKey(state, city);
+  const cached = detailedIncomeCache.get(key);
+  if (cached) return cached;
+  const request = fetchJson(`/income/${state}/${city}/details`).catch((error) => {
+    detailedIncomeCache.delete(key);
+    throw error;
+  });
+  detailedIncomeCache.set(key, request);
+  return request;
 }

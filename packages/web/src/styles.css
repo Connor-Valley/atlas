@@ -544,7 +544,7 @@ body {
 /* ── Insight callouts ───────────────────────────────── */
 .housing-exp__insights {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -699,6 +699,166 @@ body {
   height: 10px;
 }
 
+/* ── Industry modal popup ────────────────────────────── */
+.industry-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+}
+
+.industry-modal__panel {
+  width: 100%;
+  max-width: 520px;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 20px 24px 18px;
+}
+
+.industry-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.industry-modal__close {
+  background: none;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.industry-modal__close:hover {
+  color: var(--accent);
+  border-color: rgba(20, 184, 166, 0.4);
+}
+
+.industry-modal-enter-active,
+.industry-modal-leave-active {
+  transition: opacity 0.2s ease;
+}
+.industry-modal-enter-active .industry-modal__panel,
+.industry-modal-leave-active .industry-modal__panel {
+  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.industry-modal-enter-from,
+.industry-modal-leave-to {
+  opacity: 0;
+}
+.industry-modal-enter-from .industry-modal__panel,
+.industry-modal-leave-to .industry-modal__panel {
+  opacity: 0;
+  transform: scale(0.95) translateY(8px);
+}
+
+/* ── Bar list (education / industry panels) ─────────── */
+.bar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.bar-list__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bar-list__label {
+  flex: 1;
+  font-size: 0.81rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.bar-list__track {
+  width: 130px;
+  flex-shrink: 0;
+  height: 8px;
+  background: var(--border-card);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.bar-list--wide .bar-list__track {
+  width: 200px;
+}
+
+.bar-list__fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 4px;
+  opacity: 0.8;
+  transition: width 0.35s ease;
+}
+
+.bar-list__fill--skeleton {
+  opacity: 0.2;
+}
+
+.bar-list__value {
+  width: 72px;
+  flex-shrink: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+/* ── Income distribution histogram ──────────────────── */
+.dist-chart__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 112px;
+}
+
+.dist-chart__bar {
+  flex: 1;
+  min-width: 14px;
+  background: var(--accent);
+  border-radius: 3px 3px 0 0;
+  opacity: 0.75;
+}
+
+.dist-chart__bar--skeleton {
+  opacity: 0.18;
+  border-radius: 3px 3px 0 0;
+}
+
+.dist-chart__labels {
+  display: flex;
+  gap: 3px;
+  padding-top: 3px;
+}
+
+.dist-chart__label {
+  flex: 1;
+  min-width: 14px;
+  font-size: 0.6rem;
+  color: var(--text-secondary);
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  height: 44px;
+  line-height: 1;
+  text-align: center;
+  overflow: hidden;
+}
 
 .breadcrumb {
   display: inline-flex;
