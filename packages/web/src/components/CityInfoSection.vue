@@ -1,13 +1,35 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
 import { fetchCity } from "../api/cities";
+import { useAuth } from "../composables/useAuth";
+import { useFavorites } from "../composables/useFavorites";
 
 const props = defineProps<{ city: string; state: string }>();
 const emit = defineEmits<{
   (e: 'score', value: number): void;
   (e: 'error'): void;
   (e: 'not-found'): void;
+  (e: 'auth-required'): void;
 }>();
+
+const { user } = useAuth();
+const { fetchFavorites, addFavorite, removeFavorite, isFavorited } = useFavorites();
+
+watch(() => user.value, (u) => {
+  if (u) fetchFavorites();
+}, { immediate: true });
+
+async function toggleFavorite() {
+  if (!user.value) {
+    emit('auth-required');
+    return;
+  }
+  if (isFavorited(props.city, props.state)) {
+    await removeFavorite(props.city, props.state);
+  } else {
+    await addFavorite(props.city, data.value.name, props.state);
+  }
+}
 
 const data = ref<any>(null);
 const loading = ref(false);
@@ -178,6 +200,14 @@ watch(
       class="city-hero-card"
       :style="photoUrl ? { backgroundImage: `url(${photoUrl})` } : {}"
     >
+      <button
+        class="city-hero-card__fav"
+        :class="{ 'city-hero-card__fav--active': isFavorited(city, state) }"
+        :aria-label="isFavorited(city, state) ? 'Remove from favorites' : 'Add to favorites'"
+        @click="toggleFavorite"
+      >
+        <span class="mdi" :class="isFavorited(city, state) ? 'mdi-star' : 'mdi-star-outline'"></span>
+      </button>
       <div class="city-hero-card__content">
         <div class="city-hero-card__name">{{ data.name }}</div>
         <div class="city-hero-card__sub">{{ data.county }}, {{ state.toUpperCase() }}</div>

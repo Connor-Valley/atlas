@@ -1,0 +1,521 @@
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useFavorites } from '../composables/useFavorites';
+import { useAuth } from '../composables/useAuth';
+import { fetchCity } from '../api/cities';
+import SiteHeader from '../components/SiteHeader.vue';
+
+const router = useRouter();
+const { user } = useAuth();
+const { favorites, fetchFavorites, removeFavorite } = useFavorites();
+
+interface CardData {
+  population: number | null;
+  county: string | null;
+  photo: string | null;
+  loading: boolean;
+}
+
+const cardData = ref<Record<string, CardData>>({});
+
+const PHOTO_BLOCKLIST = ['house','houses','home','homes','residential','suburb','bungalow','cottage','villa','neighborhood','flag','seal','coat_of_arms','.svg','_map','map_','openstreetmap','osm_','street_map','locator','location_map','location.','_location','topograph'];
+
+const STATE_NAMES: Record<string, string> = {
+  al:'Alabama',ak:'Alaska',az:'Arizona',ar:'Arkansas',ca:'California',co:'Colorado',
+  ct:'Connecticut',de:'Delaware',fl:'Florida',ga:'Georgia',hi:'Hawaii',id:'Idaho',
+  il:'Illinois',in:'Indiana',ia:'Iowa',ks:'Kansas',ky:'Kentucky',la:'Louisiana',
+  me:'Maine',md:'Maryland',ma:'Massachusetts',mi:'Michigan',mn:'Minnesota',ms:'Mississippi',
+  mo:'Missouri',mt:'Montana',ne:'Nebraska',nv:'Nevada',nh:'New_Hampshire',nj:'New_Jersey',
+  nm:'New_Mexico',ny:'New_York',nc:'North_Carolina',nd:'North_Dakota',oh:'Ohio',ok:'Oklahoma',
+  or:'Oregon',pa:'Pennsylvania',ri:'Rhode_Island',sc:'South_Carolina',sd:'South_Dakota',
+  tn:'Tennessee',tx:'Texas',ut:'Utah',vt:'Vermont',va:'Virginia',wa:'Washington',
+  wv:'West_Virginia',wi:'Wisconsin',wy:'Wyoming',
+};
+
+async function tryWikipediaPhoto(title: string): Promise<string | null> {
+  try {
+    const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`);
+    if (!res.ok) return null;
+    const json = await res.json();
+    const img = json.originalimage ?? json.thumbnail;
+    if (!img || img.width <= img.height) return null;
+    const filename = img.source.toLowerCase();
+    if (PHOTO_BLOCKLIST.some(kw => filename.includes(kw))) return null;
+    return img.source;
+  } catch { return null; }
+}
+
+async function searchCommonsPhoto(query: string): Promise<string | null> {
+  try {
+    const params = new URLSearchParams({
+      action: 'query', generator: 'search', gsrsearch: query,
+      gsrnamespace: '6', gsrlimit: '15', prop: 'imageinfo',
+      iiprop: 'url|dimensions', format: 'json', origin: '*',
+    });
+    const res = await fetch(`https://commons.wikimedia.org/w/api.php?${params}`);
+    if (!res.ok) return null;
+    const json = await res.json();
+    const pages = Object.values(json.query?.pages ?? {}) as any[];
+    for (const page of pages) {
+      const info = page.imageinfo?.[0];
+      if (!info?.url) continue;
+      if (info.width <= info.height) continue;
+      const lower = info.url.toLowerCase();
+      if (PHOTO_BLOCKLIST.some(kw => lower.includes(kw))) continue;
+      if (!lower.match(/\.(jpg|jpeg|png|webp)$/)) continue;
+      return info.url;
+    }
+    return null;
+  } catch { return null; }
+}
+
+async function loadCard(city: string, state: string) {
+  const key = `${state}:${city}`;
+  cardData.value[key] = { population: null, county: null, photo: null, loading: true };
+
+  const title = city.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join('_');
+  const stateName = STATE_NAMES[state.toLowerCase()];
+
+  const cityState = stateName ? `${title},_${stateName.replace(/ /g, '_')}` : null;
+  const cityLabel = title.replace(/_/g, ' ');
+  const stateLabel = stateName ?? '';
+
+  const [cityData, photo] = await Promise.all([
+    fetchCity(state, city).catch(() => null),
+    (async () => {
+      return (
+        await tryWikipediaPhoto(`${title}_skyline`) ??
+        await tryWikipediaPhoto(`Downtown_${title}`) ??
+        (cityState ? await tryWikipediaPhoto(cityState) : null) ??
+        await searchCommonsPhoto(`${cityLabel} ${stateLabel} skyline aerial`) ??
+        await searchCommonsPhoto(`${stateLabel} nature aerial landscape`)
+      );
+    })(),
+  ]);
+
+  cardData.value[key] = {
+    population: cityData?.population ?? null,
+    county: cityData?.county ?? null,
+    photo,
+    loading: false,
+  };
+}
+
+onMounted(async () => {
+  await fetchFavorites();
+  favorites.value.forEach(f => loadCard(f.city, f.state));
+});
+
+function cardKey(city: string, state: string) {
+  return `${state}:${city}`;
+}
+
+function goToCity(city: string, state: string) {
+  router.push({ name: 'city', params: { state, city } });
+}
+
+async function handleRemove(event: MouseEvent, city: string, state: string) {
+  event.stopPropagation();
+  await removeFavorite(city, state);
+}
+
+// ── Holographic tilt effect ────────────────────────────────────────────────────
+
+function onMouseMove(e: MouseEvent, el: HTMLElement) {
+  const rect = el.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const cx = rect.width / 2;
+  const cy = rect.height / 2;
+  const rx = ((y - cy) / cy) * -12;
+  const ry = ((x - cx) / cx) * 12;
+  const bgX = (x / rect.width) * 100;
+  const bgY = (y / rect.height) * 100;
+  el.style.setProperty('--rx', `${rx}deg`);
+  el.style.setProperty('--ry', `${ry}deg`);
+  el.style.setProperty('--shine-x', `${bgX}%`);
+  el.style.setProperty('--shine-y', `${bgY}%`);
+  el.style.setProperty('--card-scale', '1.04');
+}
+
+function onMouseLeave(el: HTMLElement) {
+  el.style.setProperty('--rx', '0deg');
+  el.style.setProperty('--ry', '0deg');
+  el.style.setProperty('--shine-x', '50%');
+  el.style.setProperty('--shine-y', '50%');
+  el.style.setProperty('--card-scale', '1');
+}
+</script>
+
+<template>
+  <div class="fav-page">
+
+    <div class="container">
+      <SiteHeader
+        show-search
+        show-theme-toggle
+        @search="({ city, state }) => router.push({ name: 'city', params: { city, state } })"
+        @logo-click="router.push({ name: 'home' })"
+      />
+    </div>
+
+    <div class="fav-page__heading">
+      <h1 class="fav-page__title">
+        <span class="mdi mdi-star fav-page__title-icon"></span>
+        Favorites
+      </h1>
+      <button class="breadcrumb" @click="router.back()">
+        <span class="breadcrumb__arr breadcrumb__arr--1 mdi mdi-arrow-left"></span>
+        <span class="breadcrumb__text">Back</span>
+        <span class="breadcrumb__arr breadcrumb__arr--2 mdi mdi-arrow-left"></span>
+        <span class="breadcrumb__circle"></span>
+      </button>
+    </div>
+
+    <!-- Not signed in -->
+    <div v-if="!user" class="fav-empty">
+      <span class="mdi mdi-account-lock-outline fav-empty__icon"></span>
+      <p class="fav-empty__text">Sign in to see your saved cities</p>
+    </div>
+
+    <!-- Empty -->
+    <div v-else-if="favorites.length === 0" class="fav-empty">
+      <span class="mdi mdi-star-outline fav-empty__icon"></span>
+      <p class="fav-empty__text">No favorites yet — star a city to save it here</p>
+    </div>
+
+    <!-- Cards grid -->
+    <div v-else class="fav-grid">
+      <div
+        v-for="fav in favorites"
+        :key="cardKey(fav.city, fav.state)"
+        class="trading-card"
+        @click="goToCity(fav.city, fav.state)"
+        @mousemove="onMouseMove($event, $event.currentTarget as HTMLElement)"
+        @mouseleave="onMouseLeave($event.currentTarget as HTMLElement)"
+      >
+        <!-- Photo background -->
+        <div
+          class="trading-card__bg"
+          :style="cardData[cardKey(fav.city, fav.state)]?.photo
+            ? { backgroundImage: `url(${cardData[cardKey(fav.city, fav.state)].photo})` }
+            : {}"
+          :class="{ 'trading-card__bg--loading': cardData[cardKey(fav.city, fav.state)]?.loading }"
+        ></div>
+
+        <!-- Holographic shine layer -->
+        <div class="trading-card__shine"></div>
+
+        <!-- Remove button -->
+        <button
+          class="trading-card__remove"
+          @click="handleRemove($event, fav.city, fav.state)"
+          aria-label="Remove from favorites"
+        >
+          <span class="trading-card__trash-lid mdi mdi-minus"></span>
+          <span class="mdi mdi-trash-can-outline trading-card__trash-body"></span>
+        </button>
+
+        <!-- State badge -->
+        <div class="trading-card__badge">{{ fav.state.toUpperCase() }}</div>
+
+        <!-- Bottom content -->
+        <div class="trading-card__body">
+          <div class="trading-card__name">{{ fav.city_name }}</div>
+          <div v-if="cardData[cardKey(fav.city, fav.state)]?.county" class="trading-card__county">
+            {{ cardData[cardKey(fav.city, fav.state)].county }}
+          </div>
+          <div class="trading-card__stats">
+            <div v-if="cardData[cardKey(fav.city, fav.state)]?.population" class="trading-card__stat">
+              <span class="trading-card__stat-label">Population</span>
+              <span class="trading-card__stat-value">{{ cardData[cardKey(fav.city, fav.state)].population!.toLocaleString() }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</template>
+
+<style scoped>
+:deep(.site-header) {
+  margin-bottom: 0;
+  padding-bottom: 8px;
+}
+
+.fav-page {
+  min-height: 100vh;
+  background: var(--bg-page);
+  padding: 0 0 60px;
+}
+
+/* ── Page heading ─────────────────────────────────────── */
+.fav-page__heading {
+  padding: 4px 40px 12px;
+  max-width: 1300px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fav-page__title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fav-page__title-icon {
+  color: var(--accent);
+  font-size: 1.5rem;
+}
+
+/* ── Empty state ──────────────────────────────────────── */
+.fav-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 60vh;
+}
+
+.fav-empty__icon {
+  font-size: 3rem;
+  color: var(--accent);
+  opacity: 0.35;
+}
+
+.fav-empty__text {
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+
+/* ── Grid ─────────────────────────────────────────────── */
+.fav-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 28px;
+  padding: 0 40px;
+  max-width: 1300px;
+  margin: 0 auto;
+}
+
+/* ── Trading card ─────────────────────────────────────── */
+.trading-card {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  border-radius: 20px;
+  overflow: hidden;
+  cursor: pointer;
+  transform:
+    perspective(800px)
+    rotateX(var(--rx, 0deg))
+    rotateY(var(--ry, 0deg))
+    scale(var(--card-scale, 1));
+  transition: transform 0.12s ease-out, box-shadow 0.2s ease;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 2px 8px rgba(0, 0, 0, 0.2);
+  will-change: transform;
+}
+
+.trading-card:hover {
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+/* Photo background */
+.trading-card__bg {
+  position: absolute;
+  inset: 0;
+  background-color: #0a7d72;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.3s ease;
+}
+
+.trading-card:hover .trading-card__bg {
+  transform: scale(1.04);
+}
+
+.trading-card__bg--loading {
+  background-image: linear-gradient(
+    140deg,
+    rgba(10, 125, 114, 0.94) 0%,
+    rgba(20, 184, 166, 0.88) 100%
+  );
+}
+
+/* Gradient overlays */
+.trading-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.35) 0%,
+    rgba(0,0,0,0.15) 35%,
+    rgba(0,0,0,0.7) 70%,
+    rgba(0,0,0,0.92) 100%
+  );
+  z-index: 1;
+}
+
+/* Holographic shine */
+.trading-card__shine {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: 20px;
+  background:
+    radial-gradient(
+      circle at var(--shine-x, 50%) var(--shine-y, 50%),
+      rgba(255, 255, 255, 0.28) 0%,
+      rgba(120, 240, 210, 0.18) 20%,
+      rgba(100, 160, 255, 0.14) 40%,
+      rgba(200, 100, 255, 0.08) 60%,
+      transparent 75%
+    ),
+    linear-gradient(
+      115deg,
+      transparent 30%,
+      rgba(120, 240, 210, 0.07) 45%,
+      rgba(100, 160, 255, 0.07) 55%,
+      transparent 70%
+    );
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+  mix-blend-mode: screen;
+}
+
+.trading-card:hover .trading-card__shine {
+  opacity: 1;
+}
+
+/* Remove button */
+.trading-card__remove {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 4;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.45);
+  color: rgba(255, 255, 255, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  cursor: pointer;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 0.18s, transform 0.18s, background 0.18s, color 0.18s;
+  backdrop-filter: blur(4px);
+}
+
+.trading-card:hover .trading-card__remove {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.trading-card__remove:hover {
+  background: rgba(248, 113, 113, 0.75);
+  color: white;
+}
+
+.trading-card__trash-lid {
+  position: absolute;
+  font-size: 0.6rem;
+  top: 6px;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: center bottom;
+}
+
+.trading-card__trash-body {
+  font-size: 1rem;
+  margin-top: 2px;
+}
+
+.trading-card__remove:hover .trading-card__trash-lid {
+  transform: rotate(-35deg) translateX(-2px) translateY(-2px);
+}
+
+/* State badge */
+.trading-card__badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 4;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Bottom content */
+.trading-card__body {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  padding: 20px 18px 20px;
+}
+
+.trading-card__name {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: white;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.trading-card__county {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 12px;
+}
+
+.trading-card__stats {
+  display: flex;
+  gap: 14px;
+}
+
+.trading-card__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.trading-card__stat-label {
+  font-size: 0.55rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.trading-card__stat-value {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: white;
+}
+</style>

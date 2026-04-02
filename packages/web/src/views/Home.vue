@@ -11,6 +11,7 @@ import AffordabilitySection from "../components/AffordabilitySection.vue";
 import AffordabilityExpandedView from "../components/AffordabilityExpandedView.vue";
 import ThemeToggle from "../components/ThemeToggle.vue";
 import AuthModal from "../components/AuthModal.vue";
+import SiteHeader from "../components/SiteHeader.vue";
 import { useAuth } from "../composables/useAuth";
 import { prefetchDetailedHousing } from "../api/housing";
 import { prefetchIncome } from "../api/income";
@@ -776,92 +777,73 @@ async function closeExpandedSection() {
       </div>
       <div v-else class="hero-auth">
         <span class="hero-auth__welcome">Welcome back, {{ displayName() ?? 'there' }}</span>
-        <button class="hero-auth__login-btn" @click="signOut">Sign out</button>
+        <div class="hero-auth__actions">
+          <button class="hero-auth__login-btn" @click="router.push({ name: 'favorites' })">
+            <span class="mdi mdi-star-outline"></span> My Favorites
+          </button>
+          <span class="hero-auth__sep">·</span>
+          <button class="hero-auth__login-btn" @click="signOut">Sign out</button>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- After search: city data view -->
   <div v-if="showDashboard" ref="dashboardStage" class="container">
-    <header class="site-header">
-      <span class="site-logo-wrap" @click="resetSearch">
-        <span class="site-logo">Atlas</span>
-        <span class="site-logo-accent" aria-hidden="true"></span>
-      </span>
-      <div ref="headerSearch" class="site-header__search">
-        <CitySearch
-          :initial-city="city"
-          :initial-state="state"
-          @search="onSearch"
-        />
-      </div>
-      <div class="site-header__controls">
-        <ThemeToggle v-if="hasSearched && !transitioningToLanding" />
-        <div v-if="user" class="user-menu">
-          <button class="user-menu__btn" @click="userMenuOpen = !userMenuOpen">
-            <span class="mdi mdi-account-circle-outline user-menu__icon"></span>
-            <span class="user-menu__name">{{ displayName() ?? 'Account' }}</span>
-            <span class="mdi mdi-chevron-down user-menu__chevron" :class="{ 'user-menu__chevron--open': userMenuOpen }"></span>
-          </button>
-          <div v-if="userMenuOpen" class="user-menu__dropdown" @click="userMenuOpen = false">
-            <button class="user-menu__item" @click="signOut">
-              <span class="mdi mdi-logout user-menu__item-icon"></span>
-              Sign out
-            </button>
-          </div>
-        </div>
-        <button v-else class="auth-btn" @click="openAuth('login')">
-          <span class="mdi mdi-account-outline"></span>
-          <span class="auth-btn__label">Sign in</span>
-        </button>
-      </div>
-    </header>
+    <SiteHeader
+      show-search
+      :show-theme-toggle="hasSearched && !transitioningToLanding"
+      :initial-city="city"
+      :initial-state="state"
+      @search="onSearch"
+      @logo-click="resetSearch"
+    />
 
     <!-- Score pills bar -->
-    <div v-if="!cityNotFound" ref="scorePills" class="score-pills">
-      <div class="score-pills__pills">
-      <div
-        class="score-pill"
-        :class="{ 'score-pill--top': topCategory === 'economic' }"
-      >
-        <span class="score-pill__label">Income</span>
-        <span class="score-pill__value">{{ scores.economic !== null ? scores.economic : '—' }}</span>
-      </div>
-      <div
-        class="score-pill"
-        :class="{ 'score-pill--top': topCategory === 'housing' }"
-      >
-        <span class="score-pill__label">Housing</span>
-        <span class="score-pill__value">{{ scores.housing !== null ? scores.housing : '—' }}</span>
-      </div>
-      <div
-        class="score-pill"
-        :class="{ 'score-pill--top': topCategory === 'affordability' }"
-      >
-        <span class="score-pill__label">Affordability</span>
-        <span class="score-pill__value">{{ scores.affordability !== null ? scores.affordability : '—' }}</span>
-      </div>
-      <div
-        class="score-pill"
-        :class="{ 'score-pill--top': topCategory === 'people' }"
-      >
-        <span class="score-pill__label">People</span>
-        <span class="score-pill__value">{{ scores.people !== null ? scores.people : '—' }}</span>
-      </div>
-      </div>
-      <div v-if="sectionExpanded" class="score-pills__nav">
-        <span class="housing-exp__subtitle">{{
-          expandedSection === 'economic' ? 'Income Details' :
-          expandedSection === 'housing' ? 'Housing Details' :
-          'Affordability Details'
-        }}</span>
-        <button class="breadcrumb" @click="closeExpandedSection">
+    <div v-if="!cityNotFound" ref="scorePills" class="score-pills" :class="{ 'score-pills--expanded': sectionExpanded }">
+      <template v-if="sectionExpanded">
+        <button class="breadcrumb score-pills__back" @click="closeExpandedSection">
           <span class="breadcrumb__arr breadcrumb__arr--1 mdi mdi-arrow-left"></span>
           <span class="breadcrumb__text">Back</span>
           <span class="breadcrumb__arr breadcrumb__arr--2 mdi mdi-arrow-left"></span>
           <span class="breadcrumb__circle"></span>
         </button>
+      </template>
+      <div class="score-pills__pills" :class="{ 'score-pills__pills--right': sectionExpanded }">
+        <div
+          class="score-pill"
+          :class="{ 'score-pill--top': topCategory === 'economic' }"
+        >
+          <span class="score-pill__label">Income</span>
+          <span class="score-pill__value">{{ scores.economic !== null ? scores.economic : '—' }}</span>
+        </div>
+        <div
+          class="score-pill"
+          :class="{ 'score-pill--top': topCategory === 'housing' }"
+        >
+          <span class="score-pill__label">Housing</span>
+          <span class="score-pill__value">{{ scores.housing !== null ? scores.housing : '—' }}</span>
+        </div>
+        <div
+          class="score-pill"
+          :class="{ 'score-pill--top': topCategory === 'affordability' }"
+        >
+          <span class="score-pill__label">Affordability</span>
+          <span class="score-pill__value">{{ scores.affordability !== null ? scores.affordability : '—' }}</span>
+        </div>
+        <div
+          class="score-pill"
+          :class="{ 'score-pill--top': topCategory === 'people' }"
+        >
+          <span class="score-pill__label">People</span>
+          <span class="score-pill__value">{{ scores.people !== null ? scores.people : '—' }}</span>
+        </div>
       </div>
+      <span v-if="sectionExpanded" class="housing-exp__subtitle score-pills__page-title">{{
+        expandedSection === 'economic' ? 'Income Details' :
+        expandedSection === 'housing' ? 'Housing Details' :
+        'Affordability Details'
+      }}</span>
     </div>
 
     <!-- City not found state -->
@@ -891,6 +873,7 @@ async function closeExpandedSection() {
           :state="state"
           @score="scores.people = $event"
           @not-found="cityNotFound = true"
+          @auth-required="openAuth('login')"
         />
       </div>
 
