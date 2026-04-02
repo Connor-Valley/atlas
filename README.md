@@ -118,7 +118,7 @@ atlas/
 | GET | `/states` | All supported states |
 | GET | `/health` | Server health check |
 
-State is the two-letter code (e.g. `mi`), city is the slug (e.g. `grand-rapids`).
+State is the two-letter code (e.g. `ca`), city is the slug (e.g. `san-francisco`).
 
 ---
 
