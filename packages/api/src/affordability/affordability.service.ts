@@ -1,11 +1,13 @@
 import type { City } from "../cities/cities.types.js";
-import type { CityAffordability, AffordabilityLevel } from "./affordability.types.js";
-import { getCityIncome } from "../income/income.service.js";
-import { getCityHousing } from "../housing/housing.service.js";
+import type { CityAffordability, DetailedCityAffordability, AffordabilityLevel, RentBurdenBand } from "./affordability.types.js";
+import { getCityIncome, getDetailedCityIncome } from "../income/income.service.js";
+import { getCityHousing, getDetailedCityHousing } from "../housing/housing.service.js";
 
 function classifyAffordability(ratio: number): AffordabilityLevel {
-  if (ratio <= 0.3) return "Affordable";
-  if (ratio <= 0.5) return "Rent Burdened";
+  if (ratio <= 0.25) return "Comfortably Affordable";
+  if (ratio <= 0.30) return "Affordable";
+  if (ratio <= 0.40) return "Moderately Burdened";
+  if (ratio <= 0.50) return "Rent Burdened";
   return "Severely Rent Burdened";
 }
 
@@ -33,5 +35,90 @@ export async function getCityAffordability(
     annualRent,
     rentToIncomeRatio,
     affordability: classifyAffordability(rentToIncomeRatio),
+  };
+}
+
+async function fetchRentBurdenBands(city: City, year: number): Promise<RentBurdenBand[]> {
+  const baseUrl = `https://api.census.gov/data/${year}/acs/acs5`;
+  const geo = `&for=place:${city.placeCode}&in=state:${city.stateFips}`;
+  const key = process.env.CENSUS_API_KEY ? `&key=${process.env.CENSUS_API_KEY}` : "";
+
+  const vars = [
+    "B25070_001E", // total renter households
+    "B25070_002E", // less than 10%
+    "B25070_003E", // 10–14.9%
+    "B25070_004E", // 15–19.9%
+    "B25070_005E", // 20–24.9%
+    "B25070_006E", // 25–29.9%
+    "B25070_007E", // 30–34.9%
+    "B25070_008E", // 35–39.9%
+    "B25070_009E", // 40–49.9%
+    "B25070_010E", // 50%+
+  ];
+
+  const url = `${baseUrl}?get=${vars.join(",")}`+ geo + key;
+  const res = await fetch(url);
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Failed to fetch Census rent burden data: ${res.status} ${text}`);
+  }
+  const data = (await res.json()) as string[][];
+  const row = data[1];
+  if (!row) throw new Error("Census response missing data row");
+
+  const n = (v: string | undefined) => {
+    const num = Number(v);
+    return Number.isFinite(num) ? num : 0;
+  };
+
+  const [total, lt10, t10to15, t15to20, t20to25, t25to30, t30to35, t35to40, t40to50, t50plus] = row.map(n);
+  const safe = total > 0 ? total : 1;
+
+  return [
+    { label: "Under 30%", share: (lt10 + t10to15 + t15to20 + t20to25 + t25to30) / safe },
+    { label: "30–35%",    share: t30to35 / safe },
+    { label: "35–40%",    share: t35to40 / safe },
+    { label: "40–50%",    share: t40to50 / safe },
+    { label: "50%+",      share: t50plus  / safe },
+  ];
+}
+
+export async function getDetailedCityAffordability(
+  city: City,
+  year: number
+): Promise<DetailedCityAffordability> {
+  const [income, housing, rentBurdenBands] = await Promise.all([
+    getDetailedCityIncome(city, year),
+    getDetailedCityHousing(city, year),
+    fetchRentBurdenBands(city, year),
+  ]);
+
+  const annualRent = housing.medianRent * 12;
+  const rentToIncomeRatio =
+    income.medianRenterIncome > 0
+      ? annualRent / income.medianRenterIncome
+      : 0;
+
+  return {
+    city: city.name.replace(/\s+city$/i, ""),
+    state: city.state,
+    medianHouseholdIncome: income.medianHouseholdIncome,
+    medianRenterIncome: income.medianRenterIncome,
+    medianRent: housing.medianRent,
+    annualRent,
+    rentToIncomeRatio,
+    affordability: classifyAffordability(rentToIncomeRatio),
+    medianHomeValue: housing.medianHomeValue ?? null,
+    estimatedMortgage: housing.estimatedMortgage,
+    mortgageToIncomeRatio: housing.mortgageToIncomeRatio,
+    priceToIncomeRatio: income.affordabilityMetrics.priceToIncomeRatio,
+    downPaymentSavingsYears: income.affordabilityMetrics.downPaymentSavingsYears,
+    incomeNeededForMortgage: income.affordabilityMetrics.incomeNeededForMortgage,
+    incomeNeededForRent: income.affordabilityMetrics.incomeNeededForRent,
+    affordabilityGap: income.affordabilityMetrics.affordabilityGap,
+    medianOwnerIncome: income.medianOwnerIncome ?? null,
+    rentBurdenPercent: housing.rentBurdenPercent,
+    rentBurdenBands,
+    fhfaYoyChange: housing.fhfaData?.yoyChange ?? null,
   };
 }

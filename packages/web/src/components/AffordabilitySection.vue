@@ -14,7 +14,16 @@ const error = ref<string | null>(null);
 
 const score = computed(() => {
   if (!data.value) return null;
-  return Math.min(100, Math.round(((0.5 - data.value.rentToIncomeRatio) / 0.5) * 100));
+  return Math.max(0, Math.min(100, Math.round((1 - data.value.rentToIncomeRatio / 0.6) * 100)));
+});
+
+const statusClass = computed(() => {
+  const a = data.value?.affordability;
+  if (a === "Comfortably Affordable") return "positive";
+  if (a === "Affordable") return "positive";
+  if (a === "Moderately Burdened") return "status-caution";
+  if (a === "Rent Burdened") return "status-warning";
+  return "status-danger";
 });
 
 async function load() {
@@ -97,7 +106,7 @@ watch(
         </div>
         <div class="metric">
           <span class="metric__label">Status</span>
-          <span class="metric__value" :class="data.affordability === 'Affordable' ? 'positive' : 'status-warning'">
+          <span class="metric__value" :class="statusClass">
             {{ data.affordability }}
           </span>
         </div>
