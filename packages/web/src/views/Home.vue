@@ -301,8 +301,8 @@ function openCompareView() {
   router.push({
     name: "compare",
     params: {
-      state: state.value,
-      city: city.value,
+      stateA: state.value,
+      cityA: city.value,
     },
   });
 }

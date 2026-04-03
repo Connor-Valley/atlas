@@ -25,10 +25,15 @@ const router = createRouter({
       props: true
     },
     {
-      path: '/compare/:state/:city',
+      path: '/compare/:stateA/:cityA/:stateB?/:cityB?',
       name: 'compare',
       component: Compare,
-      props: true
+      props: (route) => ({
+        stateA: route.params.stateA,
+        cityA: route.params.cityA,
+        stateB: route.params.stateB,
+        cityB: route.params.cityB
+      })
     },
     {
       path: '/favorites',
