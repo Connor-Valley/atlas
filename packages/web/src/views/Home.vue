@@ -58,7 +58,6 @@ const landingContent = ref<HTMLElement | null>(null);
 const heroDots = ref<HTMLElement | null>(null);
 const landingSearch = ref<HTMLElement | null>(null);
 const dashboardStage = ref<HTMLElement | null>(null);
-const headerSearch = ref<HTMLElement | null>(null);
 const scorePills = ref<HTMLElement | null>(null);
 const dashboardShell = ref<HTMLElement | null>(null);
 const cityNotFoundPanel = ref<HTMLElement | null>(null);
@@ -327,7 +326,7 @@ async function animateLandingToDashboard() {
   hasSearched.value = true;
   await nextTick();
 
-  const target = getSearchBarElement(headerSearch.value);
+  const target = getSearchBarElement(dashboardStage.value);
   if (!target) {
     transitioningToDashboard.value = false;
     return;
@@ -444,7 +443,7 @@ async function animateLandingToDashboard() {
 }
 
 async function animateDashboardToLanding() {
-  const source = getSearchBarElement(headerSearch.value);
+  const source = getSearchBarElement(dashboardStage.value);
   if (!source) {
     clearSearchState();
     return;
@@ -574,7 +573,6 @@ async function animateDashboardToLanding() {
   ]);
 
   ghost.remove();
-  landingAnimations.forEach((animation) => animation.cancel());
   source.style.opacity = "";
   target.style.opacity = "";
   transitioningToLanding.value = false;
