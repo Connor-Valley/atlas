@@ -278,44 +278,44 @@ function updateCityB(payload: { city: string; state: string }) {
     </section>
 
     <template v-else-if="comparison">
+      <section class="compare-key-diff">
+        <div class="compare-key-diff__header">
+          <span class="mdi mdi-lightbulb-on-outline compare-key-diff__icon"></span>
+          <h2 class="compare-key-diff__title">Key Differences</h2>
+        </div>
+        <div class="compare-key-diff__items">
+          <template v-for="(card, i) in summaryCards" :key="card.title">
+            <div v-if="i > 0" class="compare-key-diff__divider"></div>
+            <div class="compare-key-diff__item">
+              <div class="compare-key-diff__label">{{ card.label }}</div>
+              <p class="compare-key-diff__sentence">
+                {{ card.sentence.before }}<span class="compare-key-diff__highlight" :class="`compare-key-diff__highlight--${card.winner}`">{{ card.sentence.value }}</span>{{ card.sentence.after }}
+              </p>
+            </div>
+          </template>
+        </div>
+      </section>
+
       <section class="compare-city-info">
         <article
           v-for="card in cityInfoCards"
           :key="card.key"
           class="compare-city-info__card"
           :class="`compare-city-info__card--${card.key}`"
-          :style="card.photoUrl ? { backgroundImage: `url(${card.photoUrl})` } : {}"
         >
-          <div class="compare-city-info__head">
-            <span class="compare-city-info__label">{{ card.label }}</span>
-            <span class="compare-city-info__state">{{ card.state }}</span>
+          <div class="compare-city-info__thumb">
+            <img v-if="card.photoUrl" :src="card.photoUrl" class="compare-city-info__photo" alt="" />
+            <div v-else class="compare-city-info__photo-fallback"></div>
+            <span class="compare-city-info__badge">{{ card.label }}</span>
           </div>
-          <div class="compare-city-info__name">{{ card.name }}</div>
-          <div class="compare-city-info__metric">
-            <span class="compare-city-info__metric-label">Population</span>
-            <span class="compare-city-info__metric-value">{{ card.population }}</span>
+          <div class="compare-city-info__body">
+            <div class="compare-city-info__name">{{ card.name }}</div>
+            <div class="compare-city-info__state">{{ card.state }}</div>
+            <div class="compare-city-info__stat">
+              <span class="compare-city-info__stat-label">Population</span>
+              <span class="compare-city-info__stat-value">{{ card.population }}</span>
+            </div>
           </div>
-        </article>
-      </section>
-
-      <section class="compare-summary">
-        <article
-          v-for="card in summaryCards"
-          :key="card.title"
-          class="compare-summary__card"
-          :class="{
-            'compare-summary__card--a': card.winner === 'a',
-            'compare-summary__card--b': card.winner === 'b',
-            'compare-summary__card--tie': card.winner === 'tie',
-            'compare-summary__card--difference': card.winner === 'difference',
-          }"
-        >
-          <div class="compare-summary__card-top">
-            <span class="mdi compare-summary__icon" :class="card.icon"></span>
-            <span class="compare-summary__title">{{ card.title }}</span>
-          </div>
-          <div class="compare-summary__verdict">{{ card.verdict }}</div>
-          <div class="compare-summary__delta">{{ card.delta }}</div>
         </article>
       </section>
 

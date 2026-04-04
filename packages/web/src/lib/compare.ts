@@ -56,6 +56,8 @@ export type SummaryCardData = {
   winner: Winner;
   verdict: string;
   delta: string;
+  label: string;
+  sentence: { before: string; value: string; after: string };
 };
 
 export function slugToDisplay(slug: string) {
@@ -192,34 +194,62 @@ function sectionVerdict(winner: Winner, cityA: ComparedCity, cityB: ComparedCity
 }
 
 export function buildSummaryCards(cityA: ComparedCity, cityB: ComparedCity): SummaryCardData[] {
-  const cards = [
+  const incomeWinner = compareNumeric(cityA.scores.income, cityB.scores.income, "higher", 2);
+  const housingWinner = compareNumeric(cityA.scores.housing, cityB.scores.housing, "higher", 2);
+  const affordabilityWinner = compareNumeric(cityA.scores.affordability, cityB.scores.affordability, "higher", 2);
+
+  const incomeLeader = winnerLabel(incomeWinner, cityA, cityB);
+  const housingLeader = winnerLabel(housingWinner, cityA, cityB);
+  const affordLeader = winnerLabel(affordabilityWinner, cityA, cityB);
+
+  const incomeDiff = Math.abs((cityA.income.medianHouseholdIncome ?? 0) - (cityB.income.medianHouseholdIncome ?? 0));
+  const rentDiff = Math.abs((cityA.housing.housing.medianRent ?? 0) - (cityB.housing.housing.medianRent ?? 0));
+  const rtiDiff = Math.abs(((cityA.affordability.rentToIncomeRatio ?? 0) - (cityB.affordability.rentToIncomeRatio ?? 0)) * 100);
+
+  function incomeSentence(): SummaryCardData["sentence"] {
+    if (incomeWinner === "tie") return { before: "Both cities have ", value: "nearly equal", after: " median household incomes." };
+    return { before: `${incomeLeader} earns `, value: `$${Math.round(incomeDiff).toLocaleString()}`, after: " more in median household income." };
+  }
+
+  function housingSentence(): SummaryCardData["sentence"] {
+    if (housingWinner === "tie") return { before: "Median rent is ", value: "nearly equal", after: " in both cities." };
+    return { before: `${housingLeader} has `, value: `$${Math.round(rentDiff).toLocaleString()}/mo`, after: " lower median rent." };
+  }
+
+  function affordSentence(): SummaryCardData["sentence"] {
+    if (affordabilityWinner === "tie") return { before: "Renter burden is ", value: "nearly equal", after: " in both cities." };
+    return { before: `${affordLeader} renters spend `, value: `${rtiDiff.toFixed(1)} pts`, after: " less of their income on rent." };
+  }
+
+  return [
     {
       title: "Income",
       icon: "mdi-trending-up",
-      winner: compareNumeric(cityA.scores.income, cityB.scores.income, "higher", 2),
+      winner: incomeWinner,
       delta: `${Math.abs(cityA.scores.income - cityB.scores.income)} pts`,
+      verdict: incomeWinner === "difference" ? "Different profiles" : `${incomeLeader} • ${Math.abs(cityA.scores.income - cityB.scores.income)} pts`,
+      label: "Income Gap",
+      sentence: incomeSentence(),
     },
     {
       title: "Housing",
       icon: "mdi-home-city",
-      winner: compareNumeric(cityA.scores.housing, cityB.scores.housing, "higher", 2),
+      winner: housingWinner,
       delta: `${Math.abs(cityA.scores.housing - cityB.scores.housing)} pts`,
+      verdict: housingWinner === "difference" ? "Different profiles" : `${housingLeader} • ${Math.abs(cityA.scores.housing - cityB.scores.housing)} pts`,
+      label: "Housing Costs",
+      sentence: housingSentence(),
     },
     {
       title: "Affordability",
       icon: "mdi-scale-balance",
-      winner: compareNumeric(cityA.scores.affordability, cityB.scores.affordability, "higher", 2),
+      winner: affordabilityWinner,
       delta: `${Math.abs(cityA.scores.affordability - cityB.scores.affordability)} pts`,
+      verdict: affordabilityWinner === "difference" ? "Different profiles" : `${affordLeader} • ${Math.abs(cityA.scores.affordability - cityB.scores.affordability)} pts`,
+      label: "Affordability",
+      sentence: affordSentence(),
     },
   ];
-
-  return cards.map((card) => ({
-    ...card,
-    verdict:
-      card.winner === "difference"
-        ? "Different profiles"
-        : `${winnerLabel(card.winner, cityA, cityB)} • ${card.delta}`,
-  }));
 }
 
 export function buildSections(cityA: ComparedCity, cityB: ComparedCity): CompareSectionData[] {
