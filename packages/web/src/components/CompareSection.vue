@@ -77,15 +77,16 @@ function diffBadgeClass(winner: "a" | "b" | "tie" | "difference") {
 
     <!-- Metrics table -->
     <div class="compare-section__table">
-      <!-- Metric blocks: label row + value row -->
       <div v-for="metric in section.metrics" :key="metric.label" class="compare-section__metric-block">
-        <div class="compare-section__metric-name">{{ metric.label }}</div>
         <div class="compare-section__metric-row">
-          <div class="compare-section__metric-val compare-section__metric-val--a" :class="metricClass(metric.winner, 'a')">
-            {{ metric.aText }}
+          <div class="compare-section__metric-side compare-section__metric-side--a">
+            <div class="compare-section__metric-val compare-section__metric-val--a" :class="metricClass(metric.winner, 'a')">
+              {{ metric.aText }}
+            </div>
+            <div class="compare-section__connector"></div>
           </div>
-          <div class="compare-section__connector"></div>
           <div class="compare-section__metric-center">
+            <span class="compare-section__metric-name">{{ metric.label }}</span>
             <span
               v-if="metric.winner === 'a' || metric.winner === 'b'"
               class="compare-section__diff"
@@ -97,9 +98,11 @@ function diffBadgeClass(winner: "a" | "b" | "tie" | "difference") {
             <span v-else-if="metric.winner === 'tie'" class="compare-section__diff compare-section__diff--tie">≈ tied</span>
             <span v-else class="compare-section__diff compare-section__diff--context">{{ metric.centerLabel }}</span>
           </div>
-          <div class="compare-section__connector"></div>
-          <div class="compare-section__metric-val compare-section__metric-val--b" :class="metricClass(metric.winner, 'b')">
-            {{ metric.bText }}
+          <div class="compare-section__metric-side compare-section__metric-side--b">
+            <div class="compare-section__connector"></div>
+            <div class="compare-section__metric-val compare-section__metric-val--b" :class="metricClass(metric.winner, 'b')">
+              {{ metric.bText }}
+            </div>
           </div>
         </div>
       </div>
@@ -268,16 +271,16 @@ function diffBadgeClass(winner: "a" | "b" | "tie" | "difference") {
   letter-spacing: -0.02em;
 }
 
-/* ── Metrics table ── */
+/* ── Metrics table — bleeds to card edges ── */
 .compare-section__table {
   display: flex;
   flex-direction: column;
+  margin: 0 -28px;
 }
-
 
 /* ── Metric block ── */
 .compare-section__metric-block {
-  padding: 14px 0;
+  padding: 14px 28px;
   border-bottom: 1px solid color-mix(in srgb, var(--border-card) 40%, transparent);
 }
 
@@ -286,42 +289,48 @@ function diffBadgeClass(winner: "a" | "b" | "tie" | "difference") {
   padding-bottom: 0;
 }
 
+/* ── Metric row: [value_a + connector] | center | [connector + value_b] ── */
+.compare-section__metric-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+}
+
+.compare-section__metric-side {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+
+/* Center column: label stacked above pill */
+.compare-section__metric-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
 .compare-section__metric-name {
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-bottom: 8px;
-  text-align: center;
   white-space: nowrap;
 }
 
-/* ── Metric row (values + connectors + pill only) ── */
-.compare-section__metric-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(16px, 1fr) auto minmax(16px, 1fr) minmax(0, 1fr);
-  align-items: center;
-}
-
-/* ── Dotted connectors ── */
+/* ── Dotted connector (flex-grow inside each side) ── */
 .compare-section__connector {
-  align-self: stretch;
-  display: flex;
-  align-items: center;
-}
-
-.compare-section__connector::before {
-  content: '';
-  display: block;
-  width: 100%;
+  flex: 1;
+  min-width: 16px;
   height: 3px;
   background-image: radial-gradient(circle, color-mix(in srgb, var(--accent) 38%, transparent) 1.5px, transparent 1.5px);
   background-size: 12px 3px;
   background-repeat: repeat-x;
   background-position: center;
-  mask-image: linear-gradient(to right, transparent 0%, black 25%, black 75%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 25%, black 75%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0%, black 20%, black 80%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 20%, black 80%, transparent 100%);
 }
 
 /* ── Metric values ── */
@@ -334,12 +343,10 @@ function diffBadgeClass(winner: "a" | "b" | "tie" | "difference") {
 
 .compare-section__metric-val--a {
   text-align: right;
-  justify-self: end;
 }
 
 .compare-section__metric-val--b {
   text-align: left;
-  justify-self: start;
 }
 
 .compare-section__metric-val--wins-a {
@@ -427,16 +434,20 @@ function diffBadgeClass(winner: "a" | "b" | "tie" | "difference") {
     border-radius: 20px;
   }
 
+  .compare-section__table {
+    margin: 0 -16px;
+  }
+
+  .compare-section__metric-block {
+    padding: 12px 16px;
+  }
+
   .compare-section__hero-value {
     font-size: 1.5rem;
   }
 
   .compare-section__metric-val {
     font-size: 1.1rem;
-  }
-
-  .compare-section__metric-center {
-    min-width: 60px;
   }
 }
 </style>
