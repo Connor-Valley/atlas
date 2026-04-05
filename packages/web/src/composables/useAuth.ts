@@ -17,17 +17,21 @@ supabase.auth.onAuthStateChange((_event, session) => {
 export function useAuth() {
   const displayName = () => user.value?.user_metadata?.full_name as string | undefined;
 
-  async function signUp(email: string, password: string, name: string) {
+  async function signUp(email: string, password: string, name: string, captchaToken?: string) {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: name } },
+      options: { data: { full_name: name }, captchaToken },
     });
     if (error) throw error;
   }
 
-  async function signIn(email: string, password: string) {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+  async function signIn(email: string, password: string, captchaToken?: string) {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+      options: { captchaToken },
+    });
     if (error) throw error;
   }
 
@@ -35,5 +39,26 @@ export function useAuth() {
     await supabase.auth.signOut();
   }
 
-  return { user, loading, displayName, signUp, signIn, signOut };
+  async function reauthenticate() {
+    const { error } = await supabase.auth.reauthenticate();
+    if (error) throw error;
+  }
+
+  async function updateDisplayName(name: string) {
+    const { data, error } = await supabase.auth.updateUser({
+      data: { full_name: name.trim() },
+    });
+    if (error) throw error;
+    if (data.user) user.value = data.user;
+  }
+
+  async function updatePassword(password: string, nonce?: string) {
+    const { data, error } = await supabase.auth.updateUser(
+      nonce ? { password, nonce } : { password }
+    );
+    if (error) throw error;
+    if (data.user) user.value = data.user;
+  }
+
+  return { user, loading, displayName, signUp, signIn, signOut, reauthenticate, updateDisplayName, updatePassword };
 }

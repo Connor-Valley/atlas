@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useAuth } from '../composables/useAuth';
+import HCaptchaWidget from './HCaptchaWidget.vue';
 
 const props = defineProps<{ mode?: 'login' | 'register' }>();
 const emit  = defineEmits<{ (e: 'close'): void }>();
@@ -14,27 +15,41 @@ const email    = ref('');
 const password = ref('');
 const loading  = ref(false);
 const error    = ref<string | null>(null);
+const captchaToken = ref<string | null>(null);
+const captchaKey = ref(0);
+const hcaptchaSiteKey = (import.meta.env.VITE_HCAPTCHA_SITE_KEY as string | undefined)?.trim() ?? '';
 
 const isRegister = computed(() => activeMode.value === 'register');
 
 function switchMode(mode: 'login' | 'register') {
   activeMode.value = mode;
   error.value = null;
+  resetCaptcha();
+}
+
+function resetCaptcha() {
+  captchaToken.value = null;
+  captchaKey.value += 1;
 }
 
 async function handleSubmit() {
   error.value = null;
+  if (hcaptchaSiteKey && !captchaToken.value) {
+    error.value = 'Please complete the CAPTCHA.';
+    return;
+  }
   loading.value = true;
   try {
     if (isRegister.value) {
       if (!name.value.trim()) { error.value = 'Please enter your name.'; return; }
-      await signUp(email.value.trim(), password.value, name.value.trim());
+      await signUp(email.value.trim(), password.value, name.value.trim(), captchaToken.value ?? undefined);
     } else {
-      await signIn(email.value.trim(), password.value);
+      await signIn(email.value.trim(), password.value, captchaToken.value ?? undefined);
     }
     emit('close');
   } catch (err: any) {
     error.value = err?.message ?? 'Something went wrong. Please try again.';
+    resetCaptcha();
   } finally {
     loading.value = false;
   }
@@ -91,6 +106,18 @@ async function handleSubmit() {
                 :autocomplete="isRegister ? 'new-password' : 'current-password'"
                 :disabled="loading"
                 required
+              />
+            </div>
+
+            <div v-if="hcaptchaSiteKey" class="auth-modal__field auth-modal__field--captcha">
+              <label class="auth-modal__label">Verification</label>
+              <HCaptchaWidget
+                :key="captchaKey"
+                :site-key="hcaptchaSiteKey"
+                theme="dark"
+                @verified="captchaToken = $event"
+                @expired="captchaToken = null"
+                @error="error = $event"
               />
             </div>
 

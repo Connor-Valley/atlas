@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import SiteHeader from '../components/SiteHeader.vue';
 import { useAuth } from '../composables/useAuth';
@@ -49,10 +49,20 @@ async function loadCard(c: SavedComparison) {
   };
 }
 
-onMounted(async () => {
-  await fetchComparisons();
-  savedComparisons.value.forEach(loadCard);
-});
+watch(
+  () => user.value?.id,
+  async (userId) => {
+    if (!userId) {
+      cardData.value = {};
+      return;
+    }
+
+    await fetchComparisons();
+    cardData.value = {};
+    savedComparisons.value.forEach(loadCard);
+  },
+  { immediate: true },
+);
 
 function onMouseMove(e: MouseEvent, el: HTMLElement) {
   const rect = el.getBoundingClientRect();

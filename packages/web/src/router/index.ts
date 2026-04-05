@@ -4,6 +4,7 @@ import Housing from '../views/Housing.vue';
 import Favorites from '../views/Favorites.vue';
 import Compare from '../views/Compare.vue';
 import SavedComparisons from '../views/SavedComparisons.vue';
+import Profile from '../views/Profile.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -45,6 +46,11 @@ const router = createRouter({
       path: '/saved-comparisons',
       name: 'saved-comparisons',
       component: SavedComparisons
+    },
+    {
+      path: '/profile',
+      name: 'profile',
+      component: Profile
     }
   ]
 });

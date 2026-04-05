@@ -1334,6 +1334,20 @@ body {
   padding: 10px 12px 12px;
 }
 
+.user-menu__header-btn {
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.user-menu__header-btn:hover {
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg-card-subtle));
+}
+
 .user-menu__header-avatar {
   width: 34px;
   height: 34px;

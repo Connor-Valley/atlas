@@ -46,6 +46,16 @@ function toggleMenu() {
   }
 }
 
+function closeMenu() {
+  userMenuOpen.value = false;
+  document.removeEventListener('click', handleClickOutside, { capture: true });
+}
+
+function navigateTo(routeName: 'profile' | 'favorites' | 'saved-comparisons') {
+  closeMenu();
+  router.push({ name: routeName });
+}
+
 function handleLogoClick() {
   emit('logo-click');
   if (!emit) router.push({ name: 'home' });
@@ -85,25 +95,25 @@ function handleLogoClick() {
           <span class="user-menu__name">{{ displayName() ?? 'Account' }}</span>
           <span class="user-menu__avatar">{{ (displayName() ?? 'A')[0].toUpperCase() }}</span>
         </button>
-        <div v-if="userMenuOpen" class="user-menu__dropdown" @click="userMenuOpen = false; document.removeEventListener('click', handleClickOutside, { capture: true })">
-          <div class="user-menu__header">
+        <div v-if="userMenuOpen" class="user-menu__dropdown">
+          <button class="user-menu__header user-menu__header-btn" @click="navigateTo('profile')">
             <span class="user-menu__header-avatar">{{ (displayName() ?? 'A')[0].toUpperCase() }}</span>
             <div class="user-menu__header-info">
               <span class="user-menu__header-name">{{ displayName() ?? 'Account' }}</span>
               <span class="user-menu__header-email">{{ user.email }}</span>
             </div>
-          </div>
+          </button>
           <div class="user-menu__divider"></div>
-          <button class="user-menu__item" @click="router.push({ name: 'favorites' })">
+          <button class="user-menu__item" @click="navigateTo('favorites')">
             <span class="mdi mdi-star-outline user-menu__item-icon"></span>
             Favorites
           </button>
-          <button class="user-menu__item" @click="router.push({ name: 'saved-comparisons' })">
+          <button class="user-menu__item" @click="navigateTo('saved-comparisons')">
             <span class="mdi mdi-bookmark-multiple-outline user-menu__item-icon"></span>
             Saved Comparisons
           </button>
           <div class="user-menu__divider"></div>
-          <button class="user-menu__item user-menu__item--danger" @click="signOut">
+          <button class="user-menu__item user-menu__item--danger" @click="closeMenu(); signOut()">
             <span class="mdi mdi-logout user-menu__item-icon"></span>
             Sign out
           </button>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useFavorites } from '../composables/useFavorites';
 import { useAuth } from '../composables/useAuth';
@@ -102,10 +102,20 @@ async function loadCard(city: string, state: string) {
   };
 }
 
-onMounted(async () => {
-  await fetchFavorites();
-  favorites.value.forEach(f => loadCard(f.city, f.state));
-});
+watch(
+  () => user.value?.id,
+  async (userId) => {
+    if (!userId) {
+      cardData.value = {};
+      return;
+    }
+
+    await fetchFavorites();
+    cardData.value = {};
+    favorites.value.forEach((f) => loadCard(f.city, f.state));
+  },
+  { immediate: true },
+);
 
 function cardKey(city: string, state: string) {
   return `${state}:${city}`;
