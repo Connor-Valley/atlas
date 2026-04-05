@@ -9,6 +9,7 @@ import AuthModal from './AuthModal.vue';
 const props = defineProps<{
   showSearch?: boolean;
   showThemeToggle?: boolean;
+  themeTogglePlacement?: 'before-actions' | 'after-actions';
   initialCity?: string;
   initialState?: string;
 }>();
@@ -88,8 +89,9 @@ function handleLogoClick() {
     <div v-else class="site-header__search-spacer"></div>
 
     <div class="site-header__controls">
-      <ThemeToggle v-if="showThemeToggle" />
+      <ThemeToggle v-if="showThemeToggle && (themeTogglePlacement ?? 'before-actions') === 'before-actions'" />
       <slot name="actions" />
+      <ThemeToggle v-if="showThemeToggle && themeTogglePlacement === 'after-actions'" />
       <div v-if="user" ref="userMenuRef" class="user-menu">
         <button class="user-menu__btn" @click="toggleMenu">
           <span class="user-menu__name">{{ displayName() ?? 'Account' }}</span>

@@ -384,7 +384,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="container compare-view">
-    <SiteHeader :show-theme-toggle="true" @logo-click="resetToHome">
+    <SiteHeader :show-theme-toggle="true" theme-toggle-placement="after-actions" @logo-click="resetToHome">
       <template #leading>
         <button class="breadcrumb compare-view__back" @click="goBack">
           <span class="breadcrumb__arr breadcrumb__arr--1 mdi mdi-arrow-left"></span>
@@ -473,7 +473,7 @@ onBeforeUnmount(() => {
         tone="a"
         :initial-city="cityA"
         :initial-state="stateA"
-        button-label="Add"
+        :button-label="cityA && stateA ? 'Update' : 'Add'"
         @search="updateCityA"
       />
       <CompareCitySearch
@@ -481,7 +481,7 @@ onBeforeUnmount(() => {
         tone="b"
         :initial-city="cityB"
         :initial-state="stateB"
-        button-label="Add"
+        :button-label="cityB && stateB ? 'Update' : 'Add'"
         @search="updateCityB"
       />
     </section>

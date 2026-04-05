@@ -4,16 +4,11 @@ const { isDark, toggle } = useTheme();
 </script>
 
 <template>
-  <button
-    class="theme-toggle"
-    :class="{ 'theme-toggle--dark': isDark }"
-    @click="toggle"
+  <label
+    class="theme-toggle switch"
     :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
   >
-    <span class="theme-toggle__icon theme-toggle__icon--sun mdi mdi-weather-sunny"></span>
-    <span class="theme-toggle__track">
-      <span class="theme-toggle__thumb" />
-    </span>
-    <span class="theme-toggle__icon theme-toggle__icon--moon mdi mdi-weather-night"></span>
-  </button>
+    <input :checked="isDark" type="checkbox" @change="toggle">
+    <span class="slider"></span>
+  </label>
 </template>

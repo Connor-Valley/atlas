@@ -9,7 +9,6 @@ import IncomeSection from "../components/IncomeSection.vue";
 import IncomeExpandedView from "../components/IncomeExpandedView.vue";
 import AffordabilitySection from "../components/AffordabilitySection.vue";
 import AffordabilityExpandedView from "../components/AffordabilityExpandedView.vue";
-import ThemeToggle from "../components/ThemeToggle.vue";
 import AuthModal from "../components/AuthModal.vue";
 import SiteHeader from "../components/SiteHeader.vue";
 import { useAuth } from "../composables/useAuth";
@@ -29,6 +28,7 @@ const { user, displayName, signOut } = useAuth();
 const showAuthModal  = ref(false);
 const authModalMode  = ref<'login' | 'register'>('register');
 const userMenuOpen   = ref(false);
+const userMenuRef = ref<HTMLElement | null>(null);
 const cityShareMenuRef = ref<HTMLElement | null>(null);
 const cityShareMenuOpen = ref(false);
 const cityShareCopied = ref(false);
@@ -213,14 +213,39 @@ function onKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape' && expandedPhase.value === 'expanded') closeExpandedSection();
 }
 
+function handleUserMenuClickOutside(event: MouseEvent) {
+  if (!userMenuRef.value?.contains(event.target as Node)) {
+    userMenuOpen.value = false;
+  }
+}
+
 function handleCityShareClickOutside(event: MouseEvent) {
   if (!cityShareMenuRef.value?.contains(event.target as Node)) {
     cityShareMenuOpen.value = false;
   }
 }
 
+function toggleUserMenu() {
+  userMenuOpen.value = !userMenuOpen.value;
+}
+
+function closeUserMenu() {
+  userMenuOpen.value = false;
+}
+
+function navigateToAccountPage(routeName: 'profile' | 'favorites' | 'saved-comparisons') {
+  closeUserMenu();
+  router.push({ name: routeName });
+}
+
+async function signOutFromLanding() {
+  closeUserMenu();
+  await signOut();
+}
+
 onMounted(() => {
   window.addEventListener('keydown', onKeydown);
+  document.addEventListener('click', handleUserMenuClickOutside, { capture: true });
   document.addEventListener('click', handleCityShareClickOutside, { capture: true });
 
   if (props.state && props.city) {
@@ -244,6 +269,7 @@ watch(showLanding, (isLandingVisible) => {
 onUnmounted(() => {
   if (typeTimer) clearTimeout(typeTimer);
   if (cityShareCopiedTimeout) clearTimeout(cityShareCopiedTimeout);
+  document.removeEventListener('click', handleUserMenuClickOutside, { capture: true });
   document.removeEventListener('click', handleCityShareClickOutside, { capture: true });
   window.removeEventListener('keydown', onKeydown);
 });
@@ -459,7 +485,7 @@ function getPanelElement(section: ExpandableSection) {
 
 function getDashboardEnterElements() {
   return [
-    dashboardStage.value?.querySelector(".site-logo-wrap") as HTMLElement | null,
+    dashboardStage.value?.querySelector(".site-header") as HTMLElement | null,
     scorePills.value,
     dashboardShell.value,
     cityNotFoundPanel.value,
@@ -468,6 +494,10 @@ function getDashboardEnterElements() {
 
 function getSearchBarElement(container: HTMLElement | null) {
   return container?.querySelector(".search-bar") as HTMLElement | null;
+}
+
+function resetFinishedAnimations(animations: Animation[]) {
+  animations.forEach((animation) => animation.cancel());
 }
 
 async function animateLandingToDashboard() {
@@ -592,6 +622,7 @@ async function animateLandingToDashboard() {
     ...dashboardAnimations.map((animation) => animation.finished),
   ]);
 
+  resetFinishedAnimations([ghostAnimation, ...landingAnimations, ...dashboardAnimations]);
   ghost.remove();
   source.style.opacity = "";
   target.style.opacity = "";
@@ -634,7 +665,7 @@ async function animateDashboardToLanding() {
   target.style.opacity = "0";
 
   const dashboardElements = [
-    dashboardStage.value?.querySelector(".site-logo-wrap") as HTMLElement | null,
+    dashboardStage.value?.querySelector(".site-header") as HTMLElement | null,
     scorePills.value,
     dashboardShell.value,
     cityNotFoundPanel.value,
@@ -728,6 +759,7 @@ async function animateDashboardToLanding() {
     ...landingAnimations.map((animation) => animation.finished),
   ]);
 
+  resetFinishedAnimations([ghostAnimation, ...dashboardAnimations, ...landingAnimations]);
   ghost.remove();
   source.style.opacity = "";
   target.style.opacity = "";
@@ -884,6 +916,42 @@ async function closeExpandedSection() {
     <!-- Dot grid (drifting layer) -->
     <div ref="heroDots" class="hero-dots"></div>
 
+    <div v-if="user" class="hero-landing__account">
+      <div ref="userMenuRef" class="user-menu hero-auth__user-menu">
+        <button
+          class="user-menu__btn hero-auth__menu-btn"
+          :class="{ 'hero-auth__menu-btn--open': userMenuOpen }"
+          @click.stop="toggleUserMenu"
+        >
+          <span v-if="userMenuOpen" class="user-menu__name hero-auth__menu-name">{{ displayName() ?? 'Account' }}</span>
+          <span class="user-menu__avatar">{{ (displayName() ?? 'A')[0].toUpperCase() }}</span>
+        </button>
+        <div v-if="userMenuOpen" class="user-menu__dropdown" @click.stop>
+          <button class="user-menu__header user-menu__header-btn" @click="navigateToAccountPage('profile')">
+            <span class="user-menu__header-avatar">{{ (displayName() ?? 'A')[0].toUpperCase() }}</span>
+            <div class="user-menu__header-info">
+              <span class="user-menu__header-name">{{ displayName() ?? 'Account' }}</span>
+              <span class="user-menu__header-email">{{ user.email }}</span>
+            </div>
+          </button>
+          <div class="user-menu__divider"></div>
+          <button class="user-menu__item" @click="navigateToAccountPage('favorites')">
+            <span class="mdi mdi-star-outline user-menu__item-icon"></span>
+            Favorites
+          </button>
+          <button class="user-menu__item" @click="navigateToAccountPage('saved-comparisons')">
+            <span class="mdi mdi-bookmark-multiple-outline user-menu__item-icon"></span>
+            Saved Comparisons
+          </button>
+          <div class="user-menu__divider"></div>
+          <button class="user-menu__item user-menu__item--danger" @click="signOutFromLanding">
+            <span class="mdi mdi-logout user-menu__item-icon"></span>
+            Sign out
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Floating city chips -->
     <div
       v-for="(slot, i) in chipSlots"
@@ -929,15 +997,8 @@ async function closeExpandedSection() {
           <button class="hero-auth__login-btn" @click="openAuth('login')">Sign in</button>
         </span>
       </div>
-      <div v-else class="hero-auth">
-        <span class="hero-auth__welcome">Welcome back, {{ displayName() ?? 'there' }}</span>
-        <div class="hero-auth__actions">
-          <button class="hero-auth__login-btn" @click="router.push({ name: 'favorites' })">
-            <span class="mdi mdi-star-outline"></span> My Favorites
-          </button>
-          <span class="hero-auth__sep">·</span>
-          <button class="hero-auth__login-btn" @click="signOut">Sign out</button>
-        </div>
+      <div v-else class="hero-auth hero-auth--welcome">
+        <span class="hero-auth__welcome">Welcome back, {{ displayName() ?? 'there' }}!</span>
       </div>
     </div>
   </div>
