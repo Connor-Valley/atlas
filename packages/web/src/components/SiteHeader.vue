@@ -54,10 +54,19 @@ function handleLogoClick() {
 
 <template>
   <header class="site-header">
-    <span class="site-logo-wrap" @click="handleLogoClick">
-      <span class="site-logo">Atlas</span>
-      <span class="site-logo-accent" aria-hidden="true"></span>
-    </span>
+    <div v-if="$slots.leading" class="site-header__leading">
+      <slot name="leading" />
+    </div>
+
+    <div class="site-header__identity">
+      <span class="site-logo-wrap" @click="handleLogoClick">
+        <span class="site-logo">Atlas</span>
+        <span class="site-logo-accent" aria-hidden="true"></span>
+      </span>
+      <div v-if="$slots.title" class="site-header__title">
+        <slot name="title" />
+      </div>
+    </div>
 
     <div v-if="showSearch" class="site-header__search">
       <CitySearch
@@ -108,5 +117,21 @@ function handleLogoClick() {
 <style scoped>
 .site-header__search-spacer {
   flex: 1;
+}
+
+.site-header__identity {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+}
+
+.site-header__leading {
+  display: flex;
+  align-items: center;
+}
+
+.site-header__title {
+  min-width: 0;
 }
 </style>

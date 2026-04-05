@@ -295,6 +295,18 @@ function resetSearch() {
   clearSearchState();
 }
 
+function openCompareView() {
+  if (!state.value || !city.value) return;
+
+  router.push({
+    name: "compare",
+    params: {
+      stateA: state.value,
+      cityA: city.value,
+    },
+  });
+}
+
 function getPanelElement(section: ExpandableSection) {
   if (section === "economic") return incomePanel.value;
   if (section === "housing") return housingPanel.value;
@@ -837,6 +849,14 @@ async function closeExpandedSection() {
           <span class="score-pill__value">{{ scores.people !== null ? scores.people : '—' }}</span>
         </div>
       </div>
+      <button
+        v-if="!sectionExpanded"
+        class="score-pills__compare-btn"
+        @click="openCompareView"
+      >
+        <span class="mdi mdi-compare-horizontal score-pills__compare-icon"></span>
+        Compare City
+      </button>
       <span v-if="sectionExpanded" class="housing-exp__subtitle score-pills__page-title">{{
         expandedSection === 'economic' ? 'Income Details' :
         expandedSection === 'housing' ? 'Housing Details' :
