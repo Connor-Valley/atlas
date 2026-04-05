@@ -141,7 +141,6 @@ function buildCenterLabel(
   formatter: (value: number | null | undefined) => string,
 ) {
   if (aValue == null || bValue == null) return "vs";
-  if (winner === "tie") return "Nearly tied";
 
   const delta = Math.abs(aValue - bValue);
   if (label === "Poverty rate" || label === "Rent / income") {
@@ -294,7 +293,7 @@ export function buildSections(cityA: ComparedCity, cityB: ComparedCity): Compare
         winner: statusWinner,
         direction: "context" as MetricDirection,
         style: "text" as MetricStyle,
-        centerLabel: statusWinner === "tie" ? "Nearly tied" : tierDiff === 1 ? "1 tier" : `${tierDiff} tiers`,
+        centerLabel: tierDiff === 1 ? "1 tier" : `${tierDiff} tiers`,
       };
     })(),
   ];

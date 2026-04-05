@@ -95,7 +95,7 @@ function diffBadgeClass(winner: "a" | "b" | "tie" | "difference") {
               <span class="mdi compare-section__diff-arrow" :class="metric.direction === 'lower' ? 'mdi-arrow-down' : 'mdi-arrow-up'"></span>
               {{ metric.centerLabel }}
             </span>
-            <span v-else-if="metric.winner === 'tie'" class="compare-section__diff compare-section__diff--tie">≈ tied</span>
+            <span v-else-if="metric.winner === 'tie'" class="compare-section__diff compare-section__diff--tie">{{ metric.centerLabel }}</span>
             <span v-else class="compare-section__diff compare-section__diff--context">{{ metric.centerLabel }}</span>
           </div>
           <div class="compare-section__metric-side compare-section__metric-side--b">
@@ -397,12 +397,10 @@ function diffBadgeClass(winner: "a" | "b" | "tie" | "difference") {
 }
 
 .compare-section__diff--tie {
-  color: var(--text-muted);
-  background: transparent;
-  border-color: transparent;
-  font-weight: 500;
-  letter-spacing: 0;
-  font-size: 0.75rem;
+  background: color-mix(in srgb, var(--text-secondary) 10%, var(--bg-card));
+  color: var(--text-secondary);
+  border-color: color-mix(in srgb, var(--text-secondary) 20%, var(--border-card));
+  font-weight: 700;
 }
 
 .compare-section__diff-arrow {
