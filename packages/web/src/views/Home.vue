@@ -233,7 +233,7 @@ function closeUserMenu() {
   userMenuOpen.value = false;
 }
 
-function navigateToAccountPage(routeName: 'profile' | 'favorites' | 'saved-comparisons') {
+function navigateToAccountPage(routeName: 'profile' | 'favorites' | 'saved-comparisons' | 'friends') {
   closeUserMenu();
   router.push({ name: routeName });
 }
@@ -935,6 +935,10 @@ async function closeExpandedSection() {
             </div>
           </button>
           <div class="user-menu__divider"></div>
+          <button class="user-menu__item" @click="navigateToAccountPage('friends')">
+            <span class="mdi mdi-account-group-outline user-menu__item-icon"></span>
+            Friends
+          </button>
           <button class="user-menu__item" @click="navigateToAccountPage('favorites')">
             <span class="mdi mdi-star-outline user-menu__item-icon"></span>
             Favorites

@@ -1,17 +1,20 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import SiteHeader from '../components/SiteHeader.vue';
 import { useAuth } from '../composables/useAuth';
 import { useFavorites } from '../composables/useFavorites';
 import { useComparisons } from '../composables/useComparisons';
+import { useFriends } from '../composables/useFriends';
+import { PROFILE_VISIBILITY_OPTIONS, getProfileVisibilityMeta, type ProfileVisibility } from '../lib/profilePrivacy';
 
 const router = useRouter();
-const { user, displayName, signOut, reauthenticate, updateDisplayName, updatePassword } = useAuth();
+const { user, profile, displayName, signOut, reauthenticate, updateDisplayName, updatePassword, updateUsername, updateProfileVisibility, checkUsernameAvailable } = useAuth();
 const { favorites, fetchFavorites } = useFavorites();
 const { savedComparisons, fetchComparisons } = useComparisons();
+const { friends, fetchAll: fetchFriends } = useFriends();
 
-type SettingsActionId = 'name' | 'password';
+type SettingsActionId = 'name' | 'password' | 'username';
 
 const userInitial = computed(() => (displayName() ?? user.value?.email ?? 'A')[0].toUpperCase());
 const memberSince = computed(() => {
@@ -24,7 +27,7 @@ const memberSince = computed(() => {
 });
 
 const recentFavorites = computed(() => favorites.value.slice(0, 3));
-const recentComparisons = computed(() => savedComparisons.value.slice(0, 3));
+const recentComparisons = computed(() => savedComparisons.value.slice(0, 5));
 
 const settingsActions: Array<{
   id: SettingsActionId;
@@ -39,6 +42,12 @@ const settingsActions: Array<{
     icon: 'mdi-account-edit-outline',
   },
   {
+    id: 'username',
+    title: 'Edit username',
+    subtitle: 'Change your @username used to find friends',
+    icon: 'mdi-at',
+  },
+  {
     id: 'password',
     title: 'Change password',
     subtitle: 'Set a new password for future sign-ins',
@@ -48,6 +57,7 @@ const settingsActions: Array<{
 
 const activeSettingsAction = ref<SettingsActionId | null>(null);
 const nameInput = ref('');
+const usernameInput = ref('');
 const passwordInput = ref('');
 const passwordConfirm = ref('');
 const passwordNonce = ref('');
@@ -55,6 +65,11 @@ const passwordCodeSent = ref(false);
 const settingsError = ref<string | null>(null);
 const settingsSuccess = ref<string | null>(null);
 const settingsLoading = ref(false);
+const visibilityDropdownOpen = ref(false);
+const visibilityLoading = ref(false);
+const visibilityControl = ref<HTMLElement | null>(null);
+const visibilityMeta = computed(() => getProfileVisibilityMeta(profile.value?.profile_visibility ?? 'public'));
+
 
 watch(
   () => user.value?.user_metadata?.full_name,
@@ -65,10 +80,26 @@ watch(
 );
 
 watch(
+  () => profile.value?.username,
+  (u) => {
+    usernameInput.value = u ?? '';
+  },
+  { immediate: true },
+);
+
+watch(
+  () => profile.value?.profile_visibility,
+  () => {
+    visibilityDropdownOpen.value = false;
+  },
+  { immediate: true },
+);
+
+watch(
   () => user.value?.id,
   async (userId) => {
     if (!userId) return;
-    await Promise.all([fetchFavorites(), fetchComparisons()]);
+    await Promise.all([fetchFavorites(), fetchComparisons(), fetchFriends()]);
   },
   { immediate: true },
 );
@@ -90,6 +121,8 @@ function selectSettingsAction(actionId: SettingsActionId) {
   passwordConfirm.value = '';
   passwordNonce.value = '';
   passwordCodeSent.value = false;
+  // Pre-fill username from current profile
+  if (actionId === 'username') usernameInput.value = profile.value?.username ?? '';
 }
 
 function closeSettingsModal() {
@@ -100,6 +133,14 @@ function closeSettingsModal() {
   passwordConfirm.value = '';
   passwordNonce.value = '';
   passwordCodeSent.value = false;
+}
+
+function toggleVisibilityDropdown() {
+  visibilityDropdownOpen.value = !visibilityDropdownOpen.value;
+}
+
+function closeVisibilityDropdown() {
+  visibilityDropdownOpen.value = false;
 }
 
 async function handleNameUpdate() {
@@ -161,6 +202,31 @@ async function handlePasswordUpdate() {
   }
 }
 
+async function handleUsernameUpdate() {
+  settingsError.value = null;
+  settingsSuccess.value = null;
+
+  const cleaned = usernameInput.value.toLowerCase().trim();
+  if (!cleaned) { settingsError.value = 'Please enter a username.'; return; }
+  if (!/^[a-z0-9_]{3,20}$/.test(cleaned)) {
+    settingsError.value = 'Username must be 3–20 characters: letters, numbers, and underscores only.';
+    return;
+  }
+  if (cleaned === profile.value?.username) { closeSettingsModal(); return; }
+
+  settingsLoading.value = true;
+  try {
+    const available = await checkUsernameAvailable(cleaned);
+    if (!available) { settingsError.value = 'That username is already taken.'; return; }
+    await updateUsername(cleaned);
+    closeSettingsModal();
+  } catch (err: any) {
+    settingsError.value = err?.message ?? 'Unable to update your username.';
+  } finally {
+    settingsLoading.value = false;
+  }
+}
+
 async function sendPasswordVerificationCode() {
   settingsError.value = null;
   settingsSuccess.value = null;
@@ -175,6 +241,36 @@ async function sendPasswordVerificationCode() {
     settingsLoading.value = false;
   }
 }
+
+async function selectVisibility(profileVisibility: ProfileVisibility) {
+  if (visibilityLoading.value || profile.value?.profile_visibility === profileVisibility) {
+    visibilityDropdownOpen.value = false;
+    return;
+  }
+  visibilityLoading.value = true;
+  try {
+    await updateProfileVisibility(profileVisibility);
+    visibilityDropdownOpen.value = false;
+  } finally {
+    visibilityLoading.value = false;
+  }
+}
+
+function handleDocumentClick(event: MouseEvent) {
+  if (!visibilityDropdownOpen.value) return;
+  const target = event.target as Node | null;
+  if (visibilityControl.value && target && !visibilityControl.value.contains(target)) {
+    closeVisibilityDropdown();
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleDocumentClick);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleDocumentClick);
+});
 </script>
 
 <template>
@@ -208,26 +304,97 @@ async function sendPasswordVerificationCode() {
 
     <div v-else class="profile-layout">
       <section class="profile-card profile-card--hero">
-        <div class="profile-card__identity">
-          <div class="profile-card__avatar">{{ userInitial }}</div>
-          <div class="profile-card__identity-copy">
-            <p class="profile-card__eyebrow">Atlas account</p>
-            <h2 class="profile-card__name">{{ displayName() ?? 'Account' }}</h2>
-            <p class="profile-card__email">{{ user.email }}</p>
+        <div class="profile-card__hero-top">
+          <div class="profile-card__identity">
+            <div class="profile-card__avatar">{{ userInitial }}</div>
+            <div class="profile-card__identity-copy">
+              <p class="profile-card__eyebrow">Atlas account</p>
+              <div class="profile-card__name-row">
+                <h2 class="profile-card__name">{{ displayName() ?? 'Account' }}</h2>
+                <span v-if="profile" class="profile-card__username">@{{ profile.username }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="profile-hero-actions">
+            <div ref="visibilityControl" class="profile-visibility-control" @keydown.esc="closeVisibilityDropdown">
+              <button
+                class="profile-visibility-btn"
+                :aria-expanded="visibilityDropdownOpen"
+                aria-haspopup="true"
+                @click="toggleVisibilityDropdown"
+              >
+                <span class="mdi" :class="visibilityMeta.icon"></span>
+                <span class="profile-visibility-btn__copy">
+                  <span class="profile-visibility-btn__label-row">
+                    <span class="profile-visibility-btn__label">Visibility</span>
+                  </span>
+                  <span class="profile-visibility-btn__value">{{ visibilityMeta.label }}</span>
+                </span>
+                <span class="mdi" :class="visibilityDropdownOpen ? 'mdi-chevron-up' : 'mdi-chevron-down'"></span>
+              </button>
+
+              <div v-if="visibilityDropdownOpen" class="profile-visibility-menu">
+                <button
+                  v-for="option in PROFILE_VISIBILITY_OPTIONS"
+                  :key="option.value"
+                  type="button"
+                  class="profile-visibility-option"
+                  :class="{ 'profile-visibility-option--active': profile?.profile_visibility === option.value }"
+                  :disabled="visibilityLoading"
+                  @click="selectVisibility(option.value)"
+                >
+                  <span class="mdi profile-visibility-option__icon" :class="option.icon"></span>
+                  <span class="profile-visibility-option__copy">
+                    <span class="profile-visibility-option__title-row">
+                      <span class="profile-visibility-option__title">{{ option.label }}</span>
+                      <span
+                        class="profile-visibility-help profile-visibility-help--option"
+                        tabindex="0"
+                        :data-tooltip="option.description"
+                        @click.stop
+                      >
+                        <span class="mdi mdi-information-outline"></span>
+                      </span>
+                    </span>
+                  </span>
+                  <span
+                    class="mdi profile-visibility-option__check"
+                    :class="profile?.profile_visibility === option.value ? 'mdi-check-circle' : 'mdi-circle-outline'"
+                  ></span>
+                </button>
+              </div>
+            </div>
+
+            <button class="profile-friends-btn" @click="router.push({ name: 'friends' })">
+              <span class="mdi mdi-account-group-outline"></span>
+              <span>Friends</span>
+              <span v-if="friends.length" class="profile-friends-btn__count">{{ friends.length }}</span>
+              <span class="mdi mdi-arrow-right"></span>
+            </button>
           </div>
         </div>
 
         <div class="profile-stats">
           <div class="profile-stat">
-            <span class="profile-stat__label">Favorites</span>
+            <div class="profile-stat__label-row">
+              <span class="mdi mdi-star-outline profile-stat__icon"></span>
+              <span class="profile-stat__label">Favorites</span>
+            </div>
             <span class="profile-stat__value">{{ favorites.length }}</span>
           </div>
           <div class="profile-stat">
-            <span class="profile-stat__label">Saved comparisons</span>
+            <div class="profile-stat__label-row">
+              <span class="mdi mdi-bookmark-multiple-outline profile-stat__icon"></span>
+              <span class="profile-stat__label">Saved comparisons</span>
+            </div>
             <span class="profile-stat__value">{{ savedComparisons.length }}</span>
           </div>
           <div class="profile-stat">
-            <span class="profile-stat__label">Member since</span>
+            <div class="profile-stat__label-row">
+              <span class="mdi mdi-calendar-outline profile-stat__icon"></span>
+              <span class="profile-stat__label">Member since</span>
+            </div>
             <span class="profile-stat__value profile-stat__value--small">{{ memberSince ?? 'Recently' }}</span>
           </div>
         </div>
@@ -266,7 +433,7 @@ async function sendPasswordVerificationCode() {
         </div>
       </section>
 
-      <section class="profile-card">
+      <section class="profile-card profile-card--stretch">
         <div class="profile-card__header">
           <div>
             <p class="profile-card__eyebrow">Recent places</p>
@@ -274,21 +441,30 @@ async function sendPasswordVerificationCode() {
           </div>
         </div>
 
-        <div v-if="recentFavorites.length" class="profile-list">
-          <button
-            v-for="favorite in recentFavorites"
-            :key="favorite.id"
-            class="profile-list__item"
-            @click="router.push({ name: 'city', params: { city: favorite.city, state: favorite.state } })"
-          >
-            <span class="profile-list__title">{{ favorite.city_name }}</span>
-            <span class="profile-list__meta">{{ favorite.state.toUpperCase() }}</span>
+        <div class="profile-card__stretch">
+          <div v-if="recentFavorites.length" class="profile-list">
+            <button
+              v-for="favorite in recentFavorites"
+              :key="favorite.id"
+              class="profile-list__item"
+              @click="router.push({ name: 'city', params: { city: favorite.city, state: favorite.state } })"
+            >
+              <span class="profile-list__title">{{ favorite.city_name }}</span>
+              <span class="profile-list__meta">{{ favorite.state.toUpperCase() }}</span>
+            </button>
+          </div>
+          <p v-else class="profile-card__empty">No favorite cities yet.</p>
+        </div>
+
+        <div class="profile-card__new-btn-row">
+          <button class="profile-card__new-btn" @click="router.push({ name: 'home' })">
+            <span class="mdi mdi-magnify"></span>
+            Search cities
           </button>
         </div>
-        <p v-else class="profile-card__empty">No favorite cities yet.</p>
       </section>
 
-      <section class="profile-card">
+      <section class="profile-card profile-card--stretch">
         <div class="profile-card__header">
           <div>
             <p class="profile-card__eyebrow">Recent comparisons</p>
@@ -296,18 +472,27 @@ async function sendPasswordVerificationCode() {
           </div>
         </div>
 
-        <div v-if="recentComparisons.length" class="profile-list">
-          <button
-            v-for="comparison in recentComparisons"
-            :key="comparison.id"
-            class="profile-list__item"
-            @click="router.push({ name: 'compare', params: { stateA: comparison.state_a, cityA: comparison.city_a, stateB: comparison.state_b, cityB: comparison.city_b } })"
-          >
-            <span class="profile-list__title">{{ comparison.city_name_a }} vs {{ comparison.city_name_b }}</span>
-            <span class="profile-list__meta">{{ comparison.state_a.toUpperCase() }} / {{ comparison.state_b.toUpperCase() }}</span>
+        <div class="profile-card__stretch">
+          <div v-if="recentComparisons.length" class="profile-list">
+            <button
+              v-for="comparison in recentComparisons"
+              :key="comparison.id"
+              class="profile-list__item"
+              @click="router.push({ name: 'compare', params: { stateA: comparison.state_a, cityA: comparison.city_a, stateB: comparison.state_b, cityB: comparison.city_b } })"
+            >
+              <span class="profile-list__title">{{ comparison.city_name_a }} vs {{ comparison.city_name_b }}</span>
+              <span class="profile-list__meta">{{ comparison.state_a.toUpperCase() }} / {{ comparison.state_b.toUpperCase() }}</span>
+            </button>
+          </div>
+          <p v-else class="profile-card__empty">No saved comparisons yet.</p>
+        </div>
+
+        <div class="profile-card__new-btn-row">
+          <button class="profile-card__new-btn" @click="router.push({ name: 'home' })">
+            <span class="mdi mdi-plus"></span>
+            Compare cities
           </button>
         </div>
-        <p v-else class="profile-card__empty">No saved comparisons yet.</p>
       </section>
 
       <section class="profile-card">
@@ -342,9 +527,9 @@ async function sendPasswordVerificationCode() {
             <div class="auth-modal__header">
               <span class="auth-modal__title">
                 {{
-                  activeSettingsAction === 'name'
-                    ? 'Edit display name'
-                    : 'Change password'
+                  activeSettingsAction === 'name'     ? 'Edit display name' :
+                  activeSettingsAction === 'username'  ? 'Edit username' :
+                  'Change password'
                 }}
               </span>
               <button class="industry-modal__close" @click="closeSettingsModal">
@@ -353,7 +538,33 @@ async function sendPasswordVerificationCode() {
             </div>
 
             <form
-              v-if="activeSettingsAction === 'name'"
+              v-if="activeSettingsAction === 'username'"
+              class="auth-modal__form"
+              @submit.prevent="handleUsernameUpdate"
+            >
+              <div class="auth-modal__field">
+                <label class="auth-modal__label" for="profile-username">Username</label>
+                <input
+                  id="profile-username"
+                  v-model="usernameInput"
+                  class="auth-modal__input"
+                  type="text"
+                  placeholder="yourhandle"
+                  autocomplete="username"
+                  :disabled="settingsLoading"
+                />
+                <p class="auth-modal__hint">3–20 characters, lowercase letters, numbers, underscores</p>
+              </div>
+
+              <p v-if="settingsError" class="auth-modal__error">{{ settingsError }}</p>
+
+              <button class="auth-modal__submit-btn" type="submit" :disabled="settingsLoading">
+                {{ settingsLoading ? 'Saving…' : 'Save username' }}
+              </button>
+            </form>
+
+            <form
+              v-else-if="activeSettingsAction === 'name'"
               class="auth-modal__form"
               @submit.prevent="handleNameUpdate"
             >
@@ -538,13 +749,12 @@ async function sendPasswordVerificationCode() {
   display: flex;
   align-items: center;
   gap: 18px;
-  margin-bottom: 24px;
 }
 
 .profile-card__avatar {
   width: 76px;
   height: 76px;
-  border-radius: 24px;
+  border-radius: 50%;
   display: grid;
   place-items: center;
   background: var(--logo-gradient);
@@ -575,11 +785,112 @@ async function sendPasswordVerificationCode() {
   color: var(--text-primary);
 }
 
-.profile-card__email {
-  margin: 0;
-  font-size: 0.98rem;
-  color: var(--text-secondary);
+.profile-hero-actions {
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: nowrap;
+  margin-left: auto;
 }
+
+.profile-visibility-control {
+  position: relative;
+  min-width: 0;
+}
+
+.profile-visibility-btn,
+.profile-friends-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--bg-card-subtle) 84%, transparent);
+  padding: 10px 16px;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.profile-visibility-btn {
+  min-width: 176px;
+}
+
+.profile-friends-btn {
+  white-space: nowrap;
+}
+
+.profile-visibility-btn__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  flex: 1;
+}
+
+.profile-visibility-btn__label-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.profile-visibility-btn__label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.profile-visibility-btn__value {
+  color: var(--text-primary);
+}
+
+.profile-visibility-help {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  color: var(--text-muted);
+  outline: none;
+}
+
+.profile-visibility-help:hover,
+.profile-visibility-help:focus-visible {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.profile-visibility-help--option {
+  width: 20px;
+  height: 20px;
+}
+
+.profile-visibility-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 12;
+  width: min(340px, calc(100vw - 32px));
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border-card));
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-card) 96%, transparent), var(--bg-card)),
+    radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 10%, transparent), transparent 45%);
+  box-shadow: var(--card-shadow-md);
+  display: grid;
+  gap: 8px;
+}
+
 
 .profile-stats {
   display: grid;
@@ -595,6 +906,18 @@ async function sendPasswordVerificationCode() {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.profile-stat__label-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.profile-stat__icon {
+  font-size: 0.95rem;
+  color: var(--accent);
+  opacity: 0.75;
 }
 
 .profile-stat__label {
@@ -709,6 +1032,44 @@ async function sendPasswordVerificationCode() {
   color: var(--text-secondary);
 }
 
+.profile-card--stretch {
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-card__stretch {
+  flex: 1;
+}
+
+.profile-card__new-btn-row {
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.profile-card__new-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  border: 1px dashed var(--border-subtle);
+  border-radius: 14px;
+  background: transparent;
+  padding: 11px 16px;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.profile-card__new-btn:hover {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border-card));
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
 .profile-settings {
   display: grid;
   gap: 10px;
@@ -812,6 +1173,76 @@ async function sendPasswordVerificationCode() {
   cursor: default;
 }
 
+.profile-visibility-options {
+  display: grid;
+  gap: 10px;
+}
+
+.profile-visibility-option {
+  width: 100%;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--bg-card-subtle) 84%, transparent);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.profile-visibility-option:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--border-card));
+  box-shadow: var(--card-shadow-md);
+}
+
+.profile-visibility-option--active {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border-card));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent) inset;
+}
+
+.profile-visibility-option__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.profile-visibility-option__copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+  min-height: 40px;
+}
+
+.profile-visibility-option__title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transform: translateY(1px);
+}
+
+.profile-visibility-option__title {
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.profile-visibility-option__check {
+  color: var(--text-muted);
+  font-size: 1.05rem;
+  flex-shrink: 0;
+}
+
 .profile-settings-modal {
   width: min(100%, 520px);
 }
@@ -847,10 +1278,33 @@ async function sendPasswordVerificationCode() {
     flex-direction: column;
   }
 
+  .profile-visibility-control {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .profile-hero-actions {
+    width: 100%;
+    margin-left: 0;
+    flex-wrap: wrap;
+  }
+
+  .profile-visibility-btn,
+  .profile-friends-btn {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .profile-visibility-menu {
+    width: 100%;
+    right: auto;
+    left: 0;
+  }
+
   .profile-card__avatar {
     width: 64px;
     height: 64px;
-    border-radius: 20px;
+    border-radius: 50%;
     font-size: 1.4rem;
   }
 
@@ -859,4 +1313,51 @@ async function sendPasswordVerificationCode() {
     align-items: flex-start;
   }
 }
+
+/* ── Username in hero ───────────────────────────────────────── */
+.profile-card__name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.profile-card__name-row .profile-card__name {
+  margin: 0;
+}
+
+.profile-card__username {
+  font-size: 0.95rem;
+  color: var(--accent);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+/* ── Hero top row (identity + friends button) ───────────────── */
+.profile-card__hero-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.profile-friends-btn__count {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent);
+  border-radius: 20px;
+  padding: 1px 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.profile-visibility-btn:hover,
+.profile-friends-btn:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border-card));
+  color: var(--text-primary);
+}
+
 </style>

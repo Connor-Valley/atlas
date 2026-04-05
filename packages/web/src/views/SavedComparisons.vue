@@ -1,15 +1,70 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import SiteHeader from '../components/SiteHeader.vue';
 import { useAuth } from '../composables/useAuth';
+import { useFriends } from '../composables/useFriends';
 import { useComparisons, type SavedComparison } from '../composables/useComparisons';
 import { fetchCityPhoto } from '../lib/cityPhotos';
 import { fetchCity } from '../api/cities';
+import { supabase } from '../lib/supabase';
+import { canViewerAccessProfileContent, getProfileVisibilityNotice, type ProfileVisibility } from '../lib/profilePrivacy';
+
+const props = defineProps<{ username?: string }>();
 
 const router = useRouter();
 const { user } = useAuth();
+const { getFriendshipStatus } = useFriends();
 const { savedComparisons, fetchComparisons, removeComparison } = useComparisons();
+
+const isOwnPage = computed(() => !props.username);
+
+// ── Viewing another user's comparisons ────────────────────────
+const viewingName  = ref('');
+const viewingComps = ref<SavedComparison[]>([]);
+const viewingAccessDenied = ref(false);
+const viewingNotice = ref<{ title: string; description: string } | null>(null);
+
+async function fetchViewingComps() {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id, display_name, username, profile_visibility')
+    .eq('username', props.username!)
+    .maybeSingle();
+  if (!profile) {
+    viewingComps.value = [];
+    viewingAccessDenied.value = false;
+    viewingNotice.value = null;
+    return;
+  }
+  viewingName.value = profile.display_name || profile.username;
+  let isFriend = false;
+  if (user.value) {
+    const status = await getFriendshipStatus(profile.id);
+    isFriend = status.status === 'accepted';
+  }
+  const canView = canViewerAccessProfileContent(
+    profile.profile_visibility as ProfileVisibility,
+    user.value?.id,
+    profile.id,
+    isFriend,
+  );
+  viewingAccessDenied.value = !canView;
+  viewingNotice.value = canView ? null : getProfileVisibilityNotice(profile.profile_visibility as ProfileVisibility, !!user.value);
+  if (!canView) {
+    viewingComps.value = [];
+    return;
+  }
+  const { data } = await supabase
+    .from('saved_comparisons')
+    .select('id, city_a, state_a, city_name_a, city_b, state_b, city_name_b, user_id')
+    .eq('user_id', profile.id)
+    .order('created_at', { ascending: false });
+  viewingComps.value = (data ?? []) as SavedComparison[];
+}
+
+const displayComparisons = computed(() => isOwnPage.value ? savedComparisons.value : viewingComps.value);
+const pageTitle           = computed(() => isOwnPage.value ? 'Saved Comparisons' : `${viewingName.value}'s Comparisons`);
 
 interface CardData {
   photoA: string | null;
@@ -49,20 +104,20 @@ async function loadCard(c: SavedComparison) {
   };
 }
 
-watch(
-  () => user.value?.id,
-  async (userId) => {
-    if (!userId) {
-      cardData.value = {};
-      return;
-    }
-
+async function init() {
+  cardData.value = {};
+  if (isOwnPage.value) {
+    if (!user.value) return;
     await fetchComparisons();
-    cardData.value = {};
     savedComparisons.value.forEach(loadCard);
-  },
-  { immediate: true },
-);
+  } else {
+    await fetchViewingComps();
+    viewingComps.value.forEach(loadCard);
+  }
+}
+
+watch(() => user.value?.id, init, { immediate: true });
+watch(() => props.username, init);
 
 function onMouseMove(e: MouseEvent, el: HTMLElement) {
   const rect = el.getBoundingClientRect();
@@ -94,7 +149,7 @@ async function handleRemove(e: MouseEvent, c: SavedComparison) {
     <div class="cmp-page__heading">
       <h1 class="cmp-page__title">
         <span class="mdi mdi-bookmark-multiple cmp-page__title-icon"></span>
-        Saved Comparisons
+        {{ pageTitle }}
       </h1>
       <button class="breadcrumb" @click="router.back()">
         <span class="breadcrumb__arr breadcrumb__arr--1 mdi mdi-arrow-left"></span>
@@ -104,20 +159,26 @@ async function handleRemove(e: MouseEvent, c: SavedComparison) {
       </button>
     </div>
 
-    <div v-if="!user" class="cmp-empty">
+    <div v-if="isOwnPage && !user" class="cmp-empty">
       <span class="mdi mdi-account-lock-outline cmp-empty__icon"></span>
       <p class="cmp-empty__text">Sign in to see your saved comparisons</p>
     </div>
 
-    <div v-else-if="savedComparisons.length === 0" class="cmp-empty">
+    <div v-else-if="!isOwnPage && viewingAccessDenied" class="cmp-empty">
+      <span class="mdi mdi-lock-outline cmp-empty__icon"></span>
+      <p class="cmp-empty__text">{{ viewingNotice?.title }}</p>
+      <p class="cmp-empty__hint">{{ viewingNotice?.description }}</p>
+    </div>
+
+    <div v-else-if="displayComparisons.length === 0" class="cmp-empty">
       <span class="mdi mdi-bookmark-off-outline cmp-empty__icon"></span>
       <p class="cmp-empty__text">No saved comparisons yet</p>
-      <p class="cmp-empty__hint">Open a comparison and hit Save to keep it here.</p>
+      <p v-if="isOwnPage" class="cmp-empty__hint">Open a comparison and hit Save to keep it here.</p>
     </div>
 
     <div v-else class="cmp-grid">
       <div
-        v-for="c in savedComparisons"
+        v-for="c in displayComparisons"
         :key="cardKey(c)"
         class="cmp-card"
         @click="goToComparison(c)"
@@ -156,8 +217,9 @@ async function handleRemove(e: MouseEvent, c: SavedComparison) {
           </div>
         </div>
 
-        <!-- Remove button -->
+        <!-- Remove button (own page only) -->
         <button
+          v-if="isOwnPage"
           class="cmp-card__remove"
           aria-label="Remove comparison"
           @click="handleRemove($event, c)"

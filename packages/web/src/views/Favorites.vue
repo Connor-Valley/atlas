@@ -1,14 +1,70 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useFavorites } from '../composables/useFavorites';
 import { useAuth } from '../composables/useAuth';
+import { useFriends } from '../composables/useFriends';
 import { fetchCity } from '../api/cities';
 import SiteHeader from '../components/SiteHeader.vue';
+import { supabase } from '../lib/supabase';
+import { canViewerAccessProfileContent, getProfileVisibilityNotice, type ProfileVisibility } from '../lib/profilePrivacy';
+
+const props = defineProps<{ username?: string }>();
 
 const router = useRouter();
 const { user } = useAuth();
+const { getFriendshipStatus } = useFriends();
 const { favorites, fetchFavorites, removeFavorite } = useFavorites();
+
+const isOwnPage = computed(() => !props.username);
+
+// ── Viewing another user's favorites ──────────────────────────
+interface FavItem { id: string; city: string; state: string; city_name: string; }
+const viewingName     = ref('');
+const viewingFavs     = ref<FavItem[]>([]);
+const viewingAccessDenied = ref(false);
+const viewingNotice = ref<{ title: string; description: string } | null>(null);
+
+async function fetchViewingFavs() {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id, display_name, username, profile_visibility')
+    .eq('username', props.username!)
+    .maybeSingle();
+  if (!profile) {
+    viewingFavs.value = [];
+    viewingAccessDenied.value = false;
+    viewingNotice.value = null;
+    return;
+  }
+  viewingName.value = profile.display_name || profile.username;
+  let isFriend = false;
+  if (user.value) {
+    const status = await getFriendshipStatus(profile.id);
+    isFriend = status.status === 'accepted';
+  }
+  const canView = canViewerAccessProfileContent(
+    profile.profile_visibility as ProfileVisibility,
+    user.value?.id,
+    profile.id,
+    isFriend,
+  );
+  viewingAccessDenied.value = !canView;
+  viewingNotice.value = canView ? null : getProfileVisibilityNotice(profile.profile_visibility as ProfileVisibility, !!user.value);
+  if (!canView) {
+    viewingFavs.value = [];
+    return;
+  }
+  const { data } = await supabase
+    .from('favorites')
+    .select('id, city, state, city_name')
+    .eq('user_id', profile.id)
+    .order('created_at', { ascending: false });
+  viewingFavs.value = data ?? [];
+}
+
+const displayFavorites = computed(() => isOwnPage.value ? favorites.value : viewingFavs.value);
+const pageTitle        = computed(() => isOwnPage.value ? 'Favorites' : `${viewingName.value}'s Favorites`);
 
 interface CardData {
   population: number | null;
@@ -102,20 +158,20 @@ async function loadCard(city: string, state: string) {
   };
 }
 
-watch(
-  () => user.value?.id,
-  async (userId) => {
-    if (!userId) {
-      cardData.value = {};
-      return;
-    }
-
+async function init() {
+  cardData.value = {};
+  if (isOwnPage.value) {
+    if (!user.value) return;
     await fetchFavorites();
-    cardData.value = {};
     favorites.value.forEach((f) => loadCard(f.city, f.state));
-  },
-  { immediate: true },
-);
+  } else {
+    await fetchViewingFavs();
+    viewingFavs.value.forEach((f) => loadCard(f.city, f.state));
+  }
+}
+
+watch(() => user.value?.id, init, { immediate: true });
+watch(() => props.username, init);
 
 function cardKey(city: string, state: string) {
   return `${state}:${city}`;
@@ -173,7 +229,7 @@ function onMouseLeave(el: HTMLElement) {
     <div class="fav-page__heading">
       <h1 class="fav-page__title">
         <span class="mdi mdi-star fav-page__title-icon"></span>
-        Favorites
+        {{ pageTitle }}
       </h1>
       <button class="breadcrumb" @click="router.back()">
         <span class="breadcrumb__arr breadcrumb__arr--1 mdi mdi-arrow-left"></span>
@@ -183,22 +239,28 @@ function onMouseLeave(el: HTMLElement) {
       </button>
     </div>
 
-    <!-- Not signed in -->
-    <div v-if="!user" class="fav-empty">
+    <!-- Not signed in (own page only) -->
+    <div v-if="isOwnPage && !user" class="fav-empty">
       <span class="mdi mdi-account-lock-outline fav-empty__icon"></span>
       <p class="fav-empty__text">Sign in to see your saved cities</p>
     </div>
 
     <!-- Empty -->
-    <div v-else-if="favorites.length === 0" class="fav-empty">
+    <div v-else-if="!isOwnPage && viewingAccessDenied" class="fav-empty">
+      <span class="mdi mdi-lock-outline fav-empty__icon"></span>
+      <p class="fav-empty__text">{{ viewingNotice?.title }}</p>
+      <p class="fav-empty__hint">{{ viewingNotice?.description }}</p>
+    </div>
+
+    <div v-else-if="displayFavorites.length === 0" class="fav-empty">
       <span class="mdi mdi-star-outline fav-empty__icon"></span>
-      <p class="fav-empty__text">No favorites yet — star a city to save it here</p>
+      <p class="fav-empty__text">{{ isOwnPage ? 'No favorites yet — star a city to save it here' : 'No favorites yet' }}</p>
     </div>
 
     <!-- Cards grid -->
     <div v-else class="fav-grid">
       <div
-        v-for="fav in favorites"
+        v-for="fav in displayFavorites"
         :key="cardKey(fav.city, fav.state)"
         class="trading-card"
         @click="goToCity(fav.city, fav.state)"
@@ -217,8 +279,9 @@ function onMouseLeave(el: HTMLElement) {
         <!-- Holographic shine layer -->
         <div class="trading-card__shine"></div>
 
-        <!-- Remove button -->
+        <!-- Remove button (own page only) -->
         <button
+          v-if="isOwnPage"
           class="trading-card__remove"
           @click="handleRemove($event, fav.city, fav.state)"
           aria-label="Remove from favorites"

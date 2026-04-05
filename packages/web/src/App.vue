@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import { useTheme } from './composables/useTheme';
+import ToastContainer from './components/ToastContainer.vue';
 
 const { init } = useTheme();
 
@@ -20,5 +21,6 @@ onMounted(() => {
 <template>
   <div class="app">
     <router-view />
+    <ToastContainer />
   </div>
 </template>

@@ -29,6 +29,7 @@ export function useComparisons() {
     const { data, error } = await supabase
       .from('saved_comparisons')
       .select('*')
+      .eq('user_id', user.value.id)
       .order('created_at', { ascending: false });
     if (!error && data) {
       savedComparisons.value = data;

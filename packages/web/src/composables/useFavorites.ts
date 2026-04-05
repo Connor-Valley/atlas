@@ -26,6 +26,7 @@ export function useFavorites() {
     const { data, error } = await supabase
       .from('favorites')
       .select('*')
+      .eq('user_id', user.value.id)
       .order('created_at', { ascending: false });
     if (!error && data) {
       favorites.value = data;

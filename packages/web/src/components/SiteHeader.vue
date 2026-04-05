@@ -52,7 +52,7 @@ function closeMenu() {
   document.removeEventListener('click', handleClickOutside, { capture: true });
 }
 
-function navigateTo(routeName: 'profile' | 'favorites' | 'saved-comparisons') {
+function navigateTo(routeName: 'profile' | 'favorites' | 'saved-comparisons' | 'friends') {
   closeMenu();
   router.push({ name: routeName });
 }
@@ -106,6 +106,10 @@ function handleLogoClick() {
             </div>
           </button>
           <div class="user-menu__divider"></div>
+          <button class="user-menu__item" @click="navigateTo('friends')">
+            <span class="mdi mdi-account-group-outline user-menu__item-icon"></span>
+            Friends
+          </button>
           <button class="user-menu__item" @click="navigateTo('favorites')">
             <span class="mdi mdi-star-outline user-menu__item-icon"></span>
             Favorites
