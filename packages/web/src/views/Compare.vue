@@ -274,7 +274,12 @@ function closeShareMenu() {
   shareMenuOpen.value = false;
 }
 
-function toggleShareMenu() {
+async function openShareOptions() {
+  if (supportsNativeShare.value) {
+    await shareNatively();
+    return;
+  }
+
   shareMenuOpen.value = !shareMenuOpen.value;
 }
 
@@ -397,7 +402,7 @@ onBeforeUnmount(() => {
             <button
               class="compare-view__share-btn"
               :class="{ 'compare-view__share-btn--active': shareMenuOpen }"
-              @click.stop="toggleShareMenu"
+              @click.stop="openShareOptions"
             >
               <span class="compare-view__share-btn-label">{{ shareCopied ? 'Copied' : 'Share' }}</span>
               <span class="mdi" :class="shareCopied ? 'mdi-check' : 'mdi-share-variant-outline'"></span>

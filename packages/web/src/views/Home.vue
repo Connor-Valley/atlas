@@ -29,6 +29,10 @@ const { user, displayName, signOut } = useAuth();
 const showAuthModal  = ref(false);
 const authModalMode  = ref<'login' | 'register'>('register');
 const userMenuOpen   = ref(false);
+const cityShareMenuRef = ref<HTMLElement | null>(null);
+const cityShareMenuOpen = ref(false);
+const cityShareCopied = ref(false);
+let cityShareCopiedTimeout: ReturnType<typeof setTimeout> | null = null;
 
 function openAuth(mode: 'login' | 'register') {
   authModalMode.value = mode;
@@ -209,8 +213,15 @@ function onKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape' && expandedPhase.value === 'expanded') closeExpandedSection();
 }
 
+function handleCityShareClickOutside(event: MouseEvent) {
+  if (!cityShareMenuRef.value?.contains(event.target as Node)) {
+    cityShareMenuOpen.value = false;
+  }
+}
+
 onMounted(() => {
   window.addEventListener('keydown', onKeydown);
+  document.addEventListener('click', handleCityShareClickOutside, { capture: true });
 
   if (props.state && props.city) {
     state.value = props.state;
@@ -232,6 +243,8 @@ watch(showLanding, (isLandingVisible) => {
 
 onUnmounted(() => {
   if (typeTimer) clearTimeout(typeTimer);
+  if (cityShareCopiedTimeout) clearTimeout(cityShareCopiedTimeout);
+  document.removeEventListener('click', handleCityShareClickOutside, { capture: true });
   window.removeEventListener('keydown', onKeydown);
 });
 
@@ -305,6 +318,137 @@ function openCompareView() {
       cityA: city.value,
     },
   });
+}
+
+function cityLabel(citySlug: string, stateCode: string) {
+  const displayCity = citySlug
+    .split('-')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+
+  return `${displayCity}, ${stateCode.toUpperCase()}`;
+}
+
+function closeCityShareMenu() {
+  cityShareMenuOpen.value = false;
+}
+
+const cityShareTitle = computed(() =>
+  state.value && city.value ? `${cityLabel(city.value, state.value)} | Atlas` : 'Atlas city'
+);
+
+const cityShareText = computed(() =>
+  state.value && city.value ? `Explore ${cityLabel(city.value, state.value)} on Atlas.` : 'Explore cities on Atlas.'
+);
+
+const cityShareUrl = computed(() => {
+  if (!state.value || !city.value) return '';
+
+  const href = router.resolve({
+    name: 'city',
+    params: {
+      state: state.value,
+      city: city.value,
+    },
+  }).href;
+
+  const shareBase = import.meta.env.VITE_SHARE_BASE as string | undefined;
+  return shareBase ? new URL(href, shareBase).toString() : new URL(href, window.location.origin).toString();
+});
+
+const supportsCityNativeShare = computed(() =>
+  typeof navigator !== 'undefined' && typeof navigator.share === 'function'
+);
+
+function setCityShareCopied() {
+  cityShareCopied.value = true;
+  if (cityShareCopiedTimeout) clearTimeout(cityShareCopiedTimeout);
+  cityShareCopiedTimeout = setTimeout(() => {
+    cityShareCopied.value = false;
+  }, 1800);
+}
+
+async function copyCityShareLink() {
+  if (!cityShareUrl.value) return;
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(cityShareUrl.value);
+    } else {
+      const textarea = document.createElement('textarea');
+      textarea.value = cityShareUrl.value;
+      textarea.setAttribute('readonly', 'true');
+      textarea.style.position = 'absolute';
+      textarea.style.left = '-9999px';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+    }
+
+    setCityShareCopied();
+    closeCityShareMenu();
+  } catch (error) {
+    console.error('Failed to copy city share link', error);
+  }
+}
+
+async function shareCityNatively() {
+  if (!supportsCityNativeShare.value || !cityShareUrl.value) return;
+
+  try {
+    await navigator.share({
+      title: cityShareTitle.value,
+      text: cityShareText.value,
+      url: cityShareUrl.value,
+    });
+    closeCityShareMenu();
+  } catch (error) {
+    if (!(error instanceof DOMException && error.name === 'AbortError')) {
+      console.error('Failed to share city', error);
+    }
+  }
+}
+
+async function openCityShareOptions() {
+  if (supportsCityNativeShare.value) {
+    await shareCityNatively();
+    return;
+  }
+
+  cityShareMenuOpen.value = !cityShareMenuOpen.value;
+}
+
+function openCityShareTarget(url: string) {
+  window.open(url, '_blank', 'noopener,noreferrer');
+  closeCityShareMenu();
+}
+
+function shareCityToMessages() {
+  if (!cityShareUrl.value) return;
+  const body = encodeURIComponent(`${cityShareText.value} ${cityShareUrl.value}`);
+  window.location.href = `sms:?&body=${body}`;
+  closeCityShareMenu();
+}
+
+function shareCityToEmail() {
+  if (!cityShareUrl.value) return;
+  const subject = encodeURIComponent(cityShareTitle.value);
+  const body = encodeURIComponent(`${cityShareText.value}\n\n${cityShareUrl.value}`);
+  window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  closeCityShareMenu();
+}
+
+function shareCityToX() {
+  openCityShareTarget(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`${cityShareText.value} ${cityShareUrl.value}`)}`);
+}
+
+function shareCityToFacebook() {
+  openCityShareTarget(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(cityShareUrl.value)}`);
+}
+
+function shareCityToLinkedIn() {
+  openCityShareTarget(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(cityShareUrl.value)}`);
 }
 
 function getPanelElement(section: ExpandableSection) {
@@ -847,6 +991,51 @@ async function closeExpandedSection() {
         >
           <span class="score-pill__label">People</span>
           <span class="score-pill__value">{{ scores.people !== null ? scores.people : '—' }}</span>
+        </div>
+      </div>
+      <div v-if="!sectionExpanded" ref="cityShareMenuRef" class="score-pills__share-wrap">
+        <button
+          class="score-pills__compare-btn"
+          :class="{ 'score-pills__compare-btn--active': cityShareMenuOpen }"
+          @click.stop="openCityShareOptions"
+        >
+          <span class="mdi" :class="cityShareCopied ? 'mdi-check' : 'mdi-share-variant-outline'"></span>
+          {{ cityShareCopied ? 'Copied Link' : 'Share City' }}
+        </button>
+
+        <div v-if="cityShareMenuOpen" class="score-pills__share-menu" @click.stop>
+          <button
+            v-if="supportsCityNativeShare"
+            class="score-pills__share-item score-pills__share-item--primary"
+            @click="shareCityNatively"
+          >
+            <span class="mdi mdi-cellphone-arrow-down score-pills__share-item-icon"></span>
+            Share via device
+          </button>
+          <button class="score-pills__share-item" @click="copyCityShareLink">
+            <span class="mdi mdi-content-copy score-pills__share-item-icon"></span>
+            Copy link
+          </button>
+          <button class="score-pills__share-item" @click="shareCityToMessages">
+            <span class="mdi mdi-message-text-outline score-pills__share-item-icon"></span>
+            Messages
+          </button>
+          <button class="score-pills__share-item" @click="shareCityToEmail">
+            <span class="mdi mdi-email-outline score-pills__share-item-icon"></span>
+            Email
+          </button>
+          <button class="score-pills__share-item" @click="shareCityToX">
+            <span class="mdi mdi-twitter score-pills__share-item-icon"></span>
+            X
+          </button>
+          <button class="score-pills__share-item" @click="shareCityToFacebook">
+            <span class="mdi mdi-facebook score-pills__share-item-icon"></span>
+            Facebook
+          </button>
+          <button class="score-pills__share-item" @click="shareCityToLinkedIn">
+            <span class="mdi mdi-linkedin score-pills__share-item-icon"></span>
+            LinkedIn
+          </button>
         </div>
       </div>
       <button
