@@ -410,10 +410,9 @@ function onMouseLeave(el: HTMLElement) {
   z-index: 4;
   width: 32px;
   height: 32px;
-  border-radius: 50%;
   border: none;
-  background: rgba(0, 0, 0, 0.45);
-  color: rgba(255, 255, 255, 0.75);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -421,8 +420,8 @@ function onMouseLeave(el: HTMLElement) {
   cursor: pointer;
   opacity: 0;
   transform: scale(0.8);
-  transition: opacity 0.18s, transform 0.18s, background 0.18s, color 0.18s;
-  backdrop-filter: blur(4px);
+  transition: opacity 0.18s, transform 0.18s, color 0.18s;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.9));
 }
 
 .trading-card:hover .trading-card__remove {
@@ -431,20 +430,19 @@ function onMouseLeave(el: HTMLElement) {
 }
 
 .trading-card__remove:hover {
-  background: rgba(248, 113, 113, 0.75);
-  color: white;
+  color: #f87171;
 }
 
 .trading-card__trash-lid {
   position: absolute;
-  font-size: 0.6rem;
-  top: 6px;
+  font-size: 0.75rem;
+  top: 4px;
   transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
   transform-origin: center bottom;
 }
 
 .trading-card__trash-body {
-  font-size: 1rem;
+  font-size: 1.3rem;
   margin-top: 2px;
 }
 

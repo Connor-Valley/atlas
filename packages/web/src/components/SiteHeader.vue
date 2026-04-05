@@ -79,6 +79,7 @@ function handleLogoClick() {
 
     <div class="site-header__controls">
       <ThemeToggle v-if="showThemeToggle" />
+      <slot name="actions" />
       <div v-if="user" ref="userMenuRef" class="user-menu">
         <button class="user-menu__btn" @click="toggleMenu">
           <span class="user-menu__name">{{ displayName() ?? 'Account' }}</span>
@@ -96,6 +97,10 @@ function handleLogoClick() {
           <button class="user-menu__item" @click="router.push({ name: 'favorites' })">
             <span class="mdi mdi-star-outline user-menu__item-icon"></span>
             Favorites
+          </button>
+          <button class="user-menu__item" @click="router.push({ name: 'saved-comparisons' })">
+            <span class="mdi mdi-bookmark-multiple-outline user-menu__item-icon"></span>
+            Saved Comparisons
           </button>
           <div class="user-menu__divider"></div>
           <button class="user-menu__item user-menu__item--danger" @click="signOut">

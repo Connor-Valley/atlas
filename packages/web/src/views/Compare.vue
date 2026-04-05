@@ -4,6 +4,7 @@ import { useRouter } from "vue-router";
 import CompareCitySearch from "../components/CompareCitySearch.vue";
 import CompareSection from "../components/CompareSection.vue";
 import SiteHeader from "../components/SiteHeader.vue";
+import AuthModal from "../components/AuthModal.vue";
 import { fetchAffordability } from "../api/affordability";
 import { fetchCity } from "../api/cities";
 import { fetchHousing } from "../api/housing";
@@ -17,6 +18,8 @@ import {
   slugToDisplay,
   type ComparedCity,
 } from "../lib/compare";
+import { useAuth } from "../composables/useAuth";
+import { useComparisons } from "../composables/useComparisons";
 
 const props = defineProps<{
   stateA: string;
@@ -26,8 +29,13 @@ const props = defineProps<{
 }>();
 
 const router = useRouter();
+const { user } = useAuth();
+const { fetchComparisons, addComparison, removeComparison, isComparisonSaved } = useComparisons();
 const loading = ref(false);
 const error = ref<string | null>(null);
+const showAuthModal = ref(false);
+
+fetchComparisons();
 const comparison = ref<{ a: ComparedCity; b: ComparedCity } | null>(null);
 let requestToken = 0;
 
@@ -166,6 +174,35 @@ watch(
   { immediate: true },
 );
 
+watch(user, () => {
+  void fetchComparisons();
+});
+
+const isSaved = computed(() => {
+  if (!props.stateB || !props.cityB) return false;
+  return isComparisonSaved(props.cityA, props.stateA, props.cityB, props.stateB);
+});
+
+const isSaving = ref(false);
+
+async function toggleSave() {
+  if (!user.value) {
+    showAuthModal.value = true;
+    return;
+  }
+  if (!props.stateB || !props.cityB || !comparison.value) return;
+  if (isSaved.value) {
+    await removeComparison(props.cityA, props.stateA, props.cityB, props.stateB);
+  } else {
+    isSaving.value = true;
+    await addComparison(
+      props.cityA, comparison.value.a.cityInfo.name, props.stateA,
+      props.cityB, comparison.value.b.cityInfo.name, props.stateB,
+    );
+    setTimeout(() => { isSaving.value = false; }, 700);
+  }
+}
+
 function goBack() {
   router.push({
     name: "city",
@@ -219,6 +256,18 @@ function updateCityB(payload: { city: string; state: string }) {
       </template>
       <template #title>
         <h1 class="compare-view__page-title">City Comparison</h1>
+      </template>
+      <template v-if="compareReady" #actions>
+        <span class="compare-view__save-wrap" :data-tooltip="isSaved ? 'Unsave comparison' : 'Save city comparison'">
+          <button
+            class="compare-view__save-btn"
+            :class="{ 'compare-view__save-btn--saved': isSaved, 'compare-view__save-btn--animating': isSaving }"
+            @click="toggleSave"
+          >
+            <span class="compare-view__save-btn-label">{{ isSaved ? 'Saved' : 'Save' }}</span>
+            <span class="mdi" :class="isSaved ? 'mdi-bookmark' : 'mdi-bookmark-outline'"></span>
+          </button>
+        </span>
       </template>
     </SiteHeader>
 
@@ -331,4 +380,6 @@ function updateCityB(payload: { city: string; state: string }) {
       </section>
     </template>
   </div>
+
+  <AuthModal v-if="showAuthModal" mode="login" @close="showAuthModal = false" />
 </template>

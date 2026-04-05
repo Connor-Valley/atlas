@@ -3,6 +3,7 @@ import Home from '../views/Home.vue';
 import Housing from '../views/Housing.vue';
 import Favorites from '../views/Favorites.vue';
 import Compare from '../views/Compare.vue';
+import SavedComparisons from '../views/SavedComparisons.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -39,6 +40,11 @@ const router = createRouter({
       path: '/favorites',
       name: 'favorites',
       component: Favorites
+    },
+    {
+      path: '/saved-comparisons',
+      name: 'saved-comparisons',
+      component: SavedComparisons
     }
   ]
 });
