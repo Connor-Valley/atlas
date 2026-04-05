@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import CompareCitySearch from "../components/CompareCitySearch.vue";
 import CompareSection from "../components/CompareSection.vue";
@@ -34,6 +34,10 @@ const { fetchComparisons, addComparison, removeComparison, isComparisonSaved } =
 const loading = ref(false);
 const error = ref<string | null>(null);
 const showAuthModal = ref(false);
+const shareMenuRef = ref<HTMLElement | null>(null);
+const shareMenuOpen = ref(false);
+const shareCopied = ref(false);
+let shareCopiedTimeout: ReturnType<typeof setTimeout> | null = null;
 
 fetchComparisons();
 const comparison = ref<{ a: ComparedCity; b: ComparedCity } | null>(null);
@@ -183,6 +187,33 @@ const isSaved = computed(() => {
   return isComparisonSaved(props.cityA, props.stateA, props.cityB, props.stateB);
 });
 
+const shareTitle = computed(() => {
+  if (!compareReady.value) return "Atlas city comparison";
+  return `Compare ${cityLabel(props.cityA, props.stateA)} vs ${cityLabel(props.cityB!, props.stateB!)} on Atlas`;
+});
+
+const shareText = computed(() => {
+  if (!compareReady.value) return "Compare cities on Atlas.";
+  return `${cityLabel(props.cityA, props.stateA)} vs ${cityLabel(props.cityB!, props.stateB!)} on Atlas.`;
+});
+
+const shareUrl = computed(() => {
+  if (!compareReady.value) return "";
+  const href = router.resolve({
+    name: "compare",
+    params: {
+      stateA: props.stateA,
+      cityA: props.cityA,
+      stateB: props.stateB!,
+      cityB: props.cityB!,
+    },
+  }).href;
+
+  if (typeof window === "undefined") return href;
+  return new URL(href, window.location.origin).toString();
+});
+
+const supportsNativeShare = computed(() => typeof navigator !== "undefined" && typeof navigator.share === "function");
 const isSaving = ref(false);
 
 async function toggleSave() {
@@ -241,6 +272,112 @@ function updateCityB(payload: { city: string; state: string }) {
     cityB: payload.city,
   });
 }
+
+function closeShareMenu() {
+  shareMenuOpen.value = false;
+}
+
+function toggleShareMenu() {
+  shareMenuOpen.value = !shareMenuOpen.value;
+}
+
+function handleShareClickOutside(event: MouseEvent) {
+  if (!shareMenuRef.value?.contains(event.target as Node)) {
+    closeShareMenu();
+  }
+}
+
+function setCopiedState() {
+  shareCopied.value = true;
+  if (shareCopiedTimeout) clearTimeout(shareCopiedTimeout);
+  shareCopiedTimeout = setTimeout(() => {
+    shareCopied.value = false;
+  }, 1800);
+}
+
+async function copyShareLink() {
+  if (!shareUrl.value) return;
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(shareUrl.value);
+    } else {
+      const textarea = document.createElement("textarea");
+      textarea.value = shareUrl.value;
+      textarea.setAttribute("readonly", "true");
+      textarea.style.position = "absolute";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+
+    setCopiedState();
+    closeShareMenu();
+  } catch (err) {
+    console.error("Failed to copy share link", err);
+  }
+}
+
+async function shareNatively() {
+  if (!supportsNativeShare.value || !shareUrl.value) return;
+
+  try {
+    await navigator.share({
+      title: shareTitle.value,
+      text: shareText.value,
+      url: shareUrl.value,
+    });
+    closeShareMenu();
+  } catch (err) {
+    if (!(err instanceof DOMException && err.name === "AbortError")) {
+      console.error("Native share failed", err);
+    }
+  }
+}
+
+function openShareTarget(url: string) {
+  if (typeof window === "undefined") return;
+  window.open(url, "_blank", "noopener,noreferrer");
+  closeShareMenu();
+}
+
+function shareToMessages() {
+  if (!shareUrl.value || typeof window === "undefined") return;
+  const body = encodeURIComponent(`${shareText.value} ${shareUrl.value}`);
+  window.location.href = `sms:?&body=${body}`;
+  closeShareMenu();
+}
+
+function shareToEmail() {
+  if (!shareUrl.value || typeof window === "undefined") return;
+  const subject = encodeURIComponent(shareTitle.value);
+  const body = encodeURIComponent(`${shareText.value}\n\n${shareUrl.value}`);
+  window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  closeShareMenu();
+}
+
+function shareToX() {
+  openShareTarget(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`${shareText.value} ${shareUrl.value}`)}`);
+}
+
+function shareToFacebook() {
+  openShareTarget(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl.value)}`);
+}
+
+function shareToLinkedIn() {
+  openShareTarget(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl.value)}`);
+}
+
+onMounted(() => {
+  document.addEventListener("click", handleShareClickOutside, { capture: true });
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener("click", handleShareClickOutside, { capture: true });
+  if (shareCopiedTimeout) clearTimeout(shareCopiedTimeout);
+});
 </script>
 
 <template>
@@ -258,16 +395,64 @@ function updateCityB(payload: { city: string; state: string }) {
         <h1 class="compare-view__page-title">City Comparison</h1>
       </template>
       <template v-if="compareReady" #actions>
-        <span class="compare-view__save-wrap" :data-tooltip="isSaved ? 'Unsave comparison' : 'Save city comparison'">
-          <button
-            class="compare-view__save-btn"
-            :class="{ 'compare-view__save-btn--saved': isSaved, 'compare-view__save-btn--animating': isSaving }"
-            @click="toggleSave"
-          >
-            <span class="compare-view__save-btn-label">{{ isSaved ? 'Saved' : 'Save' }}</span>
-            <span class="mdi" :class="isSaved ? 'mdi-bookmark' : 'mdi-bookmark-outline'"></span>
-          </button>
-        </span>
+        <div class="compare-view__actions">
+          <div ref="shareMenuRef" class="compare-view__share-wrap">
+            <button
+              class="compare-view__share-btn"
+              :class="{ 'compare-view__share-btn--active': shareMenuOpen }"
+              @click.stop="toggleShareMenu"
+            >
+              <span class="compare-view__share-btn-label">{{ shareCopied ? 'Copied' : 'Share' }}</span>
+              <span class="mdi" :class="shareCopied ? 'mdi-check' : 'mdi-share-variant-outline'"></span>
+            </button>
+
+            <div v-if="shareMenuOpen" class="compare-view__share-menu" @click.stop>
+              <button
+                v-if="supportsNativeShare"
+                class="compare-view__share-item compare-view__share-item--primary"
+                @click="shareNatively"
+              >
+                <span class="mdi mdi-cellphone-arrow-down compare-view__share-item-icon"></span>
+                Share via device
+              </button>
+              <button class="compare-view__share-item" @click="copyShareLink">
+                <span class="mdi mdi-content-copy compare-view__share-item-icon"></span>
+                Copy link
+              </button>
+              <button class="compare-view__share-item" @click="shareToMessages">
+                <span class="mdi mdi-message-text-outline compare-view__share-item-icon"></span>
+                Messages
+              </button>
+              <button class="compare-view__share-item" @click="shareToEmail">
+                <span class="mdi mdi-email-outline compare-view__share-item-icon"></span>
+                Email
+              </button>
+              <button class="compare-view__share-item" @click="shareToX">
+                <span class="mdi mdi-twitter compare-view__share-item-icon"></span>
+                X
+              </button>
+              <button class="compare-view__share-item" @click="shareToFacebook">
+                <span class="mdi mdi-facebook compare-view__share-item-icon"></span>
+                Facebook
+              </button>
+              <button class="compare-view__share-item" @click="shareToLinkedIn">
+                <span class="mdi mdi-linkedin compare-view__share-item-icon"></span>
+                LinkedIn
+              </button>
+            </div>
+          </div>
+
+          <span class="compare-view__save-wrap" :data-tooltip="isSaved ? 'Unsave comparison' : 'Save city comparison'">
+            <button
+              class="compare-view__save-btn"
+              :class="{ 'compare-view__save-btn--saved': isSaved, 'compare-view__save-btn--animating': isSaving }"
+              @click="toggleSave"
+            >
+              <span class="compare-view__save-btn-label">{{ isSaved ? 'Saved' : 'Save' }}</span>
+              <span class="mdi" :class="isSaved ? 'mdi-bookmark' : 'mdi-bookmark-outline'"></span>
+            </button>
+          </span>
+        </div>
       </template>
     </SiteHeader>
 
