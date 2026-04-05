@@ -1,4 +1,8 @@
 atlas.local {
+    handle /share* {
+        reverse_proxy localhost:3000
+    }
+
     # API routes
     handle /api* {
         reverse_proxy localhost:3000

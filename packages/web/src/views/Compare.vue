@@ -199,15 +199,12 @@ const shareText = computed(() => {
 
 const shareUrl = computed(() => {
   if (!compareReady.value) return "";
-  const href = router.resolve({
-    name: "compare",
-    params: {
-      stateA: props.stateA,
-      cityA: props.cityA,
-      stateB: props.stateB!,
-      cityB: props.cityB!,
-    },
-  }).href;
+  const href = `/share/compare/${props.stateA}/${props.cityA}/${props.stateB!}/${props.cityB!}`;
+  const shareBase = import.meta.env.VITE_SHARE_BASE as string | undefined;
+
+  if (shareBase) {
+    return new URL(href, shareBase).toString();
+  }
 
   if (typeof window === "undefined") return href;
   return new URL(href, window.location.origin).toString();

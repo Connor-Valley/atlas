@@ -8,6 +8,7 @@ import housingRouter from "./housing/housing.route.js";
 import incomeRouter from "./income/income.route.js"
 import affordabilityRouter from "./affordability/affordability.route.js"
 import statesRouter from "./states/states.route.js"
+import shareRouter from "./share/share.route.js";
 import { initializeHpiCache } from "./housing/housing.service.js";
 
 // Load .env from repo root (monorepo) or cwd
@@ -20,6 +21,7 @@ loadEnv(); // cwd .env overrides
 const app = express();
 const port = process.env.PORT ?? 3000;
 
+app.set("trust proxy", true);
 app.use(express.json());
 app.use(cors({ origin: "*"}));
 
@@ -32,6 +34,7 @@ app.use('/housing', housingRouter);
 app.use('/income', incomeRouter);
 app.use('/affordability', affordabilityRouter);
 app.use('/states', statesRouter);
+app.use('/share', shareRouter);
 
 // Initialize FHFA data cache at startup
 initializeHpiCache();
