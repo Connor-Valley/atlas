@@ -228,6 +228,7 @@ function updateCityB(payload: { city: string; state: string }) {
           {{ item }}
         </span>
       </div>
+      <div class="compare-ticker__overlay" aria-hidden="true"></div>
     </section>
 
     <section class="compare-view__setup">
@@ -304,7 +305,7 @@ function updateCityB(payload: { city: string; state: string }) {
           <div class="compare-city-info__thumb">
             <img v-if="card.photoUrl" :src="card.photoUrl" class="compare-city-info__photo" alt="" />
             <div v-else class="compare-city-info__photo-fallback"></div>
-            <span class="compare-city-info__badge">{{ card.label }}</span>
+            <span class="compare-city-info__badge" :class="`compare-city-info__badge--${card.key}`">{{ card.key.toUpperCase() }}</span>
           </div>
           <div class="compare-city-info__body">
             <div class="compare-city-info__name">{{ card.name }}</div>
