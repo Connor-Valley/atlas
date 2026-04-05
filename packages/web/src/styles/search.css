@@ -1,0 +1,70 @@
+/* =====================
+   SEARCH BAR
+===================== */
+.search-bar {
+  display: grid;
+  grid-template-columns: 1fr 2fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 14px;
+  box-shadow: var(--card-shadow);
+  margin-bottom: 28px;
+}
+
+.hero-content .search-bar {
+  position: relative;
+  z-index: 5;
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 0;
+}
+
+/* =====================
+   CITY AUTOCOMPLETE
+===================== */
+.city-search-container {
+  position: relative;
+}
+
+.city-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 1002;
+  box-shadow: var(--card-shadow-md);
+}
+
+.city-suggestions li {
+  padding: 10px 12px;
+  cursor: pointer;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 0.875rem;
+  transition: background 0.1s ease;
+}
+
+.city-suggestions li:last-child {
+  border-bottom: none;
+}
+
+.city-suggestions li:hover {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.city-search-container:has(.city-suggestions) input {
+  border-radius: 8px 8px 0 0;
+}

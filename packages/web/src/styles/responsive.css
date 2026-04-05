@@ -1,0 +1,167 @@
+/* =====================
+   RESPONSIVE
+===================== */
+@media (max-width: 960px) {
+  .dashboard-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-panel--income,
+  .dashboard-panel--housing,
+  .dashboard-panel--affordability {
+    grid-column: 1;
+  }
+
+  .dashboard-panel--expanded {
+    grid-column: 1;
+    grid-row: 1 / span 4;
+  }
+
+  .data-card--wide .data-card__bar-row {
+    max-width: 100%;
+  }
+
+  .data-card--wide .data-card__metrics {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .city-hero-card__stats {
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+
+  .site-header {
+    grid-template-columns: 1fr;
+    column-gap: 0;
+  }
+
+  .site-header__controls {
+    justify-content: flex-start;
+  }
+
+  .site-header .search-bar {
+    justify-self: stretch;
+  }
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 20px 16px 32px;
+  }
+
+  .search-bar {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .site-header {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .site-header .search-bar {
+    margin-bottom: 0;
+  }
+
+  .hero-content .search-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .score-pills {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .score-pills--expanded {
+    flex-wrap: wrap;
+  }
+
+  .score-pills__page-title {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .score-pills__compare-btn {
+    margin-left: 0;
+  }
+
+  .compare-view__topbar,
+  .compare-view__setup,
+  .compare-city-info,
+  .compare-summary,
+  .compare-loading {
+    grid-template-columns: 1fr;
+  }
+
+  .compare-empty,
+  .compare-error {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 22px 20px;
+  }
+
+  .compare-view .site-header {
+    grid-template-columns: 1fr;
+  }
+
+  .compare-view .site-header__leading {
+    margin-right: 0;
+  }
+
+  .compare-view .site-header__identity {
+    gap: 12px;
+  }
+
+  .compare-view__actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .compare-view__share-wrap,
+  .compare-view__save-wrap {
+    flex: 1 1 0;
+  }
+
+  .compare-view__share-btn,
+  .compare-view__save-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .compare-ticker {
+    margin-top: 0;
+    padding: 0 12px;
+  }
+
+  .compare-ticker__track {
+    animation: none;
+    padding: 10px 12px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .compare-summary__card,
+  .compare-loading__card {
+    width: 100%;
+  }
+
+  .city-stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .city-stat--wide {
+    grid-column: 1 / -1;
+  }
+
+  .data-card--wide .data-card__metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .data-card--wide .data-card__bar-row {
+    max-width: 100%;
+  }
+}

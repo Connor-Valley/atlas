@@ -1,0 +1,50 @@
+/* =====================
+   TEXT
+===================== */
+p {
+  margin: 0 0 12px;
+}
+
+p:last-child {
+  margin-bottom: 0;
+}
+
+/* =====================
+   HERO (loading/error states in detail pages)
+===================== */
+.hero {
+  margin-top: 48px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+/* =====================
+   STATUS COLORS
+===================== */
+.status-caution {
+  color: var(--caution);
+  font-weight: 600;
+}
+
+.status-warning {
+  color: var(--warning);
+  font-weight: 600;
+}
+
+.status-danger {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.positive {
+  color: var(--positive);
+  font-weight: 600;
+}
+
+/* =====================
+   UTILITIES
+===================== */
+.muted {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}

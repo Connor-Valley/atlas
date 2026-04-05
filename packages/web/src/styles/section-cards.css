@@ -1,0 +1,205 @@
+/* =====================
+   SECTION CARDS (detail pages — Housing.vue)
+===================== */
+.section {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 16px;
+  margin-bottom: 20px;
+  overflow: hidden;
+  box-shadow: var(--card-shadow);
+}
+
+.section-header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.03);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  font-weight: 600;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  cursor: default;
+  flex: 1;
+  min-width: 0;
+}
+
+.section-header:hover,
+.section-header:focus {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.section-header[aria-disabled="false"] {
+  cursor: pointer;
+}
+
+.section-header[aria-disabled="false"]:hover {
+  background: rgba(0, 0, 0, 0.03);
+  color: var(--text-primary);
+}
+
+.section-header svg {
+  color: var(--text-muted);
+}
+
+.section-header-container:has(.section-header-action) .section-header {
+  flex: 0 1 auto;
+}
+
+.section-header-action {
+  flex-shrink: 0;
+}
+
+.section-action {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.15s ease;
+  text-decoration: none;
+  padding: 14px 18px;
+  white-space: nowrap;
+}
+
+.section-action:hover {
+  color: var(--text-primary);
+}
+
+.section-content {
+  padding: 20px;
+}
+
+/* =====================
+   STAT GRID (detail pages — Housing.vue)
+===================== */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.stat {
+  background: var(--bg-card-subtle);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+  padding: 14px 16px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.stat label {
+  display: block;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stat strong {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.structure-chart {
+  display: grid;
+  gap: 16px;
+}
+
+.structure-chart__bar {
+  display: flex;
+  width: 100%;
+  min-height: 46px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--bg-card-subtle);
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+}
+
+.structure-chart__segment {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  transition: filter 0.18s ease;
+}
+
+.structure-chart__segment:hover {
+  filter: brightness(1.06);
+}
+
+.structure-chart__segment-label {
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.structure-chart__legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px 16px;
+}
+
+.structure-chart__legend-item {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.structure-chart__legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+}
+
+.structure-chart__legend-label {
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+  font-weight: 500;
+}
+
+.structure-chart__legend-value {
+  color: var(--text-primary);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.structure-segment--1 { background: linear-gradient(90deg, #0f766e 0%, #14b8a6 100%); }
+.structure-segment--2 { background: linear-gradient(90deg, #0f8f86 0%, #1ccfc2 100%); }
+.structure-segment--3 { background: linear-gradient(90deg, #1199a0 0%, #35d7d0 100%); }
+.structure-segment--4 { background: linear-gradient(90deg, #0e728a 0%, #26b8d6 100%); }
+.structure-segment--5 { background: linear-gradient(90deg, #0c8c7a 0%, #2ed3ae 100%); }
+.structure-segment--6 { background: linear-gradient(90deg, #167c6b 0%, #3ac8a2 100%); }

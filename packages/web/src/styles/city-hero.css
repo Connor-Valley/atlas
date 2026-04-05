@@ -1,0 +1,157 @@
+/* =====================
+   HERO SECTION (city overview)
+===================== */
+.hero-section {
+  margin-bottom: 20px;
+}
+
+.city-hero-card {
+  background-color: #0a7d72;
+  background-size: cover;
+  background-position: center;
+  border-radius: 20px;
+  padding: 28px 32px;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: 232px;
+  box-shadow: 0 8px 32px rgba(14, 165, 148, 0.3), 0 2px 8px rgba(0, 0, 0, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.city-hero-card--loading {
+  background-image:
+    linear-gradient(140deg, rgba(10, 125, 114, 0.94) 0%, rgba(20, 184, 166, 0.88) 100%);
+}
+
+.city-hero-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    140deg,
+    rgba(10, 125, 114, 0.62) 0%,
+    rgba(20, 184, 166, 0.50) 50%,
+    rgba(45, 212, 191, 0.38) 100%
+  );
+  pointer-events: none;
+}
+
+.city-hero-card::after {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  pointer-events: none;
+}
+
+.city-hero-card__content {
+  position: relative;
+  z-index: 1;
+}
+
+.city-hero-card__name {
+  font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  margin-bottom: 6px;
+}
+
+.city-hero-card__name--skeleton {
+  display: block;
+  width: min(280px, 72%);
+  height: clamp(34px, 4vw, 48px);
+}
+
+.city-hero-card__sub {
+  font-size: 0.9rem;
+  font-weight: 400;
+  opacity: 0.7;
+}
+
+.city-hero-card__sub--skeleton {
+  display: block;
+  width: min(180px, 48%);
+  height: 14px;
+  opacity: 1;
+}
+
+.city-hero-card__stats {
+  display: flex;
+  gap: 32px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+  z-index: 1;
+}
+
+.city-hero-card__stat-label {
+  display: block;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.6;
+  margin-bottom: 3px;
+}
+
+.city-hero-card__stat-value {
+  display: block;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.city-hero-card__stat-value--skeleton {
+  width: 110px;
+  height: 20px;
+  max-width: none;
+}
+
+.city-hero-card__fav {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, transform 0.15s;
+  backdrop-filter: blur(4px);
+}
+
+.city-hero-card__fav:hover {
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+  transform: scale(1.08);
+}
+
+.city-hero-card__fav--active {
+  background: rgba(255, 213, 0, 0.25);
+  border-color: rgba(255, 213, 0, 0.5);
+  color: #ffd500;
+}
+
+.city-hero-card__fav--active:hover {
+  background: rgba(255, 213, 0, 0.35);
+  color: #ffd500;
+}

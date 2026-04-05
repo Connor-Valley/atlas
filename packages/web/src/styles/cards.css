@@ -1,0 +1,330 @@
+/* =====================
+   DATA CARDS
+===================== */
+.data-card {
+  background: var(--bg-card);
+  border-radius: 16px;
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 252px;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  position: relative;
+}
+
+.housing-exp .data-card.housing-exp__panel--compact {
+  min-height: 178px;
+  height: 100%;
+}
+
+.data-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    500px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(20, 184, 166, 0.13),
+    transparent 60%
+  );
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
+  border-radius: inherit;
+  transition: opacity 0.3s ease;
+}
+
+.data-card:hover {
+  box-shadow: var(--card-shadow-hover), 0 0 0 1px rgba(20, 184, 166, 0.28), 0 0 28px rgba(20, 184, 166, 0.13);
+  transform: translateY(-2px);
+}
+
+.data-card:hover::before {
+  opacity: 1;
+}
+
+.data-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 20px 10px;
+  position: relative;
+  z-index: 2;
+}
+
+.data-card__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.data-card__icon {
+  font-size: 1.3rem;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.data-card__name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.data-card__score {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.data-card__bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 20px 18px;
+  position: relative;
+  z-index: 2;
+}
+
+.data-card__bar {
+  flex: 1;
+  height: 10px;
+  background: var(--progress-bg);
+  border-radius: 100px;
+  overflow: hidden;
+  position: relative;
+}
+
+.data-card__bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0%,
+    transparent calc(10% - 1.5px),
+    var(--bg-card) calc(10% - 1.5px),
+    var(--bg-card) 10%
+  );
+  z-index: 1;
+  pointer-events: none;
+}
+
+.data-card__bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-hover) 0%, #2dd4bf 100%);
+  border-radius: 100px;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.data-card__bar-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.28) 0%, transparent 60%);
+  border-radius: 100px;
+}
+
+.data-card__bar-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 40px;
+  text-align: right;
+}
+
+.data-card__body {
+  padding: 0 20px 20px;
+  flex: 1;
+  position: relative;
+  z-index: 2;
+}
+
+.data-card__body > p {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.data-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.data-card--wide {
+  min-height: 252px;
+}
+
+.housing-exp .data-card--wide,
+.housing-exp__panel--wide {
+  min-height: 0;
+}
+
+.data-card--wide .data-card__bar-row {
+  max-width: 50%;
+}
+
+.data-card--wide .data-card__metrics {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.data-card--wide .data-card__metrics .metric {
+  padding: 16px 18px;
+}
+
+.data-card--wide .data-card__metrics .metric__value {
+  font-size: 1.4rem;
+}
+
+.data-card__footer {
+  border-top: 1px solid var(--border-subtle);
+  padding: 12px 20px;
+  display: flex;
+  justify-content: flex-end;
+  position: relative;
+  z-index: 2;
+}
+
+.data-card__link {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s;
+}
+
+.data-card__link:disabled {
+  color: var(--text-muted);
+  cursor: default;
+  opacity: 0.55;
+}
+
+.data-card__link:hover {
+  color: var(--accent-hover);
+  background: none;
+}
+
+/* =====================
+   METRICS (inside data cards)
+===================== */
+.metric {
+  background: var(--bg-card-subtle);
+  border-radius: 10px;
+  padding: 12px 14px;
+  min-width: 0;
+  transition: background 0.15s ease;
+}
+
+.metric:hover {
+  background: var(--bg-input);
+}
+
+.metric__label {
+  display: block;
+  font-size: 0.58rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.metric__value {
+  display: block;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Primary (first) metric in non-wide cards gets dominant treatment */
+.data-card:not(.data-card--wide) .data-card__metrics .metric:first-child {
+  grid-column: 1 / -1;
+}
+
+.data-card:not(.data-card--wide) .data-card__metrics .metric:first-child .metric__value {
+  font-size: 1.9rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.data-card:not(.data-card--wide) .data-card__metrics .metric:first-child .metric__label {
+  font-size: 0.62rem;
+  margin-bottom: 6px;
+}
+
+.metric__value--positive { color: var(--positive); }
+.metric__value--warning { color: var(--warning); }
+
+.data-card__bar--placeholder {
+  background: color-mix(in srgb, var(--progress-bg) 82%, var(--bg-card-subtle));
+}
+
+.data-card__bar-fill--placeholder {
+  opacity: 0.55;
+}
+
+.skeleton-block {
+  pointer-events: none;
+}
+
+.skeleton-block--hero {
+  min-height: 110px;
+}
+
+.skeleton-line {
+  display: block;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(255, 255, 255, 0.09) 50%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
+  background-size: 220% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+.skeleton-line--label {
+  width: 72px;
+  height: 10px;
+  margin-bottom: 10px;
+}
+
+.skeleton-line--value {
+  width: 128px;
+  height: 22px;
+}
+
+.skeleton-line--value-sm {
+  width: 92px;
+  height: 18px;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}

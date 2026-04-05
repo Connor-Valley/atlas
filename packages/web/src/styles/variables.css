@@ -1,0 +1,61 @@
+:root {
+  /* === Backgrounds === */
+  --bg-main: #F4F2ED;
+  --bg-card: #FFFFFF;
+  --bg-card-subtle: #F8F7F5;
+  --bg-input: rgba(0, 0, 0, 0.04);
+
+  /* === Text === */
+  --text-primary: #1a1a1a;
+  --text-secondary: #6B7280;
+  --text-muted: #9CA3AF;
+
+  /* === Borders === */
+  --border-subtle: rgba(0, 0, 0, 0.07);
+  --border-card: rgba(0, 0, 0, 0.09);
+
+  /* === Accent (teal) === */
+  --accent: #14B8A6;
+  --accent-hover: #0d9488;
+  --accent-light: rgba(20, 184, 166, 0.08);
+
+  /* === Shadows === */
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.07), 0 4px 14px rgba(0, 0, 0, 0.06);
+  --card-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.11), 0 2px 6px rgba(0, 0, 0, 0.06);
+  --card-shadow-hover: 0 8px 28px rgba(0, 0, 0, 0.13), 0 4px 10px rgba(0, 0, 0, 0.07);
+
+  /* === Progress bar === */
+  --progress-bg: #E5E7EB;
+
+  /* === Status === */
+  --positive: #10B981;
+  --caution: #F59E0B;
+  --warning: #F97316;
+  --danger: #EF4444;
+
+  /* === Logo === */
+  --logo-gradient: linear-gradient(135deg, #0d9488 0%, #14B8A6 60%, #2dd4bf 100%);
+}
+
+/* =====================
+   DARK MODE VARIABLES
+===================== */
+html.dark {
+  --bg-main: #111318;
+  --bg-card: #1a1d27;
+  --bg-card-subtle: #14161e;
+  --bg-input: rgba(255, 255, 255, 0.06);
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-card: rgba(255, 255, 255, 0.1);
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 4px 14px rgba(0, 0, 0, 0.35);
+  --card-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
+  --card-shadow-hover: 0 8px 28px rgba(0, 0, 0, 0.55), 0 4px 10px rgba(0, 0, 0, 0.35);
+  --progress-bg: #2D3748;
+  --positive: #68D391;
+  --caution: #FCD34D;
+  --warning: #FB923C;
+  --danger: #FC8181;
+}
