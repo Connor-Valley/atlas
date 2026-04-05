@@ -5,7 +5,7 @@ import { slugToDisplay } from "../lib/compare";
 
 const props = defineProps<{
   label: string;
-  caption: string;
+  caption?: string;
   tone?: "a" | "b";
   initialCity?: string;
   initialState?: string;
@@ -107,7 +107,7 @@ watch(() => localState.value, () => {
   <section class="compare-search-card" :class="`compare-search-card--${tone ?? 'a'}`">
     <div class="compare-search-card__header">
       <span class="compare-search-card__label">{{ label }}</span>
-      <span class="compare-search-card__caption">{{ caption }}</span>
+      <span v-if="caption" class="compare-search-card__caption">{{ caption }}</span>
     </div>
 
     <div class="search-bar compare-search-card__bar">
@@ -133,7 +133,7 @@ watch(() => localState.value, () => {
         </ul>
       </div>
 
-      <button @click="submit">{{ buttonLabel ?? "Set City" }}</button>
+      <button @click="submit"><span class="mdi mdi-plus compare-search-card__btn-icon"></span>{{ buttonLabel ?? "Set City" }}</button>
     </div>
   </section>
 </template>
@@ -166,9 +166,9 @@ watch(() => localState.value, () => {
 }
 
 .compare-search-card__label {
-  font-size: 0.88rem;
+  font-size: 1.05rem;
   font-weight: 700;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
 }
 
@@ -231,6 +231,12 @@ watch(() => localState.value, () => {
 .compare-search-card--b button:hover {
   background: color-mix(in srgb, var(--compare-city-b) 82%, black);
   color: #041c19;
+}
+
+.compare-search-card__btn-icon {
+  font-size: 0.85rem;
+  opacity: 0.85;
+  margin-right: 5px;
 }
 
 @media (max-width: 640px) {

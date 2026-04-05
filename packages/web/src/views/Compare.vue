@@ -232,21 +232,19 @@ function updateCityB(payload: { city: string; state: string }) {
 
     <section class="compare-view__setup">
       <CompareCitySearch
-        label="City A"
-        caption="Prefilled from the dashboard, but still editable"
+        label="Choose City"
         tone="a"
         :initial-city="cityA"
         :initial-state="stateA"
-        button-label="Update City A"
+        button-label="Add"
         @search="updateCityA"
       />
       <CompareCitySearch
-        label="City B"
+        label="Choose City"
         tone="b"
-        :caption="hasCityB ? 'Edit the second city to refine the comparison' : 'Choose a second city to start the comparison'"
         :initial-city="cityB"
         :initial-state="stateB"
-        button-label="Set City B"
+        button-label="Add"
         @search="updateCityB"
       />
     </section>
