@@ -81,6 +81,10 @@
   overflow: visible;
 }
 
+.dashboard-panel--hero.expansion-slot {
+  overflow: visible;
+}
+
 .dashboard-panel--income {
   grid-column: 1;
 }
