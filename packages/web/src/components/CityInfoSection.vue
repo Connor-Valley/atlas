@@ -11,6 +11,7 @@ const emit = defineEmits<{
   (e: 'error'): void;
   (e: 'not-found'): void;
   (e: 'auth-required'): void;
+  (e: 'expand'): void;
 }>();
 
 const { user } = useAuth();
@@ -141,6 +142,10 @@ watch(
           <span class="city-hero-card__stat-value">{{ state.toUpperCase() }}</span>
         </div>
       </div>
+      <button class="city-hero-card__details-btn" @click="emit('expand')">
+        More Info
+        <span class="mdi mdi-arrow-right city-hero-card__details-icon"></span>
+      </button>
     </div>
   </div>
 </template>

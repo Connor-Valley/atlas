@@ -1,5 +1,6 @@
 import type { City } from "../cities/cities.types.js";
 import type { CityHousing, DetailedCityHousing, HousingStructure, FhfaData } from "./housing.types.js";
+import { buildCensusGeoQuery } from "../common/census.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -345,7 +346,7 @@ export async function getDetailedCityHousing(city: City, year: number): Promise<
 function buildCensusUrl(variables: string[], city: City, year: number): string {
   return `https://api.census.gov/data/${year}/acs/acs5` +
     `?get=${variables.join(",")}` +
-    `&for=place:${city.placeCode}&in=state:${city.stateFips}` +
+    buildCensusGeoQuery(city) +
     (process.env.CENSUS_API_KEY ? `&key=${process.env.CENSUS_API_KEY}` : "");
 }
 
@@ -718,4 +719,3 @@ function calculatePriceChanges(hpiData: HpiRecord[]): Omit<FhfaData, 'level' | '
     lastUpdated: `${latest.year} Q${latest.period}`,
   };
 }
-

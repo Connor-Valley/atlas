@@ -1,5 +1,6 @@
 import type { City } from '../cities/cities.types.js';
 import type { CityIncome, DetailedCityIncome, EarningsByEducation, IncomeAffordabilityMetrics, IndustrySector, PovertyDepth, RawIncomeDistribution } from './income.types.js'
+import { buildCensusGeoQuery } from "../common/census.js";
 
 export async function getCityIncome(city: City, year: number): Promise<CityIncome> {
     const url =
@@ -32,7 +33,7 @@ export async function getCityIncome(city: City, year: number): Promise<CityIncom
       "B17001_001E", // total population
       "B17001_002E", // below poverty
     ].join(",") +
-    `&for=place:${city.placeCode}&in=state:${city.stateFips}` +
+    buildCensusGeoQuery(city) +
     (process.env.CENSUS_API_KEY ? `&key=${process.env.CENSUS_API_KEY}` : "");
 
   const res = await fetch(url);
@@ -136,7 +137,7 @@ const INDUSTRY_NAMES = [
 
 export async function getDetailedCityIncome(city: City, year: number): Promise<DetailedCityIncome> {
   const baseUrl = `https://api.census.gov/data/${year}/acs/acs5`;
-  const geo = `&for=place:${city.placeCode}&in=state:${city.stateFips}`;
+  const geo = buildCensusGeoQuery(city);
   const key = process.env.CENSUS_API_KEY ? `&key=${process.env.CENSUS_API_KEY}` : '';
 
   const [incomeRow, industryRow] = await Promise.all([

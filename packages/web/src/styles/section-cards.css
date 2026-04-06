@@ -203,3 +203,126 @@
 .structure-segment--4 { background: linear-gradient(90deg, #0e728a 0%, #26b8d6 100%); }
 .structure-segment--5 { background: linear-gradient(90deg, #0c8c7a 0%, #2ed3ae 100%); }
 .structure-segment--6 { background: linear-gradient(90deg, #167c6b 0%, #3ac8a2 100%); }
+
+/* =====================
+   CITY EXPANDED VIEW
+===================== */
+.city-exp {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Portrait card */
+.city-exp__portrait {
+  border-left: 3px solid var(--accent);
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.city-exp__portrait--loading {
+  padding: 28px 32px;
+}
+
+.city-exp__lead {
+  font-size: 1.12rem;
+  font-weight: 500;
+  line-height: 1.6;
+  color: var(--text-primary);
+  opacity: 0.75;
+  margin: 0;
+}
+
+.city-exp__body {
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: var(--text-primary);
+  opacity: 0.82;
+  margin: 0;
+}
+
+.city-exp__city-name {
+  font-weight: 700;
+}
+
+.city-exp__accent {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Panel narrative text */
+.city-exp__panel-narrative {
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+  opacity: 0.78;
+  margin: 0;
+  padding-bottom: 4px;
+}
+
+/* Grid */
+.city-exp__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
+  gap: 16px;
+}
+
+/* Economy panel */
+.city-exp__economy {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 4px;
+  flex: 1;
+}
+
+.city-exp__economy-para {
+  font-size: 0.92rem;
+  line-height: 1.65;
+  color: var(--text-primary);
+  opacity: 0.85;
+  margin: 0;
+}
+
+.city-exp__airport {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: auto;
+  padding: 12px 14px;
+  background: var(--bg-section, rgba(255,255,255,0.04));
+  border-radius: 10px;
+  border: 1px solid var(--border-card);
+}
+
+.city-exp__airport-icon {
+  font-size: 1.2rem;
+  color: var(--accent);
+  opacity: 0.8;
+}
+
+.city-exp__airport-code {
+  display: block;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-primary);
+}
+
+.city-exp__airport-name {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+/* Force grid panels to fill their cell height */
+.city-exp__grid > .data-card {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+}
+

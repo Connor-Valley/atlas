@@ -74,6 +74,8 @@ Search any U.S. city and get an instant dashboard of what actually matters:
 **Data Sources**
 - [US Census Bureau ACS](https://www.census.gov/data/developers/data-sets/acs-5year.html) — income, housing, population, poverty (2024)
 - [FHFA House Price Index](https://www.fhfa.gov/data/hpi) — quarterly home price trends by MSA
+- [U.S. Department of Labor](https://www.dol.gov/agencies/whd/minimum-wage/state) — state minimum wage reference
+- [FAA Airport Data](https://www.faa.gov/air_traffic/flight_info/aeronav/aero_data/Airport_Data/) — airport metadata reference
 - [Wikipedia REST API](https://en.wikipedia.org/api/rest_v1/) + [Wikimedia Commons](https://commons.wikimedia.org) — city photography
 
 ---
@@ -110,11 +112,17 @@ atlas/
 | Method | Endpoint | Description |
 |---|---|---|
 | GET | `/cities/:state/:city` | City demographics snapshot |
+| GET | `/city-profile/:state/:city` | General city summary |
+| GET | `/city-profile/:state/:city/details` | Detailed demographics and commute data |
 | GET | `/housing/:state/:city` | Basic housing data |
 | GET | `/housing/:state/:city/details` | Full housing details + HPI |
 | GET | `/income/:state/:city` | Basic income data |
 | GET | `/income/:state/:city/details` | Full income breakdown |
 | GET | `/affordability/:state/:city` | Affordability classification |
+| GET | `/financial/:state/:city` | Tax, wage, and budget summary |
+| GET | `/financial/:state/:city/details` | Detailed financial breakdown |
+| GET | `/quality-of-life/:state/:city` | Labor market, crime placeholders, and airport summary |
+| GET | `/quality-of-life/:state/:city/details` | Detailed quality-of-life payload |
 | GET | `/states` | All supported states |
 | GET | `/health` | Server health check |
 

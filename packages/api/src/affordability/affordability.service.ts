@@ -1,5 +1,6 @@
 import type { City } from "../cities/cities.types.js";
 import type { CityAffordability, DetailedCityAffordability, AffordabilityLevel, RentBurdenBand } from "./affordability.types.js";
+import { buildCensusGeoQuery } from "../common/census.js";
 import { getCityIncome, getDetailedCityIncome } from "../income/income.service.js";
 import { getCityHousing, getDetailedCityHousing } from "../housing/housing.service.js";
 
@@ -40,7 +41,7 @@ export async function getCityAffordability(
 
 async function fetchRentBurdenBands(city: City, year: number): Promise<RentBurdenBand[]> {
   const baseUrl = `https://api.census.gov/data/${year}/acs/acs5`;
-  const geo = `&for=place:${city.placeCode}&in=state:${city.stateFips}`;
+  const geo = buildCensusGeoQuery(city);
   const key = process.env.CENSUS_API_KEY ? `&key=${process.env.CENSUS_API_KEY}` : "";
 
   const vars = [

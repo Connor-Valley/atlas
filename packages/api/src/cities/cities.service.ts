@@ -1,5 +1,7 @@
 import type { City } from './cities.types.js';
 import { STATE_FIPS, type SupportedState } from '../states/states.types.js';
+import { buildCensusGeoQuery } from "../common/census.js";
+import { resolvePlace } from "../places/place-resolver.js";
 
 export async function getCity(
   state: string,
@@ -13,59 +15,41 @@ export async function getCity(
     throw new Error(`Unsupported state: ${stateCode}`);
   }
 
-  const response = await fetch(
+  const place = await resolvePlace(stateCode, citySlug, year);
+  const incomeResponse = await fetch(
     `https://api.census.gov/data/${year}/acs/acs5` +
-      `?get=NAME,B01003_001E,B19013_001E` +
-      `&for=place:*&in=state:${stateFips}` +
-      (process.env.CENSUS_API_KEY ? `&key=${process.env.CENSUS_API_KEY}` : "")
+      `?get=B19013_001E${buildCensusGeoQuery(place)}` +
+      (process.env.CENSUS_API_KEY ? `&key=${process.env.CENSUS_API_KEY}` : ""),
   );
 
-  if (!response.ok) {
+  if (!incomeResponse.ok) {
     throw new Error("Failed to fetch Census data");
   }
 
-  const data = (await response.json()) as string[][];
-  const [, ...rows] = data;
+  const incomeData = (await incomeResponse.json()) as string[][];
+  const medianIncome = incomeData[1]?.[0];
 
-  const normalizedCity = citySlug.replace(/-/g, ' ').toLowerCase();
-
-  const match = rows.find((row) => {
-    const name = row[0].toLowerCase();
-    return name.startsWith(`${normalizedCity} city`)
-  });
-
-  if (!match) {
-    throw new Error("City not found");
-  }
-
-  const [
-    fullName,
-    population,
-    medianIncome,
-    stateFipsResult,
-    placeCode,
-  ] = match;
-
-  let cityName = fullName.split(',')[0];
-
-  cityName = cityName.replace(/ city$/i, '');
-
-  const { county, countyFips } = await getCountyFromPlace(
-    year,
-    stateFipsResult,
-    placeCode
-  );
+  const { county, countyFips } = place.geographyType === "county-subdivision"
+    ? {
+        county: normalizeCountyName(place.fullName.split(",")[1] ?? ""),
+        countyFips: place.countyFips,
+      }
+    : await getCountyFromPlace(year, place.stateFips, place.placeCode);
 
   return {
-    name: cityName,
+    name: place.displayName,
     state: stateCode,
     county,
+    fullName: place.fullName,
+    slug: place.slug,
+    placeType: place.placeType,
+    geographyType: place.geographyType,
 
-    stateFips: stateFipsResult,
-    placeCode,
+    stateFips: place.stateFips,
+    placeCode: place.placeCode,
     countyFips,
     
-    population: Number(population),
+    population: place.population,
     medianIncome: Number(medianIncome),
   };
 }
@@ -110,3 +94,6 @@ async function getCountyFromPlace(
   throw new Error("Failed to fetch county for place");
 }
 
+function normalizeCountyName(value: string): string {
+  return value.replace(/\bCounty\b/i, "").trim();
+}

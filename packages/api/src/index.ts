@@ -9,6 +9,9 @@ import incomeRouter from "./income/income.route.js"
 import affordabilityRouter from "./affordability/affordability.route.js"
 import statesRouter from "./states/states.route.js"
 import shareRouter from "./share/share.route.js";
+import cityProfileRouter from "./city-profile/city-profile.route.js";
+import financialRouter from "./financial/financial.route.js";
+import qualityOfLifeRouter from "./quality-of-life/quality-of-life.route.js";
 import { initializeHpiCache } from "./housing/housing.service.js";
 
 // Load .env from repo root (monorepo) or cwd
@@ -35,6 +38,9 @@ app.use('/income', incomeRouter);
 app.use('/affordability', affordabilityRouter);
 app.use('/states', statesRouter);
 app.use('/share', shareRouter);
+app.use('/city-profile', cityProfileRouter);
+app.use('/financial', financialRouter);
+app.use('/quality-of-life', qualityOfLifeRouter);
 
 // Initialize FHFA data cache at startup
 initializeHpiCache();

@@ -155,3 +155,50 @@
   background: rgba(255, 213, 0, 0.35);
   color: #ffd500;
 }
+
+.city-hero-card__details-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  position: absolute;
+  bottom: 14px;
+  left: 32px;
+  z-index: 1;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: white;
+  font-size: 0.84rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  opacity: 0.82;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.city-hero-card__details-btn:hover {
+  background: transparent;
+  opacity: 1;
+  transform: translateY(-2px);
+}
+
+.city-hero-card__details-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1em;
+  overflow: hidden;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.city-hero-card__details-btn:hover .city-hero-card__details-icon {
+  animation: city-hero-arrow-cycle 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes city-hero-arrow-cycle {
+  0%   { transform: translateX(0);   opacity: 1; }
+  45%  { transform: translateX(9px); opacity: 0; }
+  46%  { transform: translateX(-9px); opacity: 0; }
+  100% { transform: translateX(0);   opacity: 1; }
+}
