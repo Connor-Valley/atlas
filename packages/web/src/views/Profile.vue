@@ -27,7 +27,7 @@ const memberSince = computed(() => {
 });
 
 const recentFavorites = computed(() => favorites.value.slice(0, 3));
-const recentComparisons = computed(() => savedComparisons.value.slice(0, 5));
+const recentComparisons = computed(() => savedComparisons.value.slice(0, 3));
 
 const settingsActions: Array<{
   id: SettingsActionId;
