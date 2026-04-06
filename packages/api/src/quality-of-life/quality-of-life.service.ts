@@ -1,7 +1,7 @@
 import type { MetricWithSource, SourceAttribution } from "../common/source.types.js";
 import type { City } from "../cities/cities.types.js";
 import { buildCensusGeoQuery } from "../common/census.js";
-import { FAA_AIRPORT_REFERENCE_AS_OF, FAA_AIRPORT_SOURCE_URL, STATE_PRIMARY_AIRPORTS } from "./airport-reference.js";
+import { BTS_ENPLANEMENTS_AS_OF, BTS_SOURCE_URL, FAA_AIRPORT_REFERENCE_AS_OF, FAA_AIRPORT_SOURCE_URL, findNearestAirport, getAirportBusyness } from "./airport-reference.js";
 import type { AirportInfo, QualityOfLifeDetails, QualityOfLifeSummary } from "./quality-of-life.types.js";
 
 export async function getQualityOfLifeSummary(city: City, year: number): Promise<QualityOfLifeSummary> {
@@ -28,6 +28,15 @@ export async function getQualityOfLifeSummary(city: City, year: number): Promise
       methodologyNote: "Official crime metrics are reserved for a future city/county join. This field is intentionally null until the join is reliable.",
     }),
     nearestMajorAirport: airport,
+    airportBusyness: {
+      value: airport.value ? getAirportBusyness(airport.value.code) : null,
+      source: {
+        sourceName: "Bureau of Transportation Statistics",
+        sourceUrl: BTS_SOURCE_URL,
+        asOf: BTS_ENPLANEMENTS_AS_OF,
+        geographyLevel: "place",
+      },
+    },
   };
 }
 
@@ -45,7 +54,7 @@ export async function getQualityOfLifeDetails(city: City, year: number): Promise
     }),
     reportingNotes: [
       "Labor market metrics come from ACS 5-year place-level estimates for broad coverage.",
-      "Airport values currently use a representative primary commercial airport reference by state until a coordinate-based nearest-airport join lands.",
+      "Nearest airport is determined by haversine distance from the city centroid (Census ACS internal point) to ~170 commercial service airports.",
       "Crime fields remain null until official city/county matching is reliable enough to avoid misleading users.",
     ],
   };
@@ -97,15 +106,17 @@ async function fetchLaborMetrics(city: City, year: number): Promise<{
 }
 
 function getAirport(city: City): MetricWithSource<AirportInfo | null> {
-  const airport = STATE_PRIMARY_AIRPORTS[city.state] ?? null;
+  const airport = findNearestAirport(city.lat, city.lon);
   return {
-    value: airport,
+    value: airport ? { code: airport.code, name: airport.name, city: airport.city, state: airport.state, category: airport.category } : null,
     source: {
       sourceName: "FAA Airport Data",
       sourceUrl: FAA_AIRPORT_SOURCE_URL,
       asOf: FAA_AIRPORT_REFERENCE_AS_OF,
-      geographyLevel: "state",
-      methodologyNote: "Returns a representative primary commercial airport for the state until a nearest-airport geographic join is added.",
+      geographyLevel: "place",
+      methodologyNote: city.lat != null
+        ? "Nearest commercial airport by straight-line (haversine) distance from city centroid."
+        : "City coordinates unavailable; airport field is null.",
     },
   };
 }

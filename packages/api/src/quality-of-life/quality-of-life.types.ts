@@ -8,6 +8,15 @@ export type AirportInfo = {
   category: "primary-commercial";
 };
 
+export type AirportBusyness = {
+  code: string;
+  annualEnplanements: number;
+  busyScale: number; // 1–5
+  hubCategory: "large" | "medium" | "small" | "regional";
+  hubLabel: string;
+  nationalPercentile: number; // 0–100
+};
+
 export type QualityOfLifeSummary = {
   city: string;
   state: string;
@@ -16,6 +25,7 @@ export type QualityOfLifeSummary = {
   violentCrimeRate: MetricWithSource<number | null>;
   propertyCrimeRate: MetricWithSource<number | null>;
   nearestMajorAirport: MetricWithSource<AirportInfo | null>;
+  airportBusyness: MetricWithSource<AirportBusyness | null>;
 };
 
 export type QualityOfLifeDetails = QualityOfLifeSummary & {

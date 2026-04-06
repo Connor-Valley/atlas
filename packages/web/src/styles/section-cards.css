@@ -326,3 +326,72 @@
   align-self: stretch;
 }
 
+
+/* Airport busy scale */
+.city-exp__airport {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.city-exp__airport-info {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.city-exp__busy {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.city-exp__busy-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.city-exp__busy-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.city-exp__busy-tag {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.city-exp__busy-track {
+  display: flex;
+  gap: 4px;
+}
+
+.city-exp__busy-pip {
+  flex: 1;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--border-card);
+  transition: background 0.2s;
+}
+
+.city-exp__busy-pip--active {
+  background: var(--accent);
+}
+
+.city-exp__busy-sub {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.city-exp__airport-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}

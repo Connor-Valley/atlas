@@ -15,4 +15,6 @@ export type City = {
     
     population: number;
     medianIncome: number;
+    lat: number | null;
+    lon: number | null;
 }

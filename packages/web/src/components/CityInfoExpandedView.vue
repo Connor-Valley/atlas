@@ -187,11 +187,11 @@ const commuteBars = computed(() => {
       <!-- Portrait -->
       <div class="city-exp__portrait data-card">
         <p class="city-exp__lead">
-          <span class="city-exp__city-name">{{ props.city.charAt(0).toUpperCase() + props.city.slice(1) }}</span>
+          <span class="city-exp__city-name">{{ props.city.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') }}</span>
           is home to
           <span class="city-exp__accent">{{ pop }}</span>
           residents
-          <template v-if="medianAge"> with a median age of <span class="city-exp__accent">{{ medianAge }}</span> — {{ ageLabel }}</template>.
+          <template v-if="medianAge"> with a median age of <span class="city-exp__accent">{{ medianAge }}</span>, {{ ageLabel }}</template>.
         </p>
         <p v-if="eduHeadline" class="city-exp__body">
           <span class="city-exp__accent">{{ eduHeadline.charAt(0).toUpperCase() + eduHeadline.slice(1) }}</span>,
@@ -200,7 +200,7 @@ const commuteBars = computed(() => {
         <p v-if="renterShare" class="city-exp__body">
           <span class="city-exp__accent">{{ renterShare }}%</span> of households rent
           <template v-if="remoteShare && remoteShare >= 15">, and <span class="city-exp__accent">{{ remoteShare }}%</span> work entirely from home</template>
-          <template v-if="foreignBorn"> — and <span class="city-exp__accent">{{ foreignBorn }}%</span> of residents were born outside the US</template>.
+          <template v-if="foreignBorn">, and <span class="city-exp__accent">{{ foreignBorn }}%</span> of residents were born outside the US</template>.
         </p>
         <p v-if="unemployment" class="city-exp__body">
           The local unemployment rate stands at <span class="city-exp__accent">{{ unemployment }}%</span>
@@ -288,10 +288,26 @@ const commuteBars = computed(() => {
               <template v-if="ownerShare"><span class="city-exp__accent">{{ ownerShare }}%</span> of households own their home</template><template v-if="renterShare"> while <span class="city-exp__accent">{{ renterShare }}%</span> rent</template>.
             </p>
             <div v-if="airport" class="city-exp__airport">
-              <span class="mdi mdi-airplane city-exp__airport-icon"></span>
-              <div>
-                <span class="city-exp__airport-code">{{ airport.code }}</span>
-                <span class="city-exp__airport-name">{{ airport.name }}</span>
+              <div class="city-exp__airport-row">
+                <span class="mdi mdi-airplane city-exp__airport-icon"></span>
+                <div class="city-exp__airport-info">
+                  <span class="city-exp__airport-code">{{ airport.code }}</span>
+                  <span class="city-exp__airport-name">{{ airport.name }}</span>
+                </div>
+              </div>
+              <div v-if="qol.airportBusyness?.value" class="city-exp__busy">
+                <div class="city-exp__busy-header">
+                  <span class="city-exp__busy-label">Traffic</span>
+                  <span class="city-exp__busy-tag">{{ qol.airportBusyness.value.hubLabel }}</span>
+                </div>
+                <div class="city-exp__busy-track">
+                  <div
+                    v-for="i in 5" :key="i"
+                    class="city-exp__busy-pip"
+                    :class="{ 'city-exp__busy-pip--active': i <= qol.airportBusyness.value.busyScale }"
+                  ></div>
+                </div>
+                <span class="city-exp__busy-sub">{{ (qol.airportBusyness.value.annualEnplanements / 1_000_000).toFixed(1) }}M passengers/yr · busier than {{ qol.airportBusyness.value.nationalPercentile }}% of tracked airports</span>
               </div>
             </div>
           </div>

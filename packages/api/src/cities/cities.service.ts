@@ -23,11 +23,16 @@ export async function getCity(
   );
 
   if (!incomeResponse.ok) {
-    throw new Error("Failed to fetch Census data");
+    const body = await incomeResponse.text().catch(() => "");
+    throw new Error(`Failed to fetch Census data: ${incomeResponse.status} ${body}`);
   }
 
   const incomeData = (await incomeResponse.json()) as string[][];
   const medianIncome = incomeData[1]?.[0];
+
+  // Fetch city centroid coordinates separately — INTPTLAT/INTPTLONG are geographic
+  // variables that must be requested via the geography endpoint.
+  const { lat, lon } = await fetchCityCoordinates(place, year);
 
   const { county, countyFips } = place.geographyType === "county-subdivision"
     ? {
@@ -51,6 +56,8 @@ export async function getCity(
     
     population: place.population,
     medianIncome: Number(medianIncome),
+    lat: Number.isFinite(lat) ? lat : null,
+    lon: Number.isFinite(lon) ? lon : null,
   };
 }
 
@@ -92,6 +99,49 @@ async function getCountyFromPlace(
     if (fallback) return fallback;
   }
   throw new Error("Failed to fetch county for place");
+}
+
+/**
+ * Fetch the city centroid coordinates via the Census TIGERweb REST API.
+ * - Places (incorporated cities, CDPs): TIGERweb MapServer layer 28
+ * - County subdivisions (townships, etc.): TIGERweb MapServer layer 36
+ * Returns null/null on any failure so coordinate absence never breaks the main city lookup.
+ */
+async function fetchCityCoordinates(
+  place: { geographyType: "place" | "county-subdivision"; stateFips: string; placeCode: string; countyFips: string },
+  _year: number,
+): Promise<{ lat: number | null; lon: number | null }> {
+  try {
+    // GEOID format:
+    //   place:              stateFips(2) + placeCode(5)           = 7 digits
+    //   county-subdivision: countyFips(5) + placeCode(5)          = 10 digits
+    const geoid =
+      place.geographyType === "county-subdivision"
+        ? `${place.countyFips}${place.placeCode}`
+        : `${place.stateFips}${place.placeCode}`;
+    const layer = place.geographyType === "county-subdivision" ? 22 : 28;
+
+    const url =
+      `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/${layer}/query` +
+      `?where=GEOID%3D'${geoid}'&outFields=INTPTLAT,INTPTLON&f=json`;
+
+    const res = await fetch(url);
+    if (!res.ok) return { lat: null, lon: null };
+
+    type TigerResponse = { features?: Array<{ attributes: { INTPTLAT: string; INTPTLON: string } }> };
+    const data = (await res.json()) as TigerResponse;
+    const attrs = data.features?.[0]?.attributes;
+    if (!attrs) return { lat: null, lon: null };
+
+    const lat = Number(attrs.INTPTLAT);
+    const lon = Number(attrs.INTPTLON);
+    return {
+      lat: Number.isFinite(lat) ? lat : null,
+      lon: Number.isFinite(lon) ? lon : null,
+    };
+  } catch {
+    return { lat: null, lon: null };
+  }
 }
 
 function normalizeCountyName(value: string): string {
