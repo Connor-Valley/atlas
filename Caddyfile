@@ -4,7 +4,7 @@ atlas.local {
     }
 
     # API routes
-    handle /api* {
+    handle_path /api* {
         reverse_proxy localhost:3000
     }
 
