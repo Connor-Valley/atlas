@@ -52,7 +52,7 @@
   cursor: pointer;
   color: var(--text-primary);
   border-bottom: 1px solid var(--border-subtle);
-  font-size: 0.65rem;
+  font-size: 0.8rem;
   transition: background 0.1s ease;
   display: flex;
   justify-content: space-between;
