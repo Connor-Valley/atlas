@@ -212,6 +212,8 @@ const shareUrl = computed(() => {
 
 const supportsNativeShare = computed(() => typeof navigator !== "undefined" && typeof navigator.share === "function");
 const isSaving = ref(false);
+const showSavedLink = ref(false);
+let savedLinkTimeout: ReturnType<typeof setTimeout> | null = null;
 
 async function toggleSave() {
   if (!user.value) {
@@ -221,6 +223,7 @@ async function toggleSave() {
   if (!props.stateB || !props.cityB || !comparison.value) return;
   if (isSaved.value) {
     await removeComparison(props.cityA, props.stateA, props.cityB, props.stateB);
+    showSavedLink.value = false;
   } else {
     isSaving.value = true;
     await addComparison(
@@ -228,6 +231,9 @@ async function toggleSave() {
       props.cityB, comparison.value.b.cityInfo.name, props.stateB,
     );
     setTimeout(() => { isSaving.value = false; }, 700);
+    showSavedLink.value = true;
+    if (savedLinkTimeout) clearTimeout(savedLinkTimeout);
+    savedLinkTimeout = setTimeout(() => { showSavedLink.value = false; }, 6000);
   }
 }
 
@@ -444,15 +450,26 @@ onBeforeUnmount(() => {
             </div>
           </div>
 
-          <span class="compare-view__save-wrap" :data-tooltip="isSaved ? 'Unsave comparison' : 'Save city comparison'">
+          <span class="compare-view__save-wrap">
             <button
               class="compare-view__save-btn"
               :class="{ 'compare-view__save-btn--saved': isSaved, 'compare-view__save-btn--animating': isSaving }"
+              :data-tooltip="isSaved ? 'Unsave comparison' : 'Save city comparison'"
               @click="toggleSave"
             >
               <span class="compare-view__save-btn-label">{{ isSaved ? 'Saved' : 'Save' }}</span>
               <span class="mdi" :class="isSaved ? 'mdi-bookmark' : 'mdi-bookmark-outline'"></span>
             </button>
+            <Transition name="saved-link">
+              <button
+                v-if="showSavedLink"
+                class="compare-view__saved-link"
+                @click="router.push({ name: 'saved-comparisons' })"
+              >
+                View saved
+                <span class="mdi mdi-arrow-right"></span>
+              </button>
+            </Transition>
           </span>
         </div>
       </template>
