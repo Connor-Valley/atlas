@@ -23,6 +23,72 @@
 }
 
 /* =====================
+   STATE AUTOCOMPLETE
+===================== */
+.state-search-container {
+  position: relative;
+}
+
+.state-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 1002;
+  box-shadow: var(--card-shadow-md);
+}
+
+.state-suggestions li {
+  padding: 10px 12px;
+  cursor: pointer;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 0.65rem;
+  transition: background 0.1s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.state-suggestions li:last-child {
+  border-bottom: none;
+}
+
+.state-suggestions li:hover,
+.state-suggestions__item--highlighted {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.state-suggestions__name {
+  min-width: 0;
+}
+
+.state-suggestions__code {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.state-search-container:has(.state-suggestions) input {
+  border-radius: 8px 8px 0 0;
+}
+
+/* =====================
    CITY AUTOCOMPLETE
 ===================== */
 .city-search-container {
@@ -60,7 +126,8 @@
   border-bottom: none;
 }
 
-.city-suggestions li:hover {
+.city-suggestions li:hover,
+.city-suggestions__item--highlighted {
   background: var(--accent-light);
   color: var(--accent);
 }

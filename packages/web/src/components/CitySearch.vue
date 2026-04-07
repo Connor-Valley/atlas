@@ -17,10 +17,14 @@ function slugToDisplay(slug: string) {
 
 const localCity = ref(slugToDisplay(props.initialCity || ""));
 const localState = ref(props.initialState || "");
+const stateQuery = ref("");
+const showStateSuggestions = ref(false);
+const highlightedStateIndex = ref(-1);
 const states = ref<StateOption[]>([]);
 const cities = ref<{ name: string; slug: string }[]>([]);
 const searchQuery = ref(slugToDisplay(props.initialCity || ""));
 const showSuggestions = ref(false);
+const highlightedCityIndex = ref(-1);
 
 // Watch for changes in initial props
 watch(() => props.initialCity, (newCity) => {
@@ -34,8 +38,28 @@ watch(() => props.initialCity, (newCity) => {
 watch(() => props.initialState, (newState) => {
   if (newState) {
     localState.value = newState;
+    const match = states.value.find(s => s.code === newState);
+    if (match) stateQuery.value = match.name;
     fetchCities();
   }
+});
+
+const filteredStates = computed(() => {
+  const q = stateQuery.value.trim().toLowerCase();
+  if (!q) return [];
+  return states.value
+    .filter(s =>
+      s.name.toLowerCase().includes(q) ||
+      s.code.toLowerCase().startsWith(q)
+    )
+    .sort((a, b) => {
+      const aExact = a.code.toLowerCase() === q;
+      const bExact = b.code.toLowerCase() === q;
+      if (aExact && !bExact) return -1;
+      if (bExact && !aExact) return 1;
+      return a.name.localeCompare(b.name);
+    })
+    .slice(0, 8);
 });
 
 const filteredCities = computed(() => {
@@ -50,6 +74,10 @@ const filteredCities = computed(() => {
 onMounted(async () => {
   try {
     states.value = await getStates();
+    if (props.initialState) {
+      const match = states.value.find(s => s.code === props.initialState);
+      if (match) stateQuery.value = match.name;
+    }
   } catch (error) {
     console.error('Failed to load states:', error);
   }
@@ -65,35 +93,121 @@ const fetchCities = async () => {
   }
 };
 
+// ── State autocomplete ─────────────────────────────────────────────────────
+
+const onStateInput = () => {
+  localState.value = "";
+  showStateSuggestions.value = true;
+  highlightedStateIndex.value = -1;
+};
+
+const onStateFocus = () => {
+  if (stateQuery.value.length >= 1) showStateSuggestions.value = true;
+};
+
+const cityInput = ref<HTMLInputElement | null>(null);
+
+const onStateKeydown = (e: KeyboardEvent) => {
+  const list = filteredStates.value;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (!showStateSuggestions.value) showStateSuggestions.value = true;
+    highlightedStateIndex.value = Math.min(highlightedStateIndex.value + 1, list.length - 1);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    highlightedStateIndex.value = Math.max(highlightedStateIndex.value - 1, -1);
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (highlightedStateIndex.value >= 0 && list[highlightedStateIndex.value]) {
+      selectState(list[highlightedStateIndex.value]);
+    } else if (list.length > 0) {
+      selectState(list[0]);
+    } else if (localState.value) {
+      showStateSuggestions.value = false;
+    }
+    cityInput.value?.focus();
+  }
+};
+
+const onStateBlur = () => {
+  setTimeout(() => {
+    showStateSuggestions.value = false;
+    highlightedStateIndex.value = -1;
+    if (!localState.value && stateQuery.value) {
+      const q = stateQuery.value.trim().toLowerCase();
+      const match = states.value.find(
+        s => s.name.toLowerCase() === q || s.code.toLowerCase() === q
+      );
+      if (match) {
+        selectState(match);
+      } else {
+        stateQuery.value = "";
+      }
+    }
+  }, 150);
+};
+
+const selectState = (s: StateOption) => {
+  localState.value = s.code;
+  stateQuery.value = s.name;
+  showStateSuggestions.value = false;
+  highlightedStateIndex.value = -1;
+  fetchCities();
+};
+
+// ── City autocomplete ──────────────────────────────────────────────────────
+
 let debounceTimer: number;
 
 const onInput = () => {
   searchQuery.value = localCity.value;
   showSuggestions.value = true;
+  highlightedCityIndex.value = -1;
   clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(() => {
-
-  }, 300);
+  debounceTimer = setTimeout(() => {}, 300);
 };
 
 const onFocus = () => {
-  if (localCity.value.length >= 2) {
-    showSuggestions.value = true;
-  }
+  if (localCity.value.length >= 2) showSuggestions.value = true;
 };
 
 const onBlur = () => {
-  // Delay hiding suggestions to allow click events to register
   setTimeout(() => {
     showSuggestions.value = false;
+    highlightedCityIndex.value = -1;
   }, 150);
+};
+
+const onCityKeydown = (e: KeyboardEvent) => {
+  const list = filteredCities.value;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    highlightedCityIndex.value = Math.min(highlightedCityIndex.value + 1, list.length - 1);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    highlightedCityIndex.value = Math.max(highlightedCityIndex.value - 1, -1);
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (!showSuggestions.value) {
+      submit();
+      return;
+    }
+    if (highlightedCityIndex.value >= 0 && list[highlightedCityIndex.value]) {
+      selectCity(list[highlightedCityIndex.value]);
+    } else if (list.length > 0) {
+      selectCity(list[0]);
+    } else {
+      submit();
+    }
+  }
 };
 
 const selectCity = (city: { name: string; slug: string }) => {
   localCity.value = city.name;
   searchQuery.value = city.name;
   showSuggestions.value = false;
-}
+  highlightedCityIndex.value = -1;
+};
 
 function cityToSlug(city: string) {
   return city.trim().toLowerCase().replace(/\s+/g, "-");
@@ -113,22 +227,44 @@ watch(() => localState.value, fetchCities, { immediate: true });
 
 <template>
   <div class="search-bar">
-    <select v-model="localState">
-      <option value="" disabled selected>Select State</option>
-      <option v-for="state in states" :key="state.code" :value="state.code">
-        {{ state.name }} ({{ state.code }})
-      </option>
-    </select>
+    <div class="state-search-container">
+      <input
+        v-model="stateQuery"
+        @input="onStateInput"
+        @focus="onStateFocus"
+        @blur="onStateBlur"
+        @keydown="onStateKeydown"
+        placeholder="Select State"
+        autocomplete="off"
+      />
+      <ul v-if="showStateSuggestions && filteredStates.length > 0" class="state-suggestions">
+        <li
+          v-for="(s, i) in filteredStates"
+          :key="s.code"
+          :class="{ 'state-suggestions__item--highlighted': i === highlightedStateIndex }"
+          @mousedown.prevent="selectState(s)"
+        >
+          <span class="state-suggestions__name">{{ s.name }}</span><span class="state-suggestions__code">{{ s.code }}</span>
+        </li>
+      </ul>
+    </div>
     <div class="city-search-container">
       <input
+          ref="cityInput"
           v-model="localCity"
           @input="onInput"
           @focus="onFocus"
           @blur="onBlur"
+          @keydown="onCityKeydown"
           placeholder="Search cities..."
       />
       <ul v-if="showSuggestions && filteredCities.length > 0" class="city-suggestions">
-        <li v-for="city in filteredCities" :key="city.slug" @click="selectCity(city)">
+        <li
+          v-for="(city, i) in filteredCities"
+          :key="city.slug"
+          :class="{ 'city-suggestions__item--highlighted': i === highlightedCityIndex }"
+          @mousedown.prevent="selectCity(city)"
+        >
           {{ city.name }}
         </li>
       </ul>
