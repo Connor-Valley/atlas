@@ -64,7 +64,7 @@ const commuteNarrative = computed(() => {
   const remote = remoteShare.value;
   if (!top) return null;
   const pct = Math.round(top.share * 100);
-  let s = `${pct}% of residents ${top.label === 'Drove alone' ? 'drive alone' : top.label.toLowerCase()}`;
+  let s = `${pct}% of residents ${top.label === 'Drove alone' ? 'drive alone' : top.label === 'Public transit' ? 'utilize public transit' : top.label.toLowerCase()}`;
   if (remote && remote >= 15 && top.label !== 'Worked from home') {
     s += `, and ${remote}% work entirely from home`;
   }
