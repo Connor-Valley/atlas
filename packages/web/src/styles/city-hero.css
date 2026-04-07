@@ -18,7 +18,7 @@
   min-height: 232px;
   box-shadow: 0 8px 32px rgba(14, 165, 148, 0.3), 0 2px 8px rgba(0, 0, 0, 0.15);
   position: relative;
-  overflow: hidden;
+  overflow: clip;
 }
 
 .city-hero-card--loading {
@@ -37,6 +37,7 @@
     rgba(45, 212, 191, 0.38) 100%
   );
   pointer-events: none;
+  z-index: 0;
 }
 
 .city-hero-card::after {
@@ -49,11 +50,11 @@
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.06);
   pointer-events: none;
+  z-index: 0;
 }
 
 .city-hero-card__content {
   position: relative;
-  z-index: 1;
 }
 
 .city-hero-card__name {
@@ -71,9 +72,105 @@
 }
 
 .city-hero-card__sub {
+  display: inline-flex;
+  align-items: center;
   font-size: 0.9rem;
+  font-weight: 500;
+  opacity: 1;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+  letter-spacing: 0.01em;
+}
+
+.city-hero-card__divider {
+  margin: 0 6px;
+  opacity: 0.4;
+}
+
+.city-hero-card__place-type {
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+.city-hero-card__place-info {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 4px;
+  cursor: default;
+  vertical-align: middle;
+  position: relative;
+}
+
+.city-hero-card__place-info .mdi {
+  font-size: 0.9rem;
+  opacity: 1;
+  color: #fff;
+  transition: opacity 0.15s;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+}
+
+.city-hero-card__place-info:hover .mdi {
+  opacity: 0.75;
+}
+
+.city-hero-card__place-tooltip {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 10px);
+  transform: translateY(-50%);
+  width: 210px;
+  background: rgba(10, 14, 23, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px 12px;
+  pointer-events: none;
+  z-index: 100;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.city-hero-card__place-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  transform: translateY(-50%);
+  border: 6px solid transparent;
+  border-right-color: rgba(10, 14, 23, 0.88);
+}
+
+.city-hero-card__place-tooltip-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.city-hero-card__place-tooltip-body {
+  font-size: 0.78rem;
   font-weight: 400;
-  opacity: 0.7;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.8);
+  white-space: normal;
+}
+
+.place-tooltip-enter-active,
+.place-tooltip-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.place-tooltip-enter-from,
+.place-tooltip-leave-to {
+  opacity: 0;
+  transform: translateY(-50%) translateX(-4px);
+}
+
+.place-tooltip-enter-to {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
 }
 
 .city-hero-card__sub--skeleton {
@@ -88,8 +185,6 @@
   gap: 32px;
   padding-top: 18px;
   border-top: 1px solid rgba(255, 255, 255, 0.2);
-  position: relative;
-  z-index: 1;
 }
 
 .city-hero-card__stat-label {
@@ -123,7 +218,6 @@
   position: absolute;
   top: 16px;
   right: 16px;
-  z-index: 2;
   background: rgba(255, 255, 255, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 50%;
@@ -163,7 +257,6 @@
   position: absolute;
   bottom: 14px;
   left: 32px;
-  z-index: 1;
   padding: 0;
   border: none;
   background: transparent;

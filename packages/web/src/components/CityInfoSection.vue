@@ -43,6 +43,20 @@ const peopleScore = computed(() => {
   return Math.min(100, Math.round((data.value.population / 1000000) * 100));
 });
 
+const placeTooltipVisible = ref(false);
+
+const placeType = computed(() => {
+  const pop = data.value?.population;
+  if (pop == null) return null;
+  if (pop >= 500_000) return { label: 'Major City',     tooltip: 'Population over 500,000. A large urban core and regional hub.' };
+  if (pop >= 150_000) return { label: 'City',           tooltip: 'Population 150,000–499,999. A mid-to-large city with urban density.' };
+  if (pop >= 50_000)  return { label: 'Suburban City',  tooltip: 'Population 50,000–149,999. A city-sized place often anchoring a suburban area.' };
+  if (pop >= 20_000)  return { label: 'Suburban Town',  tooltip: 'Population 20,000–49,999. A larger town typically found in a metro suburb.' };
+  if (pop >= 8_000)   return { label: 'Town',           tooltip: 'Population 8,000–19,999. A self-contained town with local services.' };
+  if (pop >= 2_500)   return { label: 'Rural Town',     tooltip: 'Population 2,500–7,999. A small town outside major metro areas.' };
+  return                     { label: 'Village',        tooltip: 'Population under 2,500. A very small incorporated community.' };
+});
+
 async function load() {
   if (!props.city || !props.state) return;
 
@@ -126,7 +140,26 @@ watch(
       </button>
       <div class="city-hero-card__content">
         <div class="city-hero-card__name">{{ data.name }}</div>
-        <div class="city-hero-card__sub">{{ data.county }}, {{ state.toUpperCase() }}</div>
+        <div class="city-hero-card__sub">
+          {{ data.county }}, {{ state.toUpperCase() }}
+          <template v-if="placeType">
+            <span class="city-hero-card__divider">|</span>
+            <span class="city-hero-card__place-type">{{ placeType.label }}</span>
+            <span
+              class="city-hero-card__place-info"
+              @mouseenter="placeTooltipVisible = true"
+              @mouseleave="placeTooltipVisible = false"
+            >
+              <span class="mdi mdi-information-outline"></span>
+              <Transition name="place-tooltip">
+                <div v-if="placeTooltipVisible" class="city-hero-card__place-tooltip">
+                  <div class="city-hero-card__place-tooltip-label">{{ placeType.label }}</div>
+                  <div class="city-hero-card__place-tooltip-body">{{ placeType.tooltip }}</div>
+                </div>
+              </Transition>
+            </span>
+          </template>
+        </div>
       </div>
       <div class="city-hero-card__stats">
         <div class="city-hero-card__stat">
