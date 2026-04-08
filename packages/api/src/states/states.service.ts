@@ -18,7 +18,7 @@ function getStateName(code: string): string {
         CO: 'Colorado',
         CT: 'Connecticut',
         DE: 'Delaware',
-        DC: 'District of Columbia',
+        DC: 'Washington DC',
         FL: 'Florida',
         GA: 'Georgia',
         HI: 'Hawaii',
