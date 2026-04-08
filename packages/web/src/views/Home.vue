@@ -35,6 +35,16 @@ const showAuthModal  = ref(false);
 const authModalMode  = ref<'login' | 'register'>('register');
 const userMenuOpen   = ref(false);
 const userMenuRef = ref<HTMLElement | null>(null);
+let userMenuCloseTimer: ReturnType<typeof setTimeout> | null = null;
+
+function openUserMenuHover() {
+  if (userMenuCloseTimer) { clearTimeout(userMenuCloseTimer); userMenuCloseTimer = null; }
+  userMenuOpen.value = true;
+}
+
+function closeUserMenuHover() {
+  userMenuCloseTimer = setTimeout(() => { userMenuOpen.value = false; }, 300);
+}
 const cityShareMenuRef = ref<HTMLElement | null>(null);
 const cityShareMenuOpen = ref(false);
 const cityShareCopied = ref(false);
@@ -295,6 +305,32 @@ watch(() => props.section, async (newSection, oldSection) => {
   }
 });
 
+watch(() => props.city, (newCity) => {
+  if (!newCity && hasSearched.value) {
+    hasSearched.value = false;
+    city.value = '';
+    state.value = '';
+    cityNotFound.value = false;
+    scores.economic = null;
+    scores.housing = null;
+    scores.affordability = null;
+    scores.people = null;
+    expandedSection.value = null;
+    expandedPhase.value = 'collapsed';
+    openedSections.city = false;
+    openedSections.economic = false;
+    openedSections.housing = false;
+    openedSections.affordability = false;
+    if (typeTimer) clearTimeout(typeTimer);
+    displayedTagline.value = '';
+    typewriterDone.value = false;
+    taglineHighlighted.value = false;
+    selectedWordCount.value = 0;
+    taglineIndex = 0;
+    typeTagline();
+  }
+});
+
 onUnmounted(() => {
   if (typeTimer) clearTimeout(typeTimer);
   if (cityShareCopiedTimeout) clearTimeout(cityShareCopiedTimeout);
@@ -323,7 +359,7 @@ function onSearch(payload: { city: string; state: string }) {
   openedSections.housing = false;
   openedSections.affordability = false;
 
-  router.replace(`/city/${payload.state}/${payload.city}`);
+  router.push(`/city/${payload.state}/${payload.city}`);
 
   if (shouldAnimateLandingTransition) {
     void animateLandingToDashboard();
@@ -349,6 +385,14 @@ function clearSearchState() {
   openedSections.housing = false;
   openedSections.affordability = false;
   router.replace('/');
+
+  if (typeTimer) clearTimeout(typeTimer);
+  displayedTagline.value = '';
+  typewriterDone.value = false;
+  taglineHighlighted.value = false;
+  selectedWordCount.value = 0;
+  taglineIndex = 0;
+  typeTagline();
 }
 
 function resetSearch() {
@@ -964,15 +1008,18 @@ async function closeExpandedSection() {
     <div ref="heroDots" class="hero-dots"></div>
 
     <div v-if="user" class="hero-landing__account">
-      <div ref="userMenuRef" class="user-menu hero-auth__user-menu">
+      <div ref="userMenuRef" class="user-menu hero-auth__user-menu" @mouseenter="openUserMenuHover" @mouseleave="closeUserMenuHover">
         <button
           class="user-menu__btn hero-auth__menu-btn"
           :class="{ 'hero-auth__menu-btn--open': userMenuOpen }"
           @click.stop="toggleUserMenu"
         >
-          <span v-if="userMenuOpen" class="user-menu__name hero-auth__menu-name">{{ displayName() ?? 'Account' }}</span>
+          <Transition name="menu-name-slide">
+            <span v-if="userMenuOpen" class="user-menu__name hero-auth__menu-name">{{ displayName() ?? 'Account' }}</span>
+          </Transition>
           <span class="user-menu__avatar">{{ (displayName() ?? 'A')[0].toUpperCase() }}</span>
         </button>
+        <Transition name="user-menu-fade">
         <div v-if="userMenuOpen" class="user-menu__dropdown" @click.stop>
           <button class="user-menu__header user-menu__header-btn" @click="navigateToAccountPage('profile')">
             <span class="user-menu__header-avatar">{{ (displayName() ?? 'A')[0].toUpperCase() }}</span>
@@ -1000,6 +1047,7 @@ async function closeExpandedSection() {
             Sign out
           </button>
         </div>
+        </Transition>
       </div>
     </div>
 

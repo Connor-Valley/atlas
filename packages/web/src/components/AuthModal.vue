@@ -19,6 +19,9 @@ const loading  = ref(false);
 const error    = ref<string | null>(null);
 const registerStep = ref<'details' | 'visibility'>('details');
 const profileVisibility = ref<ProfileVisibility>('public');
+const showPasswordHover = ref(false);
+const showPasswordLocked = ref(false);
+const showPassword = computed(() => showPasswordHover.value || showPasswordLocked.value);
 const captchaToken = ref<string | null>(null);
 const captchaKey = ref(0);
 const hcaptchaSiteKey = (import.meta.env.VITE_HCAPTCHA_SITE_KEY as string | undefined)?.trim() ?? '';
@@ -154,15 +157,27 @@ function goBackToRegisterDetails() {
             <template v-if="!isRegister || registerStep === 'details'">
             <div class="auth-modal__field">
               <label class="auth-modal__label">Password</label>
-              <input
-                v-model="password"
-                type="password"
-                placeholder="••••••••"
-                class="auth-modal__input"
-                :autocomplete="isRegister ? 'new-password' : 'current-password'"
-                :disabled="loading"
-                required
-              />
+              <div class="auth-modal__password-wrap">
+                <input
+                  v-model="password"
+                  :type="showPassword ? 'text' : 'password'"
+                  placeholder="••••••••"
+                  class="auth-modal__input"
+                  :autocomplete="isRegister ? 'new-password' : 'current-password'"
+                  :disabled="loading"
+                  required
+                />
+                <button
+                  type="button"
+                  class="auth-modal__password-toggle"
+                  @mouseenter="showPasswordHover = true"
+                  @mouseleave="showPasswordHover = false"
+                  @click="showPasswordLocked = !showPasswordLocked"
+                  tabindex="-1"
+                >
+                  <span class="mdi" :class="showPassword ? 'mdi-eye-off' : 'mdi-eye'"></span>
+                </button>
+              </div>
             </div>
             </template>
 
