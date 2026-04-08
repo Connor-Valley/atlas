@@ -429,6 +429,34 @@
   letter-spacing: 0.04em;
 }
 
+.auth-modal__password-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.auth-modal__password-wrap .auth-modal__input {
+  padding-right: 36px;
+}
+
+.auth-modal__password-toggle {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  font-size: 1rem;
+  transition: color 0.15s ease;
+}
+
+.auth-modal__password-toggle:hover {
+  color: var(--text-primary);
+}
+
 .auth-modal__input {
   width: 100%;
   padding: 9px 12px;
