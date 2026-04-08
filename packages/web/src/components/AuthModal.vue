@@ -19,7 +19,9 @@ const loading  = ref(false);
 const error    = ref<string | null>(null);
 const registerStep = ref<'details' | 'visibility'>('details');
 const profileVisibility = ref<ProfileVisibility>('public');
-const showPassword = ref(false);
+const showPasswordHover = ref(false);
+const showPasswordLocked = ref(false);
+const showPassword = computed(() => showPasswordHover.value || showPasswordLocked.value);
 const captchaToken = ref<string | null>(null);
 const captchaKey = ref(0);
 const hcaptchaSiteKey = (import.meta.env.VITE_HCAPTCHA_SITE_KEY as string | undefined)?.trim() ?? '';
@@ -168,9 +170,9 @@ function goBackToRegisterDetails() {
                 <button
                   type="button"
                   class="auth-modal__password-toggle"
-                  @mouseenter="showPassword = true"
-                  @mouseleave="showPassword = false"
-                  @click="showPassword = !showPassword"
+                  @mouseenter="showPasswordHover = true"
+                  @mouseleave="showPasswordHover = false"
+                  @click="showPasswordLocked = !showPasswordLocked"
                   tabindex="-1"
                 >
                   <span class="mdi" :class="showPassword ? 'mdi-eye-off' : 'mdi-eye'"></span>
