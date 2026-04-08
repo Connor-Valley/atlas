@@ -104,7 +104,7 @@
 }
 
 .hero-auth__menu-btn--open {
-  min-width: 132px;
+  width: max-content;
   justify-content: flex-end;
   gap: 10px;
   padding-left: 14px;
@@ -191,6 +191,33 @@
 
 .user-menu__chevron--open {
   transform: rotate(180deg);
+}
+
+.user-menu-fade-enter-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.user-menu-fade-leave-active {
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+.user-menu-fade-enter-from,
+.user-menu-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+.menu-name-slide-enter-active {
+  transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.2, 0.9, 0.24, 1);
+}
+.menu-name-slide-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.4, 0, 1, 1);
+}
+.menu-name-slide-enter-from {
+  opacity: 0;
+  transform: translateX(32px);
+}
+.menu-name-slide-leave-to {
+  opacity: 0;
+  transform: translateX(32px);
 }
 
 .user-menu__dropdown {

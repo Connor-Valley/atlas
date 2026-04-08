@@ -1027,6 +1027,8 @@
   font-weight: 300;
   margin-left: 1px;
   animation: blink-cursor 0.9s step-end infinite;
+  pointer-events: none;
+  user-select: none;
 }
 
 .hero-tagline__cursor--done {
