@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "packageManager": "pnpm@10.24.0",
   "scripts": {
-    "dev": "./dev.sh"
+    "dev": "./dev.sh",
+    "dev:web": "pnpm --filter @atlas/web dev"
   },
   "dependencies": {
     "@mdi/js": "^7.4.47"
