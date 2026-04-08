@@ -20,9 +20,12 @@ import { prefetchIncome } from "../api/income";
 import { prefetchAffordability } from "../api/affordability";
 import { useTheme } from "../composables/useTheme";
 
+type ExpandableSection = "city" | "economic" | "housing" | "affordability";
+
 const props = defineProps<{
   state?: string;
   city?: string;
+  section?: ExpandableSection;
 }>();
 
 const router = useRouter();
@@ -48,7 +51,6 @@ const hasSearched = ref(false);
 const cityNotFound = ref(false);
 const transitioningToDashboard = ref(false);
 const transitioningToLanding = ref(false);
-type ExpandableSection = "city" | "economic" | "housing" | "affordability";
 const expandedSection = ref<ExpandableSection | null>(null);
 const expandedPhase = ref<"collapsed" | "expanding" | "expanded" | "collapsing">("collapsed");
 const openedSections = reactive<Record<ExpandableSection, boolean>>({
@@ -256,6 +258,12 @@ onMounted(() => {
     state.value = props.state;
     city.value = props.city;
     hasSearched.value = true;
+    if (props.section) {
+      expandedSection.value = props.section;
+      expandedPhase.value = 'expanded';
+      openedSections[props.section] = true;
+      getPrefetcher(props.section)(props.state, props.city);
+    }
     displayedTagline.value = taglines[0];
     typewriterDone.value = true;
     return;
@@ -269,6 +277,23 @@ watch(showLanding, (isLandingVisible) => {
     applyTheme(true);
   }
 }, { immediate: true });
+
+watch(() => props.section, async (newSection, oldSection) => {
+  if (programmaticNavigation) {
+    programmaticNavigation = false;
+    return;
+  }
+  if (newSection && expandedPhase.value === 'collapsed') {
+    // Browser forward navigation to a section URL
+    expandedSection.value = newSection;
+    expandedPhase.value = 'expanded';
+    openedSections[newSection] = true;
+    getPrefetcher(newSection)(state.value, city.value);
+  } else if (!newSection && expandedPhase.value === 'expanded' && oldSection) {
+    // Browser back button from section URL to city URL
+    await animateSectionTransition(oldSection, false);
+  }
+});
 
 onUnmounted(() => {
   if (typeTimer) clearTimeout(typeTimer);
@@ -895,17 +920,30 @@ async function animateSectionTransition(section: ExpandableSection, expand: bool
   }
 }
 
+const sectionRouteNames: Record<ExpandableSection, string> = {
+  city: 'city-details',
+  economic: 'city-income',
+  housing: 'city-housing',
+  affordability: 'city-affordability',
+};
+
+let programmaticNavigation = false;
+
 async function openSectionDetails(section: ExpandableSection) {
   if (expandedPhase.value !== "collapsed") return;
   expandedSection.value = section;
   openedSections[section] = true;
   getPrefetcher(section)(state.value, city.value);
+  programmaticNavigation = true;
+  router.push({ name: sectionRouteNames[section], params: { state: state.value, city: city.value } });
   await animateSectionTransition(section, true);
 }
 
 async function closeExpandedSection() {
   if (expandedPhase.value !== "expanded" || !expandedSection.value) return;
   await animateSectionTransition(expandedSection.value, false);
+  programmaticNavigation = true;
+  router.push({ name: 'city', params: { state: state.value, city: city.value } });
 }
 </script>
 
