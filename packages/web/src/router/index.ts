@@ -23,6 +23,30 @@ const router = createRouter({
       props: true
     },
     {
+      path: '/city/:state/:city/income',
+      name: 'city-income',
+      component: Home,
+      props: (route) => ({ state: route.params.state, city: route.params.city, section: 'economic' })
+    },
+    {
+      path: '/city/:state/:city/housing',
+      name: 'city-housing',
+      component: Home,
+      props: (route) => ({ state: route.params.state, city: route.params.city, section: 'housing' })
+    },
+    {
+      path: '/city/:state/:city/city-details',
+      name: 'city-details',
+      component: Home,
+      props: (route) => ({ state: route.params.state, city: route.params.city, section: 'city' })
+    },
+    {
+      path: '/city/:state/:city/affordability',
+      name: 'city-affordability',
+      component: Home,
+      props: (route) => ({ state: route.params.state, city: route.params.city, section: 'affordability' })
+    },
+    {
       path: '/housing/:state/:city',
       name: 'housing',
       component: Housing,
