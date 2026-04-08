@@ -135,3 +135,8 @@
 .city-search-container:has(.city-suggestions) input {
   border-radius: 8px 8px 0 0;
 }
+
+.city-search-container input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {onMounted, ref, computed, watch} from "vue";
+import {onMounted, onUnmounted, ref, computed, watch} from "vue";
 import { getStates, type StateOption, getCitiesForState } from "../api/states";
 
 const props = defineProps<{
@@ -46,7 +46,7 @@ watch(() => props.initialState, (newState) => {
 
 const filteredStates = computed(() => {
   const q = stateQuery.value.trim().toLowerCase();
-  if (!q) return [];
+  if (!q) return states.value.slice(0, 8);
   return states.value
     .filter(s =>
       s.name.toLowerCase().includes(q) ||
@@ -63,7 +63,7 @@ const filteredStates = computed(() => {
 });
 
 const filteredCities = computed(() => {
-  if (!searchQuery.value || searchQuery.value.length < 2) return [];
+  if (!searchQuery.value || searchQuery.value.length < 2) return cities.value.slice(0, 10);
   return cities.value
       .filter(city =>
           city.name.toLowerCase().includes(searchQuery.value.toLowerCase())
@@ -102,7 +102,7 @@ const onStateInput = () => {
 };
 
 const onStateFocus = () => {
-  if (stateQuery.value.length >= 1) showStateSuggestions.value = true;
+  showStateSuggestions.value = true;
 };
 
 const cityInput = ref<HTMLInputElement | null>(null);
@@ -140,6 +140,8 @@ const onStateBlur = () => {
       );
       if (match) {
         selectState(match);
+      } else if (filteredStates.value.length > 0) {
+        selectState(filteredStates.value[0]);
       } else {
         stateQuery.value = "";
       }
@@ -168,15 +170,34 @@ const onInput = () => {
 };
 
 const onFocus = () => {
-  if (localCity.value.length >= 2) showSuggestions.value = true;
+  showSuggestions.value = true;
 };
+
+let recentBlurTimer: number | null = null;
+const recentlyBlurred = ref(false);
 
 const onBlur = () => {
   setTimeout(() => {
+    if (showSuggestions.value && filteredCities.value.length > 0) {
+      selectCity(filteredCities.value[0]);
+    }
     showSuggestions.value = false;
     highlightedCityIndex.value = -1;
+    recentlyBlurred.value = true;
+    if (recentBlurTimer !== null) clearTimeout(recentBlurTimer);
+    recentBlurTimer = setTimeout(() => { recentlyBlurred.value = false; }, 4000);
   }, 150);
 };
+
+const onDocumentKeydown = (e: KeyboardEvent) => {
+  if (e.key === 'Enter' && recentlyBlurred.value) {
+    recentlyBlurred.value = false;
+    submit();
+  }
+};
+
+onMounted(() => { document.addEventListener('keydown', onDocumentKeydown); });
+onUnmounted(() => { document.removeEventListener('keydown', onDocumentKeydown); });
 
 const onCityKeydown = (e: KeyboardEvent) => {
   const list = filteredCities.value;
@@ -194,8 +215,10 @@ const onCityKeydown = (e: KeyboardEvent) => {
     }
     if (highlightedCityIndex.value >= 0 && list[highlightedCityIndex.value]) {
       selectCity(list[highlightedCityIndex.value]);
+      submit();
     } else if (list.length > 0) {
       selectCity(list[0]);
+      submit();
     } else {
       submit();
     }
@@ -257,6 +280,7 @@ watch(() => localState.value, fetchCities, { immediate: true });
           @blur="onBlur"
           @keydown="onCityKeydown"
           placeholder="Search cities..."
+          :disabled="!localState"
       />
       <ul v-if="showSuggestions && filteredCities.length > 0" class="city-suggestions">
         <li
