@@ -32,6 +32,9 @@ watch(() => props.initialCity, (newCity) => {
     const display = slugToDisplay(newCity);
     localCity.value = display;
     searchQuery.value = display;
+  } else {
+    localCity.value = "";
+    searchQuery.value = "";
   }
 });
 
@@ -41,12 +44,16 @@ watch(() => props.initialState, (newState) => {
     const match = states.value.find(s => s.code === newState);
     if (match) stateQuery.value = match.name;
     fetchCities();
+  } else {
+    localState.value = "";
+    stateQuery.value = "";
+    cities.value = [];
   }
 });
 
 const filteredStates = computed(() => {
   const q = stateQuery.value.trim().toLowerCase();
-  if (!q) return states.value.slice(0, 8);
+  if (!q) return states.value;
   return states.value
     .filter(s =>
       s.name.toLowerCase().includes(q) ||
@@ -58,17 +65,15 @@ const filteredStates = computed(() => {
       if (aExact && !bExact) return -1;
       if (bExact && !aExact) return 1;
       return a.name.localeCompare(b.name);
-    })
-    .slice(0, 8);
+    });
 });
 
 const filteredCities = computed(() => {
-  if (!searchQuery.value || searchQuery.value.length < 2) return cities.value.slice(0, 10);
+  if (!searchQuery.value || searchQuery.value.length < 2) return cities.value.slice(0, 9);
   return cities.value
       .filter(city =>
           city.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-      )
-      .slice(0, 10);
+      );
 });
 
 onMounted(async () => {
@@ -154,6 +159,8 @@ const selectState = (s: StateOption) => {
   stateQuery.value = s.name;
   showStateSuggestions.value = false;
   highlightedStateIndex.value = -1;
+  localCity.value = "";
+  searchQuery.value = "";
   fetchCities();
 };
 
@@ -215,10 +222,8 @@ const onCityKeydown = (e: KeyboardEvent) => {
     }
     if (highlightedCityIndex.value >= 0 && list[highlightedCityIndex.value]) {
       selectCity(list[highlightedCityIndex.value]);
-      submit();
     } else if (list.length > 0) {
       selectCity(list[0]);
-      submit();
     } else {
       submit();
     }

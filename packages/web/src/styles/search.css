@@ -41,7 +41,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  max-height: 220px;
+  max-height: 160px;
   overflow-y: auto;
   z-index: 1002;
   box-shadow: var(--card-shadow-md);
@@ -107,7 +107,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  max-height: 220px;
+  max-height: 160px;
   overflow-y: auto;
   z-index: 1002;
   box-shadow: var(--card-shadow-md);

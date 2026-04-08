@@ -155,7 +155,7 @@ async function getListedResolvedPlacesForState(
     }
   }
 
-  return listed.sort((a, b) => a.name.localeCompare(b.name));
+  return listed.sort((a, b) => b.place.population - a.place.population);
 }
 
 async function fetchResolvedPlaces(
