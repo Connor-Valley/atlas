@@ -56,13 +56,36 @@
 
   .site-header {
     display: flex;
-    flex-direction: column;
-    align-items: stretch;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 12px;
+  }
+
+  .site-header__identity {
+    flex: 0 0 auto;
+    order: 1;
+  }
+
+  .site-header__controls {
+    flex: 0 0 auto;
+    margin-left: auto;
+    order: 2;
+    justify-content: flex-end;
+  }
+
+  .site-header__search,
+  .site-header__search-spacer {
+    flex: 1 0 100%;
+    order: 3;
   }
 
   .site-header .search-bar {
     margin-bottom: 0;
+  }
+
+  .user-menu__name,
+  .auth-btn__label {
+    display: none;
   }
 
   .hero-content .search-bar {

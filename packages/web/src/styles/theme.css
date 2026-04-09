@@ -77,6 +77,20 @@
   box-shadow: none;
 }
 
+@media (max-width: 430px) {
+  .site-header .theme-toggle {
+    font-size: 15px;
+    width: 3.95em;
+  }
+}
+
+@media (max-width: 400px) {
+  .site-header .theme-toggle {
+    font-size: 18px;
+    width: 5.1em;
+  }
+}
+
 .site-header .theme-toggle .slider {
   border-color: color-mix(in srgb, var(--accent) 16%, var(--border-card));
 }
