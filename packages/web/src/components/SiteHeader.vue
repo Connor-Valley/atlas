@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
 import CitySearch from './CitySearch.vue';
@@ -26,6 +26,17 @@ const userMenuOpen = ref(false);
 const userMenuRef = ref<HTMLElement | null>(null);
 const showAuthModal = ref(false);
 const authModalMode = ref<'login' | 'register'>('login');
+const mobileSearchOpen = ref(false);
+
+const displayCity = computed(() => {
+  if (!props.initialCity) return '';
+  return props.initialCity.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+});
+
+function onSearchSubmit(payload: { city: string; state: string }) {
+  mobileSearchOpen.value = false;
+  emit('search', payload);
+}
 
 function openAuth(mode: 'login' | 'register') {
   authModalMode.value = mode;
@@ -80,11 +91,34 @@ function handleLogoClick() {
     </div>
 
     <div v-if="showSearch" class="site-header__search">
-      <CitySearch
-        :initial-city="initialCity"
-        :initial-state="initialState"
-        @search="emit('search', $event)"
-      />
+      <!-- Pill: always in flow to hold header height; invisible when expanded -->
+      <button
+        v-if="initialCity"
+        class="site-header__search-pill"
+        :class="{ 'site-header__search-pill--expanded': mobileSearchOpen }"
+        @click="mobileSearchOpen = true"
+      >
+        <span class="mdi mdi-map-marker site-header__search-pill-icon"></span>
+        <span class="site-header__search-pill-text">{{ displayCity }}, {{ initialState?.toUpperCase() }}</span>
+        <span class="mdi mdi-chevron-down site-header__search-pill-chevron"></span>
+      </button>
+
+      <!-- Full search: always visible on desktop; overlays on mobile when open or no city -->
+      <div class="site-header__search-full" :class="{ 'site-header__search-full--visible': mobileSearchOpen || !initialCity }">
+        <CitySearch
+          class="site-header__search-city"
+          :initial-city="initialCity"
+          :initial-state="initialState"
+          @search="onSearchSubmit"
+        />
+        <button
+          v-if="initialCity && mobileSearchOpen"
+          class="site-header__search-collapse"
+          @click="mobileSearchOpen = false"
+        >
+          <span class="mdi mdi-chevron-up"></span>
+        </button>
+      </div>
     </div>
     <div v-else class="site-header__search-spacer"></div>
 
@@ -154,5 +188,113 @@ function handleLogoClick() {
 
 .site-header__title {
   min-width: 0;
+}
+
+/* ── Mobile collapsed pill ───────────────────────────── */
+
+/* Hidden on desktop — pill is mobile-only */
+.site-header__search-pill {
+  display: none;
+}
+
+/* Full search always visible on desktop */
+.site-header__search-full {
+  width: 100%;
+}
+
+/* Collapse button only relevant on mobile */
+.site-header__search-collapse {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .site-header__search {
+    position: relative;
+  }
+
+  /* Pill: in flow, holds the row height */
+  .site-header__search-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  /* When expanded: pill stays in flow (keeps space) but is invisible */
+  .site-header__search-pill--expanded {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .site-header__search-pill-icon {
+    color: var(--accent);
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+
+  .site-header__search-pill-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .site-header__search-pill-chevron {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+
+  /* Full search: hidden on mobile by default (pill shows instead) */
+  .site-header__search-full {
+    display: none;
+  }
+
+  /* When visible: absolute overlay starting exactly where the pill is */
+  .site-header__search-full--visible {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+  }
+
+  /* Shrink CitySearch slightly so it doesn't run under the chevron */
+  .site-header__search-city {
+    padding-right: 36px;
+  }
+
+  /* Collapse chevron: absolute top-right of the expanded search */
+  .site-header__search-collapse {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 42px;
+    height: 42px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    cursor: pointer;
+    z-index: 201;
+  }
+
+  .site-header__search-collapse:hover {
+    color: var(--text-primary);
+  }
 }
 </style>
