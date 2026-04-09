@@ -1,5 +1,13 @@
 import type { MetricWithSource } from "../common/source.types.js";
 
+export type SafetyScore = {
+  score: number; // 1–5, higher = safer
+  label: string; // e.g. "Good", "Average"
+  tier: "excellent" | "good" | "average" | "below-average" | "high";
+  dataYear: number;
+  methodology: string;
+};
+
 export type AirportInfo = {
   code: string;
   name: string;
@@ -30,5 +38,6 @@ export type QualityOfLifeSummary = {
 
 export type QualityOfLifeDetails = QualityOfLifeSummary & {
   airportDistanceMiles: MetricWithSource<number | null>;
+  safetyScore: MetricWithSource<SafetyScore | null>;
   reportingNotes: string[];
 };

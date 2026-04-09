@@ -1,0 +1,38 @@
+{
+  "TX:Austin": {
+    "ori": "TX2270100",
+    "isNibrs": true
+  },
+  "MI:Grand Rapids": {
+    "ori": "MI4143600",
+    "isNibrs": true
+  },
+  "IL:Chicago": {
+    "ori": "ILCPD0000",
+    "isNibrs": true
+  },
+  "CA:San Francisco": {
+    "ori": "CA0380100",
+    "isNibrs": false
+  },
+  "NY:New York": {
+    "ori": "NY0303000",
+    "isNibrs": true
+  },
+  "TX:Houston": {
+    "ori": "TXHPD0000",
+    "isNibrs": true
+  },
+  "TX:Dallas": {
+    "ori": "TXDPD0000",
+    "isNibrs": true
+  },
+  "MI:Oxford Village": {
+    "ori": "MI6364600",
+    "isNibrs": true
+  },
+  "MI:Oxford Charter Township": {
+    "ori": "MI6364600",
+    "isNibrs": true
+  }
+}

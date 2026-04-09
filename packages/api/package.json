@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "start": "node --import tsx src/index.ts"
+    "start": "node --import tsx src/index.ts",
+    "fetch-crime-data": "tsx scripts/fetch-crime-data.ts"
   },
   "dependencies": {
     "cors": "^2.8.6",

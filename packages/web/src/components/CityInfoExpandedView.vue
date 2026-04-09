@@ -132,6 +132,23 @@ const educationBars = computed(() => {
   }));
 });
 
+// ── Safety score ─────────────────────────────────────────────────────────────
+const safetyScore = computed(() => qol.value?.safetyScore?.value ?? null);
+const safetyOpen  = ref(false);
+
+const SAFETY_TIER_COLOR: Record<string, string> = {
+  excellent:      '#14b8a6',
+  good:           '#22c55e',
+  average:        '#f59e0b',
+  'below-average':'#f97316',
+  high:           '#ef4444',
+};
+
+const safetyColor = computed(() => {
+  if (!safetyScore.value) return '#6b7280';
+  return SAFETY_TIER_COLOR[safetyScore.value.tier] ?? '#6b7280';
+});
+
 // ── Commute bars (top 3 only) ─────────────────────────────────────────────────
 const commuteBars = computed(() => {
   const modes = profile.value?.commuteModes;
@@ -186,6 +203,28 @@ const commuteBars = computed(() => {
 
       <!-- Portrait -->
       <div class="city-exp__portrait data-card">
+        <!-- Safety badge -->
+        <div v-if="safetyScore" class="city-exp__safety-wrap" :style="{ '--safety-color': safetyColor }" @mouseenter="safetyOpen = true" @mouseleave="safetyOpen = false">
+          <div class="city-exp__safety-badge">
+            <span class="mdi mdi-shield-check-outline city-exp__safety-badge-icon"></span>
+            <span class="city-exp__safety-badge-score">{{ safetyScore.score }}<span class="city-exp__safety-badge-denom">/5</span></span>
+          </div>
+          <div v-if="safetyOpen" class="city-exp__safety-tooltip">
+            <div class="city-exp__safety-tooltip-inner">
+              <div class="city-exp__safety-tooltip-header">
+                <span class="city-exp__safety-tooltip-label" :style="{ color: safetyColor }">{{ safetyScore.label }}</span>
+                <span class="city-exp__safety-tooltip-score" :style="{ color: safetyColor }">{{ safetyScore.score }}/5</span>
+              </div>
+              <div class="city-exp__safety-pips" style="margin: 6px 0;">
+                <div v-for="i in 5" :key="i" class="city-exp__safety-pip" :style="{ background: i <= safetyScore.score ? safetyColor : 'var(--border-card)' }"></div>
+              </div>
+              <p class="city-exp__safety-methodology">
+                Based on FBI Crime Data Explorer violent crime rates ({{ safetyScore.dataYear }}) relative to the national average.
+                Shaped by policing practices and reporting differences — intended as general context only.
+              </p>
+            </div>
+          </div>
+        </div>
         <p class="city-exp__lead">
           <span class="city-exp__city-name">{{ props.city.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') }}</span>
           is home to

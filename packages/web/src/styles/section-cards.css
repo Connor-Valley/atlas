@@ -215,6 +215,7 @@
 
 /* Portrait card */
 .city-exp__portrait {
+  position: relative;
   border-left: 3px solid var(--accent);
   padding: 28px 32px;
   display: flex;
@@ -394,4 +395,96 @@
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+/* Safety badge (portrait corner) */
+.city-exp__safety-wrap {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  cursor: default;
+  user-select: none;
+}
+
+.city-exp__safety-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--safety-color) 35%, transparent);
+  background: color-mix(in srgb, var(--safety-color) 10%, var(--bg-card));
+  color: var(--safety-color);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.city-exp__safety-badge-icon {
+  font-size: 0.95rem;
+}
+
+.city-exp__safety-badge-score {
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.city-exp__safety-badge-denom {
+  font-size: 0.7rem;
+  font-weight: 500;
+  opacity: 0.75;
+}
+
+.city-exp__safety-tooltip {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 220px;
+  z-index: 10;
+}
+
+.city-exp__safety-tooltip-inner {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+  padding: 12px;
+}
+
+.city-exp__safety-tooltip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 2px;
+}
+
+.city-exp__safety-tooltip-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.city-exp__safety-tooltip-score {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.city-exp__safety-pips {
+  display: flex;
+  gap: 4px;
+}
+
+.city-exp__safety-pip {
+  flex: 1;
+  height: 5px;
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+
+.city-exp__safety-methodology {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-card);
 }

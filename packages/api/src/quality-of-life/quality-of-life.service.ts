@@ -3,6 +3,7 @@ import type { City } from "../cities/cities.types.js";
 import { buildCensusGeoQuery } from "../common/census.js";
 import { BTS_ENPLANEMENTS_AS_OF, BTS_SOURCE_URL, FAA_AIRPORT_REFERENCE_AS_OF, FAA_AIRPORT_SOURCE_URL, findNearestAirport, getAirportBusyness } from "./airport-reference.js";
 import type { AirportInfo, QualityOfLifeDetails, QualityOfLifeSummary } from "./quality-of-life.types.js";
+import { fetchCitySafetyScore } from "./crime-safety.service.js";
 
 export async function getQualityOfLifeSummary(city: City, year: number): Promise<QualityOfLifeSummary> {
   const labor = await fetchLaborMetrics(city, year);
@@ -41,7 +42,10 @@ export async function getQualityOfLifeSummary(city: City, year: number): Promise
 }
 
 export async function getQualityOfLifeDetails(city: City, year: number): Promise<QualityOfLifeDetails> {
-  const summary = await getQualityOfLifeSummary(city, year);
+  const [summary, safetyScoreValue] = await Promise.all([
+    getQualityOfLifeSummary(city, year),
+    fetchCitySafetyScore(city),
+  ]);
 
   return {
     ...summary,
@@ -52,10 +56,20 @@ export async function getQualityOfLifeDetails(city: City, year: number): Promise
       geographyLevel: "state",
       methodologyNote: "Distance is reserved for a future geographic join using official airport and place coordinates.",
     }),
+    safetyScore: {
+      value: safetyScoreValue,
+      source: {
+        sourceName: "FBI Crime Data Explorer",
+        sourceUrl: "https://cde.ucr.cjis.gov",
+        asOf: safetyScoreValue ? `${safetyScoreValue.dataYear}` : `${year}`,
+        geographyLevel: "city",
+        methodologyNote: safetyScoreValue?.methodology,
+      },
+    },
     reportingNotes: [
       "Labor market metrics come from ACS 5-year place-level estimates for broad coverage.",
       "Nearest airport is determined by haversine distance from the city centroid (Census ACS internal point) to ~170 commercial service airports.",
-      "Crime fields remain null until official city/county matching is reliable enough to avoid misleading users.",
+      "Safety score is derived from reported violent crime data and should be interpreted as general context — reporting rates vary by jurisdiction.",
     ],
   };
 }
