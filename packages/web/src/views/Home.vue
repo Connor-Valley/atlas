@@ -548,9 +548,17 @@ async function shareCityNatively() {
   }
 }
 
-async function openCityShareOptions() {
-  if (supportsCityNativeShare.value) {
-    await shareCityNatively();
+function openCityShareOptions() {
+  if (cityShareUrl.value && typeof navigator.share === 'function') {
+    navigator.share({
+      title: cityShareTitle.value,
+      text: cityShareText.value,
+      url: cityShareUrl.value,
+    }).catch((error) => {
+      if (!(error instanceof DOMException && error.name === 'AbortError')) {
+        cityShareMenuOpen.value = !cityShareMenuOpen.value;
+      }
+    });
     return;
   }
 
