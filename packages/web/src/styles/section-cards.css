@@ -389,17 +389,29 @@
 
 .city-exp__airline-tooltip {
   position: fixed;
-  background: var(--bg-card);
-  border: 1px solid var(--border-card);
-  border-radius: 7px;
-  padding: 6px 10px;
-  font-size: 0.72rem;
-  font-weight: 400;
-  color: var(--text-muted);
+  background: #0f1117;
+  border-radius: 6px;
+  border-top: 2px solid var(--airline-color, #555);
+  padding: 5px 11px;
+  font-size: 0.71rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: #d1d5db;
   white-space: nowrap;
   pointer-events: none;
-  box-shadow: var(--card-shadow-md);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
   z-index: 9999;
+}
+
+.city-exp__airline-tooltip::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-bottom: 5px solid var(--airline-color, #555);
+  border-top: none;
 }
 
 .city-exp__busy-track {

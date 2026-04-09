@@ -64,13 +64,8 @@ const AIRLINE_COLORS: Record<string, { bg: string; text: string }> = {
   "Spirit":    { bg: "#B8960066", text: "#ffffff" },
 };
 
-function airlineTooltip(code: string, airlines: string[]): string {
-  if (airlines.length === 1) {
-    return `${code} is a ${airlines[0]} hub`;
-  }
-  const last = airlines[airlines.length - 1];
-  const rest = airlines.slice(0, -1).join(', ');
-  return `${code} is a hub for both ${rest} and ${last}`;
+function airlineTooltip(code: string, airline: string): string {
+  return `${code} is a ${airline} hub`;
 }
 
 function airlineStyle(airline: string) {
@@ -80,28 +75,23 @@ function airlineStyle(airline: string) {
 }
 
 const airportCardRef = ref<HTMLElement | null>(null);
-const tooltipState = ref<{ text: string; x: number; y: number; align: 'center' | 'left' } | null>(null);
+const tooltipState = ref<{ text: string; x: number; y: number; color: string } | null>(null);
 
 const tooltipFixedStyle = computed((): CSSProperties => {
   if (!tooltipState.value) return {};
-  const { x, y, align } = tooltipState.value;
-  return align === 'center'
-    ? { left: `${x}px`, top: `${y}px`, transform: 'translateX(-50%)' }
-    : { left: `${x}px`, top: `${y}px` };
+  const { x, y, color } = tooltipState.value;
+  return { left: `${x}px`, top: `${y}px`, transform: 'translateX(-50%)', '--airline-color': color } as CSSProperties;
 });
 
 function showTooltip(e: MouseEvent, airline: string, idx: number) {
-  const airlines = qol.value?.airportBusyness?.value?.hubAirlines ?? [];
   const code = airport.value?.code ?? '';
   const tagRect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-  const cardRect = airportCardRef.value?.getBoundingClientRect();
-  const y = (cardRect?.bottom ?? tagRect.bottom) + 8;
-  const isLast = idx === airlines.length - 1;
+  const solidColor = (AIRLINE_COLORS[airline]?.bg ?? '#66666666').slice(0, 7);
   tooltipState.value = {
-    text: airlineTooltip(code, airlines),
-    x: isLast ? tagRect.left : tagRect.left + tagRect.width / 2,
-    y,
-    align: isLast ? 'left' : 'center',
+    text: airlineTooltip(code, airline),
+    x: tagRect.left + tagRect.width / 2,
+    y: tagRect.bottom + 10,
+    color: solidColor,
   };
 }
 
