@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, ref, watch, type CSSProperties } from "vue";
 import { fetchDetailedCityProfile } from "../api/cityProfile";
 import { fetchDetailedQualityOfLife } from "../api/qualityOfLife";
 
@@ -51,6 +51,63 @@ const laborPartic  = computed(() => qol.value?.laborForceParticipationRate?.valu
 const eduHeadline  = computed(() => profile.value?.educationHeadline ?? null);
 const commuteMin   = computed(() => profile.value?.meanCommuteMinutes ?? null);
 const airport      = computed(() => qol.value?.nearestMajorAirport?.value ?? null);
+
+const AIRLINE_COLORS: Record<string, { bg: string; text: string }> = {
+  "Delta":     { bg: "#2B5EAD66", text: "#ffffff" },
+  "United":    { bg: "#2B5EE066", text: "#ffffff" },
+  "American":  { bg: "#C8102E66", text: "#ffffff" },
+  "Southwest": { bg: "#D4970A66", text: "#ffffff" },
+  "Alaska":    { bg: "#0D6E9E66", text: "#ffffff" },
+  "JetBlue":   { bg: "#1A6FD466", text: "#ffffff" },
+  "Hawaiian":  { bg: "#7B3FAE66", text: "#ffffff" },
+  "Frontier":  { bg: "#3D9E3866", text: "#ffffff" },
+  "Spirit":    { bg: "#B8960066", text: "#ffffff" },
+};
+
+function airlineTooltip(code: string, airlines: string[]): string {
+  if (airlines.length === 1) {
+    return `${code} is a ${airlines[0]} hub`;
+  }
+  const last = airlines[airlines.length - 1];
+  const rest = airlines.slice(0, -1).join(', ');
+  return `${code} is a hub for both ${rest} and ${last}`;
+}
+
+function airlineStyle(airline: string) {
+  const colors = AIRLINE_COLORS[airline];
+  if (!colors) return {};
+  return { backgroundColor: colors.bg, color: colors.text };
+}
+
+const airportCardRef = ref<HTMLElement | null>(null);
+const tooltipState = ref<{ text: string; x: number; y: number; align: 'center' | 'left' } | null>(null);
+
+const tooltipFixedStyle = computed((): CSSProperties => {
+  if (!tooltipState.value) return {};
+  const { x, y, align } = tooltipState.value;
+  return align === 'center'
+    ? { left: `${x}px`, top: `${y}px`, transform: 'translateX(-50%)' }
+    : { left: `${x}px`, top: `${y}px` };
+});
+
+function showTooltip(e: MouseEvent, airline: string, idx: number) {
+  const airlines = qol.value?.airportBusyness?.value?.hubAirlines ?? [];
+  const code = airport.value?.code ?? '';
+  const tagRect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+  const cardRect = airportCardRef.value?.getBoundingClientRect();
+  const y = (cardRect?.bottom ?? tagRect.bottom) + 8;
+  const isLast = idx === airlines.length - 1;
+  tooltipState.value = {
+    text: airlineTooltip(code, airlines),
+    x: isLast ? tagRect.left : tagRect.left + tagRect.width / 2,
+    y,
+    align: isLast ? 'left' : 'center',
+  };
+}
+
+function hideTooltip() {
+  tooltipState.value = null;
+}
 
 // ── Dominant commute mode ─────────────────────────────────────────────────────
 const topCommuteMode = computed(() => {
@@ -287,7 +344,7 @@ const commuteBars = computed(() => {
             <p v-if="ownerShare || renterShare" class="city-exp__economy-para">
               <template v-if="ownerShare"><span class="city-exp__accent">{{ ownerShare }}%</span> of households own their home</template><template v-if="renterShare"> while <span class="city-exp__accent">{{ renterShare }}%</span> rent</template>.
             </p>
-            <div v-if="airport" class="city-exp__airport">
+            <div v-if="airport" ref="airportCardRef" class="city-exp__airport">
               <div class="city-exp__airport-row">
                 <span class="mdi mdi-airplane city-exp__airport-icon"></span>
                 <div class="city-exp__airport-info">
@@ -295,6 +352,21 @@ const commuteBars = computed(() => {
                   <span class="city-exp__airport-name">{{ airport.name }}</span>
                 </div>
               </div>
+              <div v-if="qol.airportBusyness?.value?.hubAirlines?.length" class="city-exp__airline-tags">
+                <span
+                  v-for="(airline, idx) in qol.airportBusyness.value.hubAirlines"
+                  :key="airline"
+                  class="city-exp__airline-tag"
+                  :style="airlineStyle(airline)"
+                  @mouseenter="e => showTooltip(e, airline, idx)"
+                  @mouseleave="hideTooltip"
+                >{{ airline.trim() }}</span>
+              </div>
+              <Teleport to="body">
+                <div v-if="tooltipState" class="city-exp__airline-tooltip" :style="tooltipFixedStyle">
+                  {{ tooltipState.text }}
+                </div>
+              </Teleport>
               <div v-if="qol.airportBusyness?.value" class="city-exp__busy">
                 <div class="city-exp__busy-header">
                   <span class="city-exp__busy-label">Traffic</span>
