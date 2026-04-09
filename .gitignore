@@ -8,3 +8,5 @@ build/
 .DS_Store
 .idea/
 design-refs/
+packages/api/cache/
+packages/api/data/
