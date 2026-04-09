@@ -81,6 +81,7 @@ const dashboardStage = ref<HTMLElement | null>(null);
 const scorePills = ref<HTMLElement | null>(null);
 const dashboardShell = ref<HTMLElement | null>(null);
 const cityNotFoundPanel = ref<HTMLElement | null>(null);
+const isMobile = ref(typeof window !== 'undefined' && window.innerWidth < 640);
 
 const scores = reactive({
   economic: null as number | null,
@@ -121,7 +122,20 @@ const taglines = [
   "Data-driven city exploration. Housing trends, income levels, and affordability scores, all in one place.",
   "Your next home is out there. Let Atlas help you find the city that works for you.",
 ];
+const mobileTaglines = [
+  "Find your next city today.",
+  "Compare cities. Move smarter.",
+  "Your next home is out there.",
+  "Compare rent, income, and more.",
+  "Data-driven decisions for your move.",
+  "See how cities stack up.",
+  "Explore U.S. cities by cost.",
+  "Affordability, simplified.",
+  "Move with confidence.",
+  "Find the city that fits.",
+];
 let taglineIndex = 0;
+let mobileTaglineIndex = 0;
 const displayedTagline = ref('');
 const typewriterDone = ref(false);
 const taglineHighlighted = ref(false);
@@ -160,14 +174,14 @@ const cityPool = [
 let poolCursor = 0;
 
 const chipSlots = ref([
-  { id: 1, side: 'left'  as const, x: '3%',  top: '18%', duration: '13s', delay: '0s'  },
-  { id: 2, side: 'left'  as const, x: '9%',  top: '43%', duration: '16s', delay: '4s'  },
-  { id: 3, side: 'left'  as const, x: '5%',  top: '65%', duration: '12s', delay: '8s'  },
-  { id: 4, side: 'left'  as const, x: '12%', top: '82%', duration: '15s', delay: '2s'  },
-  { id: 5, side: 'right' as const, x: '4%',  top: '24%', duration: '14s', delay: '6s'  },
-  { id: 6, side: 'right' as const, x: '11%', top: '51%', duration: '11s', delay: '1s'  },
-  { id: 7, side: 'right' as const, x: '6%',  top: '70%', duration: '17s', delay: '9s'  },
-  { id: 8, side: 'right' as const, x: '13%', top: '86%', duration: '13s', delay: '5s'  },
+  { id: 1, side: 'left'  as const, x: '3%',  top: '18%', mobileTop: '4%',  duration: '13s', delay: '0s',  mobileHide: false },
+  { id: 2, side: 'left'  as const, x: '9%',  top: '43%', mobileTop: null,  duration: '16s', delay: '4s',  mobileHide: true  },
+  { id: 3, side: 'left'  as const, x: '5%',  top: '65%', mobileTop: null,  duration: '12s', delay: '8s',  mobileHide: true  },
+  { id: 4, side: 'left'  as const, x: '12%', top: '82%', mobileTop: null,  duration: '15s', delay: '2s',  mobileHide: false },
+  { id: 5, side: 'right' as const, x: '4%',  top: '24%', mobileTop: '10%', duration: '14s', delay: '6s',  mobileHide: false },
+  { id: 6, side: 'right' as const, x: '11%', top: '51%', mobileTop: null,  duration: '11s', delay: '1s',  mobileHide: true  },
+  { id: 7, side: 'right' as const, x: '6%',  top: '70%', mobileTop: null,  duration: '17s', delay: '9s',  mobileHide: true  },
+  { id: 8, side: 'right' as const, x: '13%', top: '86%', mobileTop: null,  duration: '13s', delay: '5s',  mobileHide: false },
 ].map((slot, i) => ({ ...slot, label: cityPool[i].label, stat: cityPool[i].stat })));
 poolCursor = 8;
 
@@ -180,8 +194,25 @@ function cycleSlot(index: number) {
 
 let typeTimer: ReturnType<typeof setTimeout> | null = null;
 
+function activeTaglines() {
+  return window.innerWidth < 640 ? mobileTaglines : taglines;
+}
+
+function activeTaglineIndex() {
+  return window.innerWidth < 640 ? mobileTaglineIndex : taglineIndex;
+}
+
+function advanceTaglineIndex() {
+  if (window.innerWidth < 640) {
+    mobileTaglineIndex = (mobileTaglineIndex + 1) % mobileTaglines.length;
+  } else {
+    taglineIndex = (taglineIndex + 1) % taglines.length;
+  }
+}
+
 function typeTagline() {
-  const target = taglines[taglineIndex];
+  const list = activeTaglines();
+  const target = list[activeTaglineIndex()];
   let i = displayedTagline.value.length;
   typewriterDone.value = false;
 
@@ -215,7 +246,7 @@ function selectTagline() {
           displayedTagline.value = '';
           taglineHighlighted.value = false;
           selectedWordCount.value = 0;
-          taglineIndex = (taglineIndex + 1) % taglines.length;
+          advanceTaglineIndex();
           typeTimer = setTimeout(typeTagline, 220);
         }, 1600);
       }, 180);
@@ -259,8 +290,13 @@ async function signOutFromLanding() {
   await signOut();
 }
 
+function onResize() {
+  isMobile.value = window.innerWidth < 640;
+}
+
 onMounted(() => {
   window.addEventListener('keydown', onKeydown);
+  window.addEventListener('resize', onResize);
   document.addEventListener('click', handleUserMenuClickOutside, { capture: true });
   document.addEventListener('click', handleCityShareClickOutside, { capture: true });
 
@@ -337,6 +373,7 @@ onUnmounted(() => {
   document.removeEventListener('click', handleUserMenuClickOutside, { capture: true });
   document.removeEventListener('click', handleCityShareClickOutside, { capture: true });
   window.removeEventListener('keydown', onKeydown);
+  window.removeEventListener('resize', onResize);
 });
 
 function onSearch(payload: { city: string; state: string }) {
@@ -1056,7 +1093,8 @@ async function closeExpandedSection() {
       v-for="(slot, i) in chipSlots"
       :key="slot.id"
       class="hero-chip"
-      :style="{ [slot.side]: slot.x, top: slot.top, '--chip-duration': slot.duration, '--chip-delay': slot.delay }"
+      :class="{ 'hero-chip--mobile-hide': slot.mobileHide }"
+      :style="{ [slot.side]: slot.x, top: (isMobile && slot.mobileTop) ? slot.mobileTop : slot.top, '--chip-duration': slot.duration, '--chip-delay': slot.delay }"
       @animationiteration="cycleSlot(i)"
     >
       <span class="hero-chip__label">{{ slot.label }}</span>

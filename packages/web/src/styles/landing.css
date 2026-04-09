@@ -1008,6 +1008,23 @@
   100% { transform: translateY(-65px); opacity: 0;    }
 }
 
+@media (max-width: 640px) {
+  .hero-chip--mobile-hide {
+    display: none;
+  }
+
+  .hero-landing {
+    align-items: flex-start;
+    padding-top: 120px;
+  }
+}
+
+@media (max-width: 640px) and (min-height: 880px) {
+  .hero-landing {
+    padding-top: 160px;
+  }
+}
+
 /* =====================
    TYPEWRITER CURSOR
 ===================== */
