@@ -14,6 +14,8 @@ export type AirportRecord = AirportInfo & {
   lon: number;
   /** Annual enplanements in thousands (BTS 2023) */
   enplanements: number;
+  /** Primary airline(s) that use this as a hub or focus city */
+  hubAirlines?: string[];
 };
 
 /**
@@ -23,40 +25,40 @@ export type AirportRecord = AirportInfo & {
  */
 export const AIRPORTS: AirportRecord[] = [
   // === LARGE HUBS (≥1% of US enplanements) ===
-  { code: "ATL", name: "Hartsfield-Jackson Atlanta International", city: "Atlanta", state: "GA", category: "primary-commercial", lat: 33.6407, lon: -84.4277, enplanements: 51_000 },
-  { code: "LAX", name: "Los Angeles International", city: "Los Angeles", state: "CA", category: "primary-commercial", lat: 33.9425, lon: -118.4081, enplanements: 40_000 },
-  { code: "ORD", name: "Chicago O'Hare International", city: "Chicago", state: "IL", category: "primary-commercial", lat: 41.9742, lon: -87.9073, enplanements: 40_000 },
-  { code: "DFW", name: "Dallas/Fort Worth International", city: "Dallas", state: "TX", category: "primary-commercial", lat: 32.8998, lon: -97.0403, enplanements: 38_000 },
-  { code: "DEN", name: "Denver International", city: "Denver", state: "CO", category: "primary-commercial", lat: 39.8561, lon: -104.6737, enplanements: 36_000 },
-  { code: "LAS", name: "Harry Reid International", city: "Las Vegas", state: "NV", category: "primary-commercial", lat: 36.0840, lon: -115.1537, enplanements: 27_000 },
+  { code: "ATL", name: "Hartsfield-Jackson Atlanta International", city: "Atlanta", state: "GA", category: "primary-commercial", lat: 33.6407, lon: -84.4277, enplanements: 51_000, hubAirlines: ["Delta"] },
+  { code: "LAX", name: "Los Angeles International", city: "Los Angeles", state: "CA", category: "primary-commercial", lat: 33.9425, lon: -118.4081, enplanements: 40_000, hubAirlines: ["American", "Delta", "United"] },
+  { code: "ORD", name: "Chicago O'Hare International", city: "Chicago", state: "IL", category: "primary-commercial", lat: 41.9742, lon: -87.9073, enplanements: 40_000, hubAirlines: ["American", "United"] },
+  { code: "DFW", name: "Dallas/Fort Worth International", city: "Dallas", state: "TX", category: "primary-commercial", lat: 32.8998, lon: -97.0403, enplanements: 38_000, hubAirlines: ["American"] },
+  { code: "DEN", name: "Denver International", city: "Denver", state: "CO", category: "primary-commercial", lat: 39.8561, lon: -104.6737, enplanements: 36_000, hubAirlines: ["United", "Southwest"] },
+  { code: "LAS", name: "Harry Reid International", city: "Las Vegas", state: "NV", category: "primary-commercial", lat: 36.0840, lon: -115.1537, enplanements: 27_000, hubAirlines: ["Southwest"] },
   { code: "MCO", name: "Orlando International", city: "Orlando", state: "FL", category: "primary-commercial", lat: 28.4294, lon: -81.3089, enplanements: 26_000 },
-  { code: "SEA", name: "Seattle-Tacoma International", city: "Seattle", state: "WA", category: "primary-commercial", lat: 47.4502, lon: -122.3088, enplanements: 26_000 },
-  { code: "CLT", name: "Charlotte Douglas International", city: "Charlotte", state: "NC", category: "primary-commercial", lat: 35.2140, lon: -80.9431, enplanements: 28_500 },
-  { code: "JFK", name: "John F. Kennedy International", city: "New York", state: "NY", category: "primary-commercial", lat: 40.6413, lon: -73.7781, enplanements: 30_000 },
-  { code: "PHX", name: "Phoenix Sky Harbor International", city: "Phoenix", state: "AZ", category: "primary-commercial", lat: 33.4373, lon: -112.0078, enplanements: 26_000 },
-  { code: "MIA", name: "Miami International", city: "Miami", state: "FL", category: "primary-commercial", lat: 25.7959, lon: -80.2870, enplanements: 24_000 },
-  { code: "BOS", name: "Boston Logan International", city: "Boston", state: "MA", category: "primary-commercial", lat: 42.3656, lon: -71.0096, enplanements: 20_000 },
-  { code: "MSP", name: "Minneapolis-Saint Paul International", city: "Minneapolis", state: "MN", category: "primary-commercial", lat: 44.8848, lon: -93.2223, enplanements: 19_500 },
-  { code: "EWR", name: "Newark Liberty International", city: "Newark", state: "NJ", category: "primary-commercial", lat: 40.6895, lon: -74.1745, enplanements: 19_000 },
-  { code: "DTW", name: "Detroit Metropolitan Wayne County", city: "Detroit", state: "MI", category: "primary-commercial", lat: 42.2126, lon: -83.3534, enplanements: 18_000 },
+  { code: "SEA", name: "Seattle-Tacoma International", city: "Seattle", state: "WA", category: "primary-commercial", lat: 47.4502, lon: -122.3088, enplanements: 26_000, hubAirlines: ["Alaska", "Delta"] },
+  { code: "CLT", name: "Charlotte Douglas International", city: "Charlotte", state: "NC", category: "primary-commercial", lat: 35.2140, lon: -80.9431, enplanements: 28_500, hubAirlines: ["American"] },
+  { code: "JFK", name: "John F. Kennedy International", city: "New York", state: "NY", category: "primary-commercial", lat: 40.6413, lon: -73.7781, enplanements: 30_000, hubAirlines: ["American", "Delta", "JetBlue"] },
+  { code: "PHX", name: "Phoenix Sky Harbor International", city: "Phoenix", state: "AZ", category: "primary-commercial", lat: 33.4373, lon: -112.0078, enplanements: 26_000, hubAirlines: ["American", "Southwest"] },
+  { code: "MIA", name: "Miami International", city: "Miami", state: "FL", category: "primary-commercial", lat: 25.7959, lon: -80.2870, enplanements: 24_000, hubAirlines: ["American"] },
+  { code: "BOS", name: "Boston Logan International", city: "Boston", state: "MA", category: "primary-commercial", lat: 42.3656, lon: -71.0096, enplanements: 20_000, hubAirlines: ["American", "JetBlue"] },
+  { code: "MSP", name: "Minneapolis-Saint Paul International", city: "Minneapolis", state: "MN", category: "primary-commercial", lat: 44.8848, lon: -93.2223, enplanements: 19_500, hubAirlines: ["Delta"] },
+  { code: "EWR", name: "Newark Liberty International", city: "Newark", state: "NJ", category: "primary-commercial", lat: 40.6895, lon: -74.1745, enplanements: 19_000, hubAirlines: ["United"] },
+  { code: "DTW", name: "Detroit Metropolitan Wayne County", city: "Detroit", state: "MI", category: "primary-commercial", lat: 42.2126, lon: -83.3534, enplanements: 18_000, hubAirlines: ["Delta"] },
 
   // === MEDIUM HUBS (0.25–1% of US enplanements) ===
-  { code: "SFO", name: "San Francisco International", city: "San Francisco", state: "CA", category: "primary-commercial", lat: 37.6213, lon: -122.3790, enplanements: 22_000 },
-  { code: "IAH", name: "George Bush Intercontinental", city: "Houston", state: "TX", category: "primary-commercial", lat: 29.9902, lon: -95.3368, enplanements: 21_000 },
-  { code: "BWI", name: "Baltimore/Washington International Thurgood Marshall", city: "Baltimore", state: "MD", category: "primary-commercial", lat: 39.1754, lon: -76.6683, enplanements: 15_000 },
-  { code: "SLC", name: "Salt Lake City International", city: "Salt Lake City", state: "UT", category: "primary-commercial", lat: 40.7899, lon: -111.9791, enplanements: 14_500 },
-  { code: "PHL", name: "Philadelphia International", city: "Philadelphia", state: "PA", category: "primary-commercial", lat: 39.8744, lon: -75.2424, enplanements: 14_500 },
-  { code: "LGA", name: "LaGuardia", city: "New York", state: "NY", category: "primary-commercial", lat: 40.7772, lon: -73.8726, enplanements: 14_000 },
-  { code: "DCA", name: "Ronald Reagan Washington National", city: "Washington", state: "DC", category: "primary-commercial", lat: 38.8521, lon: -77.0377, enplanements: 12_000 },
-  { code: "MDW", name: "Chicago Midway International", city: "Chicago", state: "IL", category: "primary-commercial", lat: 41.7868, lon: -87.7522, enplanements: 10_000 },
-  { code: "HNL", name: "Daniel K. Inouye International", city: "Honolulu", state: "HI", category: "primary-commercial", lat: 21.3187, lon: -157.9225, enplanements: 10_500 },
+  { code: "SFO", name: "San Francisco International", city: "San Francisco", state: "CA", category: "primary-commercial", lat: 37.6213, lon: -122.3790, enplanements: 22_000, hubAirlines: ["United"] },
+  { code: "IAH", name: "George Bush Intercontinental", city: "Houston", state: "TX", category: "primary-commercial", lat: 29.9902, lon: -95.3368, enplanements: 21_000, hubAirlines: ["United"] },
+  { code: "BWI", name: "Baltimore/Washington International Thurgood Marshall", city: "Baltimore", state: "MD", category: "primary-commercial", lat: 39.1754, lon: -76.6683, enplanements: 15_000, hubAirlines: ["Southwest"] },
+  { code: "SLC", name: "Salt Lake City International", city: "Salt Lake City", state: "UT", category: "primary-commercial", lat: 40.7899, lon: -111.9791, enplanements: 14_500, hubAirlines: ["Delta"] },
+  { code: "PHL", name: "Philadelphia International", city: "Philadelphia", state: "PA", category: "primary-commercial", lat: 39.8744, lon: -75.2424, enplanements: 14_500, hubAirlines: ["American"] },
+  { code: "LGA", name: "LaGuardia", city: "New York", state: "NY", category: "primary-commercial", lat: 40.7772, lon: -73.8726, enplanements: 14_000, hubAirlines: ["American", "Delta"] },
+  { code: "DCA", name: "Ronald Reagan Washington National", city: "Washington", state: "DC", category: "primary-commercial", lat: 38.8521, lon: -77.0377, enplanements: 12_000, hubAirlines: ["American"] },
+  { code: "MDW", name: "Chicago Midway International", city: "Chicago", state: "IL", category: "primary-commercial", lat: 41.7868, lon: -87.7522, enplanements: 10_000, hubAirlines: ["Southwest"] },
+  { code: "HNL", name: "Daniel K. Inouye International", city: "Honolulu", state: "HI", category: "primary-commercial", lat: 21.3187, lon: -157.9225, enplanements: 10_500, hubAirlines: ["Hawaiian"] },
   { code: "SAN", name: "San Diego International", city: "San Diego", state: "CA", category: "primary-commercial", lat: 32.7338, lon: -117.1933, enplanements: 12_500 },
   { code: "TPA", name: "Tampa International", city: "Tampa", state: "FL", category: "primary-commercial", lat: 27.9755, lon: -82.5332, enplanements: 11_000 },
-  { code: "PDX", name: "Portland International", city: "Portland", state: "OR", category: "primary-commercial", lat: 45.5898, lon: -122.5951, enplanements: 9_500 },
+  { code: "PDX", name: "Portland International", city: "Portland", state: "OR", category: "primary-commercial", lat: 45.5898, lon: -122.5951, enplanements: 9_500, hubAirlines: ["Alaska"] },
   { code: "BNA", name: "Nashville International", city: "Nashville", state: "TN", category: "primary-commercial", lat: 36.1245, lon: -86.6782, enplanements: 9_500 },
   { code: "AUS", name: "Austin-Bergstrom International", city: "Austin", state: "TX", category: "primary-commercial", lat: 30.1975, lon: -97.6664, enplanements: 10_500 },
-  { code: "DAL", name: "Dallas Love Field", city: "Dallas", state: "TX", category: "primary-commercial", lat: 32.8481, lon: -96.8518, enplanements: 8_000 },
-  { code: "HOU", name: "William P. Hobby Airport", city: "Houston", state: "TX", category: "primary-commercial", lat: 29.6454, lon: -95.2789, enplanements: 5_500 },
+  { code: "DAL", name: "Dallas Love Field", city: "Dallas", state: "TX", category: "primary-commercial", lat: 32.8481, lon: -96.8518, enplanements: 8_000, hubAirlines: ["Southwest"] },
+  { code: "HOU", name: "William P. Hobby Airport", city: "Houston", state: "TX", category: "primary-commercial", lat: 29.6454, lon: -95.2789, enplanements: 5_500, hubAirlines: ["Southwest"] },
   { code: "SAT", name: "San Antonio International", city: "San Antonio", state: "TX", category: "primary-commercial", lat: 29.5337, lon: -98.4698, enplanements: 5_000 },
   { code: "STL", name: "St. Louis Lambert International", city: "St. Louis", state: "MO", category: "primary-commercial", lat: 38.7487, lon: -90.3700, enplanements: 7_000 },
   { code: "MCI", name: "Kansas City International", city: "Kansas City", state: "MO", category: "primary-commercial", lat: 39.2976, lon: -94.7139, enplanements: 6_500 },
@@ -285,7 +287,7 @@ export function getAirportBusyness(code: string): AirportBusyness | null {
     : nationalPercentile < 80 ? 4
     : 5;
 
-  return { code, annualEnplanements: enplanements * 1000, busyScale, hubCategory, hubLabel, nationalPercentile };
+  return { code, annualEnplanements: enplanements * 1000, busyScale, hubCategory, hubLabel, nationalPercentile, hubAirlines: airport.hubAirlines ?? [] };
 }
 
 /** @deprecated use findNearestAirport instead */

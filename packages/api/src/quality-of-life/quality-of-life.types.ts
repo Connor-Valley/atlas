@@ -15,6 +15,7 @@ export type AirportBusyness = {
   hubCategory: "large" | "medium" | "small" | "regional";
   hubLabel: string;
   nationalPercentile: number; // 0–100
+  hubAirlines: string[];
 };
 
 export type QualityOfLifeSummary = {
