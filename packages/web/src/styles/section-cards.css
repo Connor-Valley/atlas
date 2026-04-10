@@ -368,6 +368,66 @@
   color: var(--accent);
 }
 
+.city-exp__transit {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-card);
+}
+
+.city-exp__transit-header {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.city-exp__transit-agencies {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.city-exp__transit-agency {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.city-exp__transit-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 60px;
+  flex-shrink: 0;
+}
+
+.city-exp__transit-modes {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.city-exp__transit-mode {
+  font-size: 0.68rem;
+  font-weight: 500;
+  border-radius: 4px;
+  padding: 0 6px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.city-exp__transit-ridership {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  margin-left: auto;
+}
+
 .city-exp__airline-tags {
   position: absolute;
   top: 10px;

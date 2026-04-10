@@ -99,6 +99,36 @@ function hideTooltip() {
   tooltipState.value = null;
 }
 
+// ── Transit authority ─────────────────────────────────────────────────────────
+const transitData = computed(() => qol.value?.transitInfo?.value ?? null);
+
+const MODE_COLORS: Record<string, { bg: string; text: string; label: string }> = {
+  'bus':           { bg: '#16a34a22', text: '#16a34a', label: 'Bus' },
+  'subway':        { bg: '#2563eb22', text: '#2563eb', label: 'Subway' },
+  'light-rail':    { bg: '#0891b222', text: '#0891b2', label: 'Light Rail' },
+  'commuter-rail': { bg: '#71717a22', text: '#71717a', label: 'Commuter Rail' },
+  'ferry':         { bg: '#06b6d422', text: '#06b6d4', label: 'Ferry' },
+  'streetcar':     { bg: '#d9770622', text: '#d97706', label: 'Streetcar' },
+  'cable-car':     { bg: '#dc262622', text: '#dc2626', label: 'Cable Car' },
+};
+
+function modeStyle(mode: string) {
+  const c = MODE_COLORS[mode];
+  if (!c) return {};
+  return { backgroundColor: c.bg, color: c.text };
+}
+
+function modeLabel(mode: string) {
+  return MODE_COLORS[mode]?.label ?? mode;
+}
+
+function formatRidership(n: number): string {
+  if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}B`;
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(0)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
+  return n.toLocaleString();
+}
+
 // ── Dominant commute mode ─────────────────────────────────────────────────────
 const topCommuteMode = computed(() => {
   const modes = profile.value?.commuteModes;
@@ -301,6 +331,20 @@ const commuteBars = computed(() => {
               <span class="bar-list__label">{{ bar.label }}</span>
               <div class="bar-list__track"><div class="bar-list__fill" :style="{width:bar.pct+'%'}"></div></div>
               <span class="bar-list__value">{{ bar.value }}</span>
+            </div>
+          </div>
+          <div v-if="transitData" class="city-exp__transit">
+            <div class="city-exp__transit-header">Transit Authority</div>
+            <div class="city-exp__transit-agencies">
+              <div v-for="agency in transitData.agencies" :key="agency.shortName" class="city-exp__transit-agency">
+                <span class="city-exp__transit-name">{{ agency.shortName }}</span>
+                <div class="city-exp__transit-modes">
+                  <span v-for="mode in agency.modes" :key="mode" class="city-exp__transit-mode" :style="modeStyle(mode)">
+                    {{ modeLabel(mode) }}
+                  </span>
+                </div>
+                <span class="city-exp__transit-ridership">{{ formatRidership(agency.annualRidership) }} annual trips</span>
+              </div>
             </div>
           </div>
         </section>

@@ -1,5 +1,18 @@
 import type { MetricWithSource } from "../common/source.types.js";
 
+export type TransitMode = 'bus' | 'subway' | 'light-rail' | 'commuter-rail' | 'ferry' | 'streetcar' | 'cable-car';
+
+export type TransitAgency = {
+  name: string;
+  shortName: string;
+  modes: TransitMode[];
+  annualRidership: number; // NTD unlinked passenger trips
+};
+
+export type TransitInfo = {
+  agencies: TransitAgency[];
+};
+
 export type AirportInfo = {
   code: string;
   name: string;
@@ -27,6 +40,7 @@ export type QualityOfLifeSummary = {
   propertyCrimeRate: MetricWithSource<number | null>;
   nearestMajorAirport: MetricWithSource<AirportInfo | null>;
   airportBusyness: MetricWithSource<AirportBusyness | null>;
+  transitInfo: MetricWithSource<TransitInfo | null>;
 };
 
 export type QualityOfLifeDetails = QualityOfLifeSummary & {
