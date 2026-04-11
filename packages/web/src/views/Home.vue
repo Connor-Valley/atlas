@@ -376,10 +376,16 @@ onUnmounted(() => {
   window.removeEventListener('resize', onResize);
 });
 
+function canAnimateSearchTransition() {
+  return (
+    !window.matchMedia("(prefers-reduced-motion: reduce)").matches &&
+    !window.matchMedia("(pointer: coarse)").matches &&
+    window.innerWidth > 768
+  );
+}
+
 function onSearch(payload: { city: string; state: string }) {
-  const shouldAnimateLandingTransition =
-    !hasSearched.value &&
-    !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const shouldAnimateLandingTransition = !hasSearched.value && canAnimateSearchTransition();
 
   city.value = payload.city;
   state.value = payload.state;
@@ -436,7 +442,7 @@ function resetSearch() {
   const shouldAnimateReturn =
     hasSearched.value &&
     !transitioningToLanding.value &&
-    !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    canAnimateSearchTransition();
 
   if (shouldAnimateReturn) {
     void animateDashboardToLanding();
