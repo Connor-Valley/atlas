@@ -5,11 +5,13 @@ import { fetchDetailedQualityOfLife } from "../api/qualityOfLife";
 
 const props = defineProps<{ city: string; state: string }>();
 const emit = defineEmits<{ (e: 'close'): void }>();
+type CommunityView = 'race' | 'ethnicity';
 
 const profile = ref<any>(null);
 const qol     = ref<any>(null);
 const loading = ref(false);
 const error   = ref<string | null>(null);
+const communityView = ref<CommunityView>('race');
 
 async function load() {
   if (!props.city || !props.state) return;
@@ -91,11 +93,12 @@ const tooltipFixedStyle = computed((): CSSProperties => {
 });
 
 function showTooltipText(e: MouseEvent | FocusEvent, text: string, color = '#555555') {
-  const tagRect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+  const isMouseEvent = e instanceof MouseEvent;
+  const tagRect = (e.currentTarget as Element).getBoundingClientRect();
   tooltipState.value = {
     text,
-    x: tagRect.left + tagRect.width / 2,
-    y: tagRect.bottom + 10,
+    x: isMouseEvent ? e.clientX : tagRect.left + tagRect.width / 2,
+    y: isMouseEvent ? e.clientY + 14 : tagRect.bottom + 10,
     color,
   };
 }
@@ -108,6 +111,10 @@ function showTooltip(e: MouseEvent, airline: string) {
 
 function showRidershipTooltip(e: MouseEvent | FocusEvent, annualRidership: number) {
   showTooltipText(e, ridershipTooltip(annualRidership), '#5d6472');
+}
+
+function showDonutTooltip(e: MouseEvent, label: string, color: string) {
+  showTooltipText(e, label, color);
 }
 
 function hideTooltip() {
@@ -184,18 +191,47 @@ const DONUT_R = 45;
 const DONUT_C = 2 * Math.PI * DONUT_R;
 const DONUT_GAP = 2;
 const AGE_COLORS = ['#14B8A6', '#0891b2', '#6366f1', '#8b5cf6', '#f59e0b'];
+const RACE_COLORS = ['#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4', '#a855f7'];
+const ORIGIN_COLORS = ['#22c55e', '#3b82f6'];
+
+function buildDonutSegments(
+  entries: Array<{ label: string; share: number }>,
+  colors: string[],
+  minVisualShare = 0,
+) {
+  // Boost tiny segments to minVisualShare, then scale large ones down to compensate
+  let visualShares = entries.map(e =>
+    minVisualShare > 0 && e.share > 0 && e.share < minVisualShare ? minVisualShare : e.share
+  );
+  const total = visualShares.reduce((s, v) => s + v, 0);
+  if (total > 1) {
+    const extra = total - 1;
+    const largeSum = visualShares.reduce((s, v, i) => entries[i].share >= minVisualShare ? s + v : s, 0);
+    visualShares = visualShares.map((v, i) =>
+      entries[i].share >= minVisualShare && largeSum > 0 ? v - (v / largeSum) * extra : v
+    );
+  }
+
+  let offset = 0;
+  return entries.map((entry, i) => {
+    const full = visualShares[i] * DONUT_C;
+    const dash = Math.max(0, full - DONUT_GAP);
+    const dashOffset = -offset * DONUT_C;
+    offset += visualShares[i];
+    return {
+      label: entry.label,
+      pct: (entry.share * 100).toFixed(1),
+      color: colors[i % colors.length],
+      dash,
+      dashOffset,
+    };
+  });
+}
 
 const ageSegments = computed(() => {
   const dist = profile.value?.ageDistribution;
   if (!dist?.length) return [];
-  let offset = 0;
-  return dist.map((d: any, i: number) => {
-    const full = d.share * DONUT_C;
-    const dash = Math.max(0, full - DONUT_GAP);
-    const dashOffset = -offset * DONUT_C;
-    offset += d.share;
-    return { label: d.label, pct: (d.share * 100).toFixed(1), color: AGE_COLORS[i % AGE_COLORS.length], dash, dashOffset };
-  });
+  return buildDonutSegments(dist, AGE_COLORS);
 });
 
 const dominantAge = computed(() => {
@@ -211,6 +247,57 @@ const ageNarrative = computed(() => {
   if (!d || !age) return null;
   return `The largest age group is ${d.label} at ${d.pct}% of residents.`;
 });
+
+const raceEthnicityRaw = computed(() => profile.value?.raceEthnicityMix ?? []);
+
+const raceSegments = computed(() => {
+  const dist = raceEthnicityRaw.value;
+  if (!dist.length) return [];
+  const renamed = dist
+    .filter((d: any) => d.share > 0)
+    .map((d: any) => ({
+      label:
+        d.label === 'White (non-Hispanic)' ? 'White' :
+        d.label === 'Black or African American' ? 'Black' :
+        d.label === 'Hispanic or Latino' ? 'Hispanic/Latino' :
+        d.label,
+      share: d.share,
+    }))
+    .sort((a: any, b: any) => b.share - a.share);
+  return buildDonutSegments(renamed, RACE_COLORS, 0.025);
+});
+
+const ethnicitySegments = computed(() => {
+  const dist = raceEthnicityRaw.value;
+  if (!dist.length) return [];
+  const latinoShare = dist.find((d: any) => d.label === 'Hispanic or Latino')?.share ?? 0;
+  return buildDonutSegments([
+    { label: 'Latino/Hispanic', share: latinoShare },
+    { label: 'Not Latino/Hispanic', share: Math.max(0, 1 - latinoShare) },
+  ], ORIGIN_COLORS);
+});
+
+const activeCommunitySegments = computed(() =>
+  communityView.value === 'race' ? raceSegments.value : ethnicitySegments.value,
+);
+
+const communitySubtitle = computed(() =>
+  communityView.value === 'race'
+    ? 'Race breakdown across all residents'
+    : 'Latino/Hispanic ethnicity across all residents',
+);
+
+const communityNarrative = computed(() => {
+  const [top, second] = activeCommunitySegments.value;
+  if (!top) return null;
+  if (communityView.value === 'ethnicity') {
+    return `${top.label} residents make up ${top.pct}% of the city.`;
+  }
+  if (!second) return `${top.label} residents make up ${top.pct}% of the city.`;
+  return `${top.label} residents make up ${top.pct}% of the city, followed by ${second.label} at ${second.pct}%.`;
+});
+
+const hasCommunityData = computed(() => raceSegments.value.length > 0 || ethnicitySegments.value.length > 0);
 
 // ── Education bars ────────────────────────────────────────────────────────────
 const educationBars = computed(() => {
@@ -246,14 +333,14 @@ const commuteBars = computed(() => {
 
     <!-- Loading -->
     <template v-if="loading">
-      <div class="city-exp__portrait city-exp__portrait--loading data-card">
-        <span class="skeleton-line" style="width:75%;height:20px;display:block;margin-bottom:12px"></span>
-        <span class="skeleton-line" style="width:90%;height:16px;display:block;margin-bottom:8px"></span>
-        <span class="skeleton-line" style="width:60%;height:16px;display:block;margin-bottom:8px"></span>
-        <span class="skeleton-line" style="width:50%;height:16px;display:block"></span>
-      </div>
       <div class="city-exp__grid">
         <div class="city-exp__column">
+          <div class="city-exp__portrait city-exp__portrait--loading data-card">
+            <span class="skeleton-line" style="width:75%;height:20px;display:block;margin-bottom:12px"></span>
+            <span class="skeleton-line" style="width:90%;height:16px;display:block;margin-bottom:8px"></span>
+            <span class="skeleton-line" style="width:60%;height:16px;display:block;margin-bottom:8px"></span>
+            <span class="skeleton-line" style="width:50%;height:16px;display:block"></span>
+          </div>
           <section v-for="i in 2" :key="`left-${i}`" class="data-card housing-exp__panel housing-exp__panel--compact">
             <div class="housing-exp__panel-head">
               <span class="skeleton-line" style="width:18px;height:18px;display:block;border-radius:4px"></span>
@@ -293,34 +380,32 @@ const commuteBars = computed(() => {
 
     <!-- Data -->
     <template v-else-if="profile">
-
-      <!-- Portrait -->
-      <div class="city-exp__portrait data-card">
-        <p class="city-exp__lead">
-          <span class="city-exp__city-name">{{ props.city.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') }}</span>
-          is home to
-          <span class="city-exp__accent">{{ pop }}</span>
-          residents
-          <template v-if="medianAge"> with a median age of <span class="city-exp__accent">{{ medianAge }}</span>, {{ ageLabel }}</template>.
-        </p>
-        <p v-if="eduHeadline" class="city-exp__body">
-          <span class="city-exp__accent">{{ eduHeadline.charAt(0).toUpperCase() + eduHeadline.slice(1) }}</span>,
-          reflecting a highly skilled, knowledge-economy workforce.
-        </p>
-        <p v-if="renterShare" class="city-exp__body">
-          <span class="city-exp__accent">{{ renterShare }}%</span> of households rent
-          <template v-if="remoteShare && remoteShare >= 15">, and <span class="city-exp__accent">{{ remoteShare }}%</span> work entirely from home</template>
-          <template v-if="foreignBorn">, and <span class="city-exp__accent">{{ foreignBorn }}%</span> of residents were born outside the US</template>.
-        </p>
-        <p v-if="unemployment" class="city-exp__body">
-          The local unemployment rate stands at <span class="city-exp__accent">{{ unemployment }}%</span>
-          <template v-if="laborPartic">, with <span class="city-exp__accent">{{ laborPartic }}%</span> of working-age adults active in the labor force</template>.
-        </p>
-      </div>
-
-      <!-- Grid -->
       <div class="city-exp__grid">
         <div class="city-exp__column">
+          <!-- Portrait -->
+          <div class="city-exp__portrait data-card">
+            <p class="city-exp__lead">
+              <span class="city-exp__city-name">{{ props.city.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') }}</span>
+              is home to
+              <span class="city-exp__accent">{{ pop }}</span>
+              residents
+              <template v-if="medianAge"> with a median age of <span class="city-exp__accent">{{ medianAge }}</span>, {{ ageLabel }}</template>.
+            </p>
+            <p v-if="eduHeadline" class="city-exp__body">
+              <span class="city-exp__accent">{{ eduHeadline.charAt(0).toUpperCase() + eduHeadline.slice(1) }}</span>,
+              reflecting a highly skilled, knowledge-economy workforce.
+            </p>
+            <p v-if="renterShare" class="city-exp__body">
+              <span class="city-exp__accent">{{ renterShare }}%</span> of households rent
+              <template v-if="remoteShare && remoteShare >= 15">, and <span class="city-exp__accent">{{ remoteShare }}%</span> work entirely from home</template>
+              <template v-if="foreignBorn">, and <span class="city-exp__accent">{{ foreignBorn }}%</span> of residents were born outside the US</template>.
+            </p>
+            <p v-if="unemployment" class="city-exp__body">
+              The local unemployment rate stands at <span class="city-exp__accent">{{ unemployment }}%</span>
+              <template v-if="laborPartic">, with <span class="city-exp__accent">{{ laborPartic }}%</span> of working-age adults active in the labor force</template>.
+            </p>
+          </div>
+
           <!-- Age -->
           <section v-if="ageSegments.length" class="data-card housing-exp__panel housing-exp__panel--compact">
             <div class="housing-exp__panel-head">
@@ -333,14 +418,16 @@ const commuteBars = computed(() => {
             <div class="struct-donut-wrap" style="margin-top: 12px;">
               <svg viewBox="0 0 120 120" class="struct-donut" aria-hidden="true">
                 <circle cx="60" cy="60" r="45" fill="none" stroke="var(--border-card)" stroke-width="20"/>
-                <circle
-                  v-for="seg in ageSegments" :key="seg.label"
-                  cx="60" cy="60" r="45" fill="none"
-                  :stroke="seg.color" stroke-width="20" stroke-linecap="butt"
-                  :stroke-dasharray="`${seg.dash} ${DONUT_C}`"
-                  :stroke-dashoffset="seg.dashOffset"
-                  style="transform:rotate(-90deg);transform-origin:60px 60px;"
-                />
+              <circle
+                v-for="seg in ageSegments" :key="seg.label"
+                cx="60" cy="60" r="45" fill="none"
+                :stroke="seg.color" stroke-width="20" stroke-linecap="butt"
+                :stroke-dasharray="`${seg.dash} ${DONUT_C}`"
+                :stroke-dashoffset="seg.dashOffset"
+                @mouseenter="e => showDonutTooltip(e, seg.label, seg.color)"
+                @mouseleave="hideTooltip"
+                style="transform:rotate(-90deg);transform-origin:60px 60px;"
+              />
               </svg>
               <div class="struct-legend struct-legend--vertical">
                 <div v-for="seg in ageSegments" :key="seg.label" class="struct-legend__item">
@@ -456,6 +543,52 @@ const commuteBars = computed(() => {
                     ></div>
                   </div>
                   <span class="city-exp__busy-sub">{{ (qol.airportBusyness.value.annualEnplanements / 1_000_000).toFixed(1) }}M passengers/yr · busier than {{ qol.airportBusyness.value.nationalPercentile }}% of tracked airports</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Community -->
+          <section v-if="hasCommunityData" class="data-card housing-exp__panel housing-exp__panel--compact">
+            <div class="housing-exp__panel-head">
+              <span class="data-card__icon mdi mdi-earth"></span>
+              <span class="housing-exp__panel-title">Community</span>
+            </div>
+            <div class="city-exp__community-toggle" role="tablist" aria-label="Community demographic view">
+              <button
+                type="button"
+                class="city-exp__community-chip"
+                :class="{ 'city-exp__community-chip--active': communityView === 'race' }"
+                @click="communityView = 'race'"
+              >Race</button>
+              <button
+                type="button"
+                class="city-exp__community-chip"
+                :class="{ 'city-exp__community-chip--active': communityView === 'ethnicity' }"
+                @click="communityView = 'ethnicity'"
+              >Ethnicity</button>
+              <span class="city-exp__community-subtitle">{{ communitySubtitle }}</span>
+            </div>
+            <p v-if="communityNarrative" class="city-exp__panel-narrative">{{ communityNarrative }}</p>
+            <div class="struct-donut-wrap" style="margin-top: 12px;">
+              <svg viewBox="0 0 120 120" class="struct-donut" aria-hidden="true">
+                <circle cx="60" cy="60" r="45" fill="none" stroke="var(--border-card)" stroke-width="20"/>
+                <circle
+                  v-for="seg in activeCommunitySegments" :key="seg.label"
+                  cx="60" cy="60" r="45" fill="none"
+                  :stroke="seg.color" stroke-width="20" stroke-linecap="butt"
+                  :stroke-dasharray="`${seg.dash} ${DONUT_C}`"
+                  :stroke-dashoffset="seg.dashOffset"
+                  @mouseenter="e => showDonutTooltip(e, seg.label, seg.color)"
+                  @mouseleave="hideTooltip"
+                  style="transform:rotate(-90deg);transform-origin:60px 60px;"
+                />
+              </svg>
+              <div class="struct-legend struct-legend--vertical city-exp__community-legend" :class="communityView === 'ethnicity' ? 'city-exp__community-legend--single' : 'city-exp__community-legend--col-flow'">
+                <div v-for="seg in activeCommunitySegments" :key="seg.label" class="struct-legend__item">
+                  <span class="struct-legend__dot" :style="{background:seg.color}"></span>
+                  <span class="struct-legend__label">{{ seg.label }}</span>
+                  <span class="struct-legend__pct">{{ seg.pct }}%</span>
                 </div>
               </div>
             </div>
