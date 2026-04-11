@@ -1,4 +1,4 @@
-import type { TransitAgency, TransitInfo, TransitMode } from "./quality-of-life.types.js";
+import type { TransitAgency, TransitInfo } from "./quality-of-life.types.js";
 
 export const NTD_SOURCE_URL = "https://www.transit.dot.gov/ntd/ntd-data";
 export const NTD_AS_OF = "2023";
@@ -451,12 +451,15 @@ const AGENCIES: AgencyRecord[] = [
   {
     name: "San Francisco Municipal Railway", shortName: "Muni",
     modes: ["light-rail", "bus", "cable-car", "streetcar"], annualRidership: 130_000_000,
-    bounds: { minLat: 37.70, maxLat: 37.86, minLon: -122.55, maxLon: -122.35 },
+    // minLon extended to -123.15: SF's TIGERweb centroid is displaced to ~-123.03 because
+    // SF County officially includes the Farallon Islands (~30mi offshore).
+    bounds: { minLat: 37.68, maxLat: 37.86, minLon: -123.15, maxLon: -122.35 },
   },
   {
     name: "Bay Area Rapid Transit", shortName: "BART",
     modes: ["subway"], annualRidership: 120_000_000,
-    bounds: { minLat: 37.48, maxLat: 38.08, minLon: -122.52, maxLon: -121.68 },
+    // minLon extended to -123.15 for same SF centroid displacement reason.
+    bounds: { minLat: 37.48, maxLat: 38.08, minLon: -123.15, maxLon: -121.68 },
   },
   {
     name: "AC Transit", shortName: "AC Transit",
@@ -466,13 +469,14 @@ const AGENCIES: AgencyRecord[] = [
   {
     name: "Caltrain", shortName: "Caltrain",
     modes: ["commuter-rail"], annualRidership: 15_000_000,
-    // SF to San Jose corridor
-    bounds: { minLat: 37.28, maxLat: 37.82, minLon: -122.52, maxLon: -121.88 },
+    // SF to San Jose corridor; minLon extended for SF centroid displacement.
+    bounds: { minLat: 37.28, maxLat: 37.82, minLon: -123.15, maxLon: -121.88 },
   },
   {
     name: "Golden Gate Ferry", shortName: "GG Ferry",
     modes: ["ferry"], annualRidership: 2_500_000,
-    bounds: { minLat: 37.68, maxLat: 38.12, minLon: -122.65, maxLon: -122.18 },
+    // minLon extended for SF centroid displacement.
+    bounds: { minLat: 37.68, maxLat: 38.12, minLon: -123.15, maxLon: -122.18 },
   },
   {
     name: "Santa Clara Valley Transportation Authority", shortName: "VTA",

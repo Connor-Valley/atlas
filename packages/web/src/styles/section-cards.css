@@ -266,7 +266,12 @@
 .city-exp__grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  align-items: stretch;
+  gap: 16px;
+}
+
+.city-exp__column {
+  display: flex;
+  flex-direction: column;
   gap: 16px;
 }
 
@@ -320,8 +325,8 @@
   margin-top: 1px;
 }
 
-/* Force grid panels to fill their cell height */
-.city-exp__grid > .data-card {
+/* Keep cards at their natural height inside each column */
+.city-exp__column > .data-card {
   display: flex;
   flex-direction: column;
   align-self: stretch;
@@ -428,6 +433,12 @@
   margin-left: auto;
 }
 
+.city-exp__transit-ridership:focus-visible {
+  outline: 1px solid rgba(148, 163, 184, 0.55);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
 .city-exp__airline-tags {
   position: absolute;
   top: 10px;
@@ -457,7 +468,10 @@
   font-weight: 500;
   letter-spacing: 0.01em;
   color: #d1d5db;
-  white-space: nowrap;
+  line-height: 1.35;
+  white-space: normal;
+  max-width: 220px;
+  text-align: center;
   pointer-events: none;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
   z-index: 9999;

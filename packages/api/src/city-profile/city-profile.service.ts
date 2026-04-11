@@ -91,10 +91,9 @@ export async function getCityProfileDetails(city: City, year: number): Promise<C
     "B11001_001E", "B11001_002E",
   ];
 
-  // Batch 2: race (8) + ethnicity (2) + nativity (2) + education (25) + commute (5) = 42 vars
+  // Batch 2: race/eth B03002 (9) + nativity (2) + education (25) + commute (5) = 41 vars
   const vars2 = [
-    "B02001_001E", "B02001_002E", "B02001_003E", "B02001_004E", "B02001_005E", "B02001_006E", "B02001_007E", "B02001_008E",
-    "B03003_001E", "B03003_003E",
+    "B03002_001E", "B03002_003E", "B03002_004E", "B03002_005E", "B03002_006E", "B03002_007E", "B03002_008E", "B03002_009E", "B03002_012E",
     "B05002_001E", "B05002_013E",
     "B15003_001E", "B15003_002E", "B15003_003E", "B15003_004E", "B15003_005E", "B15003_006E", "B15003_007E", "B15003_008E", "B15003_009E", "B15003_010E", "B15003_011E", "B15003_012E", "B15003_013E", "B15003_014E", "B15003_015E", "B15003_016E", "B15003_017E", "B15003_018E", "B15003_019E", "B15003_020E", "B15003_021E", "B15003_022E", "B15003_023E", "B15003_024E", "B15003_025E",
     "B08301_001E", "B08301_003E", "B08301_004E", "B08301_010E", "B08301_021E",
@@ -122,16 +121,15 @@ export async function getCityProfileDetails(city: City, year: number): Promise<C
   const totalHouseholds = values[offset++];
   const familyHouseholds = values[offset++];
 
-  const raceTotal = values[offset++];
-  const white = values[offset++];
-  const black = values[offset++];
-  const native = values[offset++];
-  const asian = values[offset++];
-  const pacific = values[offset++];
-  const other = values[offset++];
-  const multiracial = values[offset++];
-
-  const ethnicityTotal = values[offset++];
+  // B03002: mutually exclusive race × Hispanic/Latino breakdown
+  const raceEthTotal = values[offset++];
+  const nhWhite = values[offset++];
+  const nhBlack = values[offset++];
+  const nhNative = values[offset++];
+  const nhAsian = values[offset++];
+  const nhPacific = values[offset++];
+  const nhOther = values[offset++];
+  const nhMulti = values[offset++];
   const hispanic = values[offset++];
 
   const nativityTotal = values[offset++];
@@ -172,15 +170,15 @@ export async function getCityProfileDetails(city: City, year: number): Promise<C
       ["Family households", familyHouseholds],
       ["Non-family households", Math.max(0, totalHouseholds - familyHouseholds)],
     ]),
-    raceEthnicityMix: ratioBreakdown(Math.max(raceTotal, ethnicityTotal), [
-      ["White alone", white],
-      ["Black alone", black],
-      ["Asian alone", asian],
-      ["Native American alone", native],
-      ["Pacific Islander alone", pacific],
-      ["Other race", other],
-      ["Two or more races", multiracial],
+    raceEthnicityMix: ratioBreakdown(raceEthTotal, [
       ["Hispanic or Latino", hispanic],
+      ["White (non-Hispanic)", nhWhite],
+      ["Black or African American", nhBlack],
+      ["Asian", nhAsian],
+      ["Two or more races", nhMulti],
+      ["Native American", nhNative],
+      ["Pacific Islander", nhPacific],
+      ["Other", nhOther],
     ]),
     foreignBornShare: nativityTotal > 0 ? roundRatio(foreignBorn / nativityTotal) : null,
     educationalAttainment: ratioBreakdown(educationTotal, [
