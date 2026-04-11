@@ -69,10 +69,10 @@ function airlineTooltip(code: string, airline: string): string {
 }
 
 function ridershipTooltip(annualRidership: number): string {
-  if (annualRidership < 3_000_000) return "Small transit system.";
-  if (annualRidership < 28_000_000) return "Midsize transit system.";
-  if (annualRidership < 70_000_000) return "Major transit system.";
-  return "Very large transit system.";
+  if (annualRidership < 3_000_000) return "Small transit system";
+  if (annualRidership < 28_000_000) return "Midsize transit system";
+  if (annualRidership < 70_000_000) return "Major transit system";
+  return "Very large transit system";
 }
 
 function airlineStyle(airline: string) {
@@ -137,11 +137,11 @@ function modeLabel(mode: string) {
   return MODE_COLORS[mode]?.label ?? mode;
 }
 
-function formatRidership(n: number): string {
-  if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}B`;
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(0)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
-  return n.toLocaleString();
+function formatDailyRidership(annualRidership: number): string {
+  const dailyRidership = Math.round(annualRidership / 365);
+  if (dailyRidership >= 1_000_000) return `${(dailyRidership / 1_000_000).toFixed(1)}M`;
+  if (dailyRidership >= 1_000) return `${(dailyRidership / 1_000).toFixed(0)}K`;
+  return dailyRidership.toLocaleString();
 }
 
 // ── Dominant commute mode ─────────────────────────────────────────────────────
@@ -401,7 +401,7 @@ const commuteBars = computed(() => {
                     @mouseleave="hideTooltip"
                     @focus="e => showRidershipTooltip(e, agency.annualRidership)"
                     @blur="hideTooltip"
-                  >{{ formatRidership(agency.annualRidership) }} annual trips</span>
+                  >{{ formatDailyRidership(agency.annualRidership) }} daily trips</span>
                 </div>
               </div>
             </div>
