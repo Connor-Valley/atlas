@@ -225,3 +225,31 @@
     max-width: 100%;
   }
 }
+
+@media (hover: none) and (pointer: coarse) {
+  .data-card:hover {
+    box-shadow: var(--card-shadow);
+    transform: none;
+  }
+
+  .data-card:hover::before {
+    opacity: 0;
+  }
+
+  .metric:hover {
+    background: var(--bg-card-subtle);
+  }
+
+  .section-header[aria-disabled="false"]:hover {
+    background: transparent;
+    color: var(--text-secondary);
+  }
+
+  .section-action:hover {
+    color: var(--text-secondary);
+  }
+
+  .structure-chart__segment:hover {
+    filter: none;
+  }
+}
