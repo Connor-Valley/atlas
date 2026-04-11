@@ -90,7 +90,7 @@ function handleLogoClick() {
       </div>
     </div>
 
-    <div v-if="showSearch" class="site-header__search">
+    <div v-if="showSearch" class="site-header__search site-header__search--desktop">
       <!-- Pill: always in flow to hold header height; invisible when expanded -->
       <button
         v-if="initialCity"
@@ -166,6 +166,35 @@ function handleLogoClick() {
     </div>
   </header>
 
+  <div v-if="showSearch" class="site-header__search site-header__search--mobile">
+    <button
+      v-if="initialCity"
+      class="site-header__search-pill"
+      :class="{ 'site-header__search-pill--expanded': mobileSearchOpen }"
+      @click="mobileSearchOpen = true"
+    >
+      <span class="mdi mdi-map-marker site-header__search-pill-icon"></span>
+      <span class="site-header__search-pill-text">{{ displayCity }}, {{ initialState?.toUpperCase() }}</span>
+      <span class="mdi mdi-chevron-down site-header__search-pill-chevron"></span>
+    </button>
+
+    <div class="site-header__search-full" :class="{ 'site-header__search-full--visible': mobileSearchOpen || !initialCity }">
+      <CitySearch
+        class="site-header__search-city"
+        :initial-city="initialCity"
+        :initial-state="initialState"
+        @search="onSearchSubmit"
+      />
+      <button
+        v-if="initialCity && mobileSearchOpen"
+        class="site-header__search-collapse"
+        @click="mobileSearchOpen = false"
+      >
+        <span class="mdi mdi-chevron-up"></span>
+      </button>
+    </div>
+  </div>
+
   <AuthModal v-if="showAuthModal" :mode="authModalMode" @close="showAuthModal = false" />
 </template>
 
@@ -202,14 +231,33 @@ function handleLogoClick() {
   width: 100%;
 }
 
+.site-header__search--mobile {
+  display: none;
+}
+
 /* Collapse button only relevant on mobile */
 .site-header__search-collapse {
   display: none;
 }
 
 @media (max-width: 640px) {
-  .site-header__search {
-    position: relative;
+  .site-header__search--desktop,
+  .site-header__search-spacer {
+    display: none;
+  }
+
+  .site-header__search--mobile {
+    display: block;
+    position: sticky;
+    top: calc(env(safe-area-inset-top, 0px) + 8px);
+    z-index: 220;
+    margin: 0 0 8px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    background: color-mix(in srgb, var(--bg-main) 90%, transparent);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-radius: 12px;
   }
 
   /* Pill: in flow, holds the row height */

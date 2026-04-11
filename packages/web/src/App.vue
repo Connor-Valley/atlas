@@ -20,7 +20,23 @@ onMounted(() => {
 
 <template>
   <div class="app">
+    <div class="app-safe-top" aria-hidden="true"></div>
     <router-view />
     <ToastContainer />
   </div>
 </template>
+
+<style>
+@media (max-width: 640px) {
+  .app-safe-top {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: calc(env(safe-area-inset-top, 0px) + 8px);
+    background: var(--bg-main);
+    z-index: 500;
+    pointer-events: none;
+  }
+}
+</style>
