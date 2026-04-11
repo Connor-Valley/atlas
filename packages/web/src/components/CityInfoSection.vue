@@ -162,23 +162,29 @@ watch(
         </div>
       </div>
       <div class="city-hero-card__stats">
-        <div class="city-hero-card__stat">
+        <div class="city-hero-card__stat city-hero-card__stat--population">
           <span class="city-hero-card__stat-label">Population</span>
           <span class="city-hero-card__stat-value">{{ data.population.toLocaleString() }}</span>
         </div>
-        <div class="city-hero-card__stat">
+        <div class="city-hero-card__stat city-hero-card__stat--county">
           <span class="city-hero-card__stat-label">County</span>
           <span class="city-hero-card__stat-value">{{ data.county }}</span>
         </div>
-        <div class="city-hero-card__stat">
+        <div class="city-hero-card__stat city-hero-card__stat--state">
           <span class="city-hero-card__stat-label">State</span>
           <span class="city-hero-card__stat-value">{{ state.toUpperCase() }}</span>
         </div>
       </div>
-      <button class="city-hero-card__details-btn" @click="emit('expand')">
-        More Info
-        <span class="mdi mdi-arrow-right city-hero-card__details-icon"></span>
-      </button>
+      <div class="city-hero-card__footer">
+        <button class="city-hero-card__details-btn" @click="emit('expand')">
+          More Info
+          <span class="mdi mdi-arrow-right city-hero-card__details-icon"></span>
+        </button>
+        <div class="city-hero-card__stat city-hero-card__stat--population city-hero-card__stat--population-mobile">
+          <span class="city-hero-card__stat-label">Population</span>
+          <span class="city-hero-card__stat-value">{{ data.population.toLocaleString() }}</span>
+        </div>
+      </div>
     </div>
   </div>
 </template>

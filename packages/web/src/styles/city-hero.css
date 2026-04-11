@@ -218,6 +218,18 @@
   max-width: none;
 }
 
+.city-hero-card__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: auto;
+}
+
+.city-hero-card__stat--population-mobile {
+  display: none;
+  text-align: right;
+}
+
 .city-hero-card__fav {
   position: absolute;
   top: 16px;
@@ -258,9 +270,6 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  position: absolute;
-  bottom: 14px;
-  left: 32px;
   padding: 0;
   border: none;
   background: transparent;
@@ -298,4 +307,48 @@
   45%  { transform: translateX(9px); opacity: 0; }
   46%  { transform: translateX(-9px); opacity: 0; }
   100% { transform: translateX(0);   opacity: 1; }
+}
+
+@media (max-width: 640px) {
+  .city-hero-card {
+    padding: 24px 20px 18px;
+    gap: 16px;
+    min-height: 150px;
+  }
+
+  .city-hero-card__content {
+    padding-right: 34px;
+  }
+
+  .city-hero-card__name {
+    font-size: clamp(1.45rem, 8vw, 2.1rem);
+    margin-bottom: 4px;
+  }
+
+  .city-hero-card__sub {
+    font-size: 0.82rem;
+    display: block;
+    max-width: calc(100% - 40px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .city-hero-card__divider,
+  .city-hero-card__place-type,
+  .city-hero-card__place-info {
+    display: none;
+  }
+
+  .city-hero-card__stats {
+    display: none;
+  }
+
+  .city-hero-card__stat--population-mobile {
+    display: block;
+  }
+
+  .city-hero-card__stat--population-mobile .city-hero-card__stat-value {
+    max-width: none;
+  }
 }
