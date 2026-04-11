@@ -167,16 +167,22 @@ function handleLogoClick() {
   </header>
 
   <div v-if="showSearch" class="site-header__search site-header__search--mobile">
-    <button
-      v-if="initialCity"
-      class="site-header__search-pill"
-      :class="{ 'site-header__search-pill--expanded': mobileSearchOpen }"
-      @click="mobileSearchOpen = true"
-    >
-      <span class="mdi mdi-map-marker site-header__search-pill-icon"></span>
-      <span class="site-header__search-pill-text">{{ displayCity }}, {{ initialState?.toUpperCase() }}</span>
-      <span class="mdi mdi-chevron-down site-header__search-pill-chevron"></span>
-    </button>
+    <div class="site-header__search-row">
+      <div v-if="$slots['mobile-leading']" class="site-header__search-leading">
+        <slot name="mobile-leading" />
+      </div>
+
+      <button
+        v-if="initialCity"
+        class="site-header__search-pill"
+        :class="{ 'site-header__search-pill--expanded': mobileSearchOpen }"
+        @click="mobileSearchOpen = true"
+      >
+        <span class="mdi mdi-map-marker site-header__search-pill-icon"></span>
+        <span class="site-header__search-pill-text">{{ displayCity }}, {{ initialState?.toUpperCase() }}</span>
+        <span class="mdi mdi-chevron-down site-header__search-pill-chevron"></span>
+      </button>
+    </div>
 
     <div class="site-header__search-full" :class="{ 'site-header__search-full--visible': mobileSearchOpen || !initialCity }">
       <CitySearch
@@ -235,6 +241,18 @@ function handleLogoClick() {
   display: none;
 }
 
+.site-header__search-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.site-header__search-leading {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
 /* Collapse button only relevant on mobile */
 .site-header__search-collapse {
   display: none;
@@ -276,6 +294,8 @@ function handleLogoClick() {
     align-items: center;
     gap: 8px;
     width: 100%;
+    flex: 1 1 auto;
+    min-width: 0;
     padding: 10px 14px;
     background: var(--bg-card);
     border: 1px solid var(--border-card);

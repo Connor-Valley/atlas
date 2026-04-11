@@ -1163,7 +1163,16 @@ async function closeExpandedSection() {
       :initial-state="state"
       @search="onSearch"
       @logo-click="resetSearch"
-    />
+    >
+      <template v-if="sectionExpanded" #mobile-leading>
+        <button class="breadcrumb score-pills__back" @click="closeExpandedSection">
+          <span class="breadcrumb__arr breadcrumb__arr--1 mdi mdi-arrow-left"></span>
+          <span class="breadcrumb__text">Back</span>
+          <span class="breadcrumb__arr breadcrumb__arr--2 mdi mdi-arrow-left"></span>
+          <span class="breadcrumb__circle"></span>
+        </button>
+      </template>
+    </SiteHeader>
 
     <!-- Score pills bar -->
     <div v-if="!cityNotFound" ref="scorePills" class="score-pills" :class="{ 'score-pills--expanded': sectionExpanded }">
