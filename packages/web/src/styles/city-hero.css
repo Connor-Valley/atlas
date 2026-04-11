@@ -55,6 +55,7 @@
 
 .city-hero-card__content {
   position: relative;
+  z-index: 2;
 }
 
 .city-hero-card__name {
@@ -186,6 +187,7 @@
   padding-top: 18px;
   border-top: 1px solid rgba(255, 255, 255, 0.2);
   position: relative;
+  z-index: 2;
 }
 
 .city-hero-card__stat-label {
@@ -223,6 +225,8 @@
   justify-content: space-between;
   align-items: flex-end;
   margin-top: auto;
+  position: relative;
+  z-index: 2;
 }
 
 .city-hero-card__stat--population-mobile {
@@ -348,7 +352,14 @@
     display: block;
   }
 
+  .city-hero-card__stat--population-mobile .city-hero-card__stat-label {
+    color: rgba(255, 255, 255, 0.98);
+    text-shadow: none;
+  }
+
   .city-hero-card__stat--population-mobile .city-hero-card__stat-value {
+    color: #ffffff;
+    text-shadow: none;
     max-width: none;
   }
 }

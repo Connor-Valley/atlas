@@ -241,6 +241,16 @@ function handleLogoClick() {
 }
 
 @media (max-width: 640px) {
+  .site-header {
+    z-index: 260;
+  }
+
+  .site-header__controls,
+  .user-menu,
+  .user-menu__dropdown {
+    z-index: 261;
+  }
+
   .site-header__search--desktop,
   .site-header__search-spacer {
     display: none;
