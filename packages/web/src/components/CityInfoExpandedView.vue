@@ -72,7 +72,7 @@ const mobileSummary = computed(() => {
 const mobileHighlights = computed(() => {
   const rows = [
     bachelorsPlus.value
-      ? { label: "Bachelor's+", value: bachelorsPlus.value }
+      ? { label: "Bachelors or Higher", value: bachelorsPlus.value }
       : (eduHeadline.value ? { label: 'Education', value: eduHeadline.value } : null),
     renterShare.value != null
       ? { label: 'Renter share', value: `${renterShare.value}%` }
