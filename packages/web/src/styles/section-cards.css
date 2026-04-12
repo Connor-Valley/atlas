@@ -316,6 +316,16 @@
   min-width: 0;
 }
 
+.city-exp__community-chart {
+  flex: 1;
+  align-items: center;
+}
+
+.city-exp__community-donut {
+  width: 112px;
+  height: 112px;
+}
+
 /* Grid */
 .city-exp__grid {
   display: grid;
@@ -337,6 +347,15 @@
   .city-exp__panel--education,
   .city-exp__panel--community {
     flex: 1 1 auto;
+  }
+
+  .city-exp__community-chart {
+    justify-content: center;
+  }
+
+  .city-exp__community-donut {
+    width: clamp(112px, 9vw, 160px);
+    height: clamp(112px, 9vw, 160px);
   }
 }
 

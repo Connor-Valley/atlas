@@ -261,9 +261,14 @@ const ageNarrative = computed(() => {
 
 const politicsSourceLabel = computed(() => {
   const scope = profile.value?.politicalAffiliationSourceScope;
-  if (scope === 'city') return 'city-level result';
-  if (scope === 'county') return 'county-level proxy';
+  if (scope === 'city') return 'City-level Result';
+  if (scope === 'county') return 'County-level Proxy';
   return null;
+});
+
+const politicsElectionYear = computed(() => {
+  const asOf = profile.value?.politicalAffiliationAsOf;
+  return asOf ? asOf.slice(0, 4) : '2024';
 });
 
 const politicsSegments = computed(() => {
@@ -283,9 +288,9 @@ const politicsSegments = computed(() => {
 
 const politicsNarrative = computed(() => {
   const [republican, democratic, thirdParty] = politicsSegments.value;
-  const electionDate = profile.value?.politicalAffiliationAsOf ?? '2024';
+  const electionDate = politicsElectionYear.value;
   if (!republican || !democratic || !thirdParty) return null;
-  return `In the ${electionDate} presidential election, Republican candidates received ${republican.pct}% of votes here, Democrats received ${democratic.pct}%, and Third Party / Independent candidates received ${thirdParty.pct}%.`;
+  return `In the ${electionDate} Presidental Election, Republican candidates received ${republican.pct}% of votes here, Democrats received ${democratic.pct}%, and Third Party / Independent candidates received ${thirdParty.pct}%.`;
 });
 
 const activeWhoLivesHereSegments = computed(() =>
@@ -304,7 +309,7 @@ const whoLivesHereNarrative = computed(() => {
 const whoLivesHereSubtitle = computed(() =>
   whoLivesHereView.value === 'age'
     ? 'Age breakdown across all residents'
-    : `${profile.value?.politicalAffiliationAsOf ?? '2024'} presidential vote share${politicsSourceLabel.value ? ` · ${politicsSourceLabel.value}` : ''}`,
+    : `${politicsElectionYear.value} Presidental Election${politicsSourceLabel.value ? ` · ${politicsSourceLabel.value}` : ''}`,
 );
 
 const hasPoliticsData = computed(() => politicsSegments.value.length > 0);
@@ -646,8 +651,8 @@ const commuteBars = computed(() => {
               <span class="city-exp__community-subtitle">{{ communitySubtitle }}</span>
             </div>
             <p v-if="communityNarrative" class="city-exp__panel-narrative">{{ communityNarrative }}</p>
-            <div class="struct-donut-wrap" style="margin-top: 12px;">
-              <svg viewBox="0 0 120 120" class="struct-donut" aria-hidden="true">
+            <div class="struct-donut-wrap city-exp__community-chart" style="margin-top: 12px;">
+              <svg viewBox="0 0 120 120" class="struct-donut city-exp__community-donut" aria-hidden="true">
                 <circle cx="60" cy="60" r="45" fill="none" stroke="var(--border-card)" stroke-width="20"/>
                 <circle
                   v-for="seg in activeCommunitySegments" :key="seg.label"
