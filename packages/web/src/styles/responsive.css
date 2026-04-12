@@ -73,6 +73,10 @@
     order: 1;
   }
 
+  .site-header__title {
+    display: none;
+  }
+
   .site-header__controls {
     flex: 0 0 auto;
     margin-left: auto;
@@ -112,8 +116,7 @@
   }
 
   .score-pills__page-title {
-    margin-left: 0;
-    width: 100%;
+    display: none;
   }
 
   /* Hide stat pills on mobile */
