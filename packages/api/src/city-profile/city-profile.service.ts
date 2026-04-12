@@ -2,6 +2,7 @@ import type { City } from "../cities/cities.types.js";
 import { buildCensusGeoQuery } from "../common/census.js";
 import type { SourceAttribution } from "../common/source.types.js";
 import type { CityProfileDetails, CityProfileSummary, PercentageBreakdown } from "./city-profile.types.js";
+import { getPoliticalAffiliation } from "./politics-reference.js";
 
 const ACS_SOURCE = (year: number): SourceAttribution => ({
   sourceName: "U.S. Census Bureau ACS 5-year",
@@ -74,6 +75,7 @@ export async function getCityProfileSummary(city: City, year: number): Promise<C
 
 export async function getCityProfileDetails(city: City, year: number): Promise<CityProfileDetails> {
   const summary = await getCityProfileSummary(city, year);
+  const politicalAffiliation = await getPoliticalAffiliation(city);
 
   // Batch 1: age (47) + household (2) = 49 vars
   const vars1 = [
@@ -166,6 +168,10 @@ export async function getCityProfileDetails(city: City, year: number): Promise<C
       ["45-64", age45to64],
       ["65+", age65Plus],
     ]),
+    politicalAffiliationDistribution: politicalAffiliation?.distribution ?? null,
+    politicalAffiliationSourceScope: politicalAffiliation?.sourceScope ?? null,
+    politicalAffiliationSourceName: politicalAffiliation?.sourceName ?? null,
+    politicalAffiliationAsOf: politicalAffiliation?.asOf ?? null,
     householdComposition: ratioBreakdown(totalHouseholds, [
       ["Family households", familyHouseholds],
       ["Non-family households", Math.max(0, totalHouseholds - familyHouseholds)],

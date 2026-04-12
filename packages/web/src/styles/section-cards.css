@@ -329,6 +329,16 @@
   gap: 16px;
 }
 
+@media (min-width: 961px) {
+  .city-exp__column {
+    height: 100%;
+  }
+
+  .city-exp__panel--education {
+    flex: 1 1 auto;
+  }
+}
+
 /* Economy panel */
 .city-exp__economy {
   display: flex;

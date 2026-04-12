@@ -6,12 +6,14 @@ import { fetchDetailedQualityOfLife } from "../api/qualityOfLife";
 const props = defineProps<{ city: string; state: string }>();
 const emit = defineEmits<{ (e: 'close'): void }>();
 type CommunityView = 'race' | 'ethnicity';
+type WhoLivesHereView = 'age' | 'politics';
 
 const profile = ref<any>(null);
 const qol     = ref<any>(null);
 const loading = ref(false);
 const error   = ref<string | null>(null);
 const communityView = ref<CommunityView>('race');
+const whoLivesHereView = ref<WhoLivesHereView>('age');
 
 async function load() {
   if (!props.city || !props.state) return;
@@ -151,6 +153,16 @@ function formatDailyRidership(annualRidership: number): string {
   return dailyRidership.toLocaleString();
 }
 
+function educationHeadlineToNarrative(headline: string): string {
+  const normalized = headline.trim().replace(/\.$/, "");
+  const bachelorsMatch = normalized.match(/^([\d.]+%) bachelor's or higher$/i);
+  if (bachelorsMatch) {
+    return `${bachelorsMatch[1]} of adults hold a bachelor's degree or higher`;
+  }
+
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+}
+
 // ── Dominant commute mode ─────────────────────────────────────────────────────
 const topCommuteMode = computed(() => {
   const modes = profile.value?.commuteModes;
@@ -175,13 +187,11 @@ const commuteNarrative = computed(() => {
 const educationNarrative = computed(() => {
   const p = profile.value;
   if (!p) return null;
-  const bachelors = p.educationalAttainment?.find((e: any) => e.label === "Bachelor's degree");
   const graduate  = p.educationalAttainment?.find((e: any) => e.label === "Graduate degree");
-  const bPct = bachelors ? Math.round(bachelors.share * 100) : null;
   const gPct = graduate  ? Math.round(graduate.share * 100)  : null;
   const headline = eduHeadline.value;
   if (!headline) return null;
-  let s = `${headline.charAt(0).toUpperCase() + headline.slice(1)}`;
+  let s = `In this city, ${educationHeadlineToNarrative(headline)}`;
   if (gPct && gPct >= 15) s += `, including ${gPct}% with a graduate degree`;
   return s + '.';
 });
@@ -191,6 +201,7 @@ const DONUT_R = 45;
 const DONUT_C = 2 * Math.PI * DONUT_R;
 const DONUT_GAP = 2;
 const AGE_COLORS = ['#14B8A6', '#0891b2', '#6366f1', '#8b5cf6', '#f59e0b'];
+const POLITICS_COLORS = ['#dc2626', '#2563eb', '#a16207'];
 const RACE_COLORS = ['#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4', '#a855f7'];
 const ORIGIN_COLORS = ['#22c55e', '#3b82f6'];
 
@@ -247,6 +258,57 @@ const ageNarrative = computed(() => {
   if (!d || !age) return null;
   return `The largest age group is ${d.label} at ${d.pct}% of residents.`;
 });
+
+const politicsSourceLabel = computed(() => {
+  const scope = profile.value?.politicalAffiliationSourceScope;
+  if (scope === 'city') return 'city-level result';
+  if (scope === 'county') return 'county-level proxy';
+  return null;
+});
+
+const politicsSegments = computed(() => {
+  const dist = profile.value?.politicalAffiliationDistribution;
+  if (!dist?.length) return [];
+  return buildDonutSegments(
+    dist
+      .filter((d: any) => d.share > 0)
+      .sort((a: any, b: any) => {
+        const order = ['Republican', 'Democratic', 'Third Party / Independent'];
+        return order.indexOf(a.label) - order.indexOf(b.label);
+      }),
+    POLITICS_COLORS,
+    0.04,
+  );
+});
+
+const politicsNarrative = computed(() => {
+  const [republican, democratic, thirdParty] = politicsSegments.value;
+  const electionDate = profile.value?.politicalAffiliationAsOf ?? '2024';
+  if (!republican || !democratic || !thirdParty) return null;
+  return `In the ${electionDate} presidential election, Republican candidates received ${republican.pct}% of votes here, Democrats received ${democratic.pct}%, and Third Party / Independent candidates received ${thirdParty.pct}%.`;
+});
+
+const activeWhoLivesHereSegments = computed(() =>
+  whoLivesHereView.value === 'age' ? ageSegments.value : politicsSegments.value,
+);
+
+const whoLivesHereNarrative = computed(() => {
+  if (whoLivesHereView.value === 'age') {
+    const narrative = ageNarrative.value;
+    if (!narrative) return null;
+    return `${medianAge.value ? `Median age is ${medianAge.value}. ` : ''}${narrative}`;
+  }
+  return politicsNarrative.value;
+});
+
+const whoLivesHereSubtitle = computed(() =>
+  whoLivesHereView.value === 'age'
+    ? 'Age breakdown across all residents'
+    : `${profile.value?.politicalAffiliationAsOf ?? '2024'} presidential vote share${politicsSourceLabel.value ? ` · ${politicsSourceLabel.value}` : ''}`,
+);
+
+const hasPoliticsData = computed(() => politicsSegments.value.length > 0);
+const hasWhoLivesHereData = computed(() => ageSegments.value.length > 0 || politicsSegments.value.length > 0);
 
 const raceEthnicityRaw = computed(() => profile.value?.raceEthnicityMix ?? []);
 
@@ -392,7 +454,7 @@ const commuteBars = computed(() => {
               <template v-if="medianAge"> with a median age of <span class="city-exp__accent">{{ medianAge }}</span>, {{ ageLabel }}</template>.
             </p>
             <p v-if="eduHeadline" class="city-exp__body">
-              <span class="city-exp__accent">{{ eduHeadline.charAt(0).toUpperCase() + eduHeadline.slice(1) }}</span>,
+              <span class="city-exp__accent">{{ educationHeadlineToNarrative(eduHeadline) }}</span>,
               reflecting a highly skilled, knowledge-economy workforce.
             </p>
             <p v-if="renterShare" class="city-exp__body">
@@ -406,20 +468,34 @@ const commuteBars = computed(() => {
             </p>
           </div>
 
-          <!-- Age -->
-          <section v-if="ageSegments.length" class="data-card housing-exp__panel housing-exp__panel--compact">
+          <!-- Who lives here -->
+          <section v-if="hasWhoLivesHereData" class="data-card housing-exp__panel housing-exp__panel--compact">
             <div class="housing-exp__panel-head">
               <span class="data-card__icon mdi mdi-account-group-outline"></span>
               <span class="housing-exp__panel-title">Who Lives Here</span>
             </div>
-            <p v-if="ageNarrative" class="city-exp__panel-narrative">
-              <template v-if="medianAge">Median age is <span class="city-exp__accent">{{ medianAge }}</span>. </template>{{ ageNarrative }}
-            </p>
+            <div v-if="hasPoliticsData" class="city-exp__community-toggle" role="tablist" aria-label="Who lives here demographic view">
+              <button
+                type="button"
+                class="city-exp__community-chip"
+                :class="{ 'city-exp__community-chip--active': whoLivesHereView === 'age' }"
+                @click="whoLivesHereView = 'age'"
+              >Age</button>
+              <button
+                type="button"
+                class="city-exp__community-chip"
+                :class="{ 'city-exp__community-chip--active': whoLivesHereView === 'politics' }"
+                @click="whoLivesHereView = 'politics'"
+              >Politics</button>
+              <span class="city-exp__community-subtitle">{{ whoLivesHereSubtitle }}</span>
+            </div>
+            <p v-else class="city-exp__community-subtitle">{{ whoLivesHereSubtitle }}</p>
+            <p v-if="whoLivesHereNarrative" class="city-exp__panel-narrative">{{ whoLivesHereNarrative }}</p>
             <div class="struct-donut-wrap" style="margin-top: 12px;">
               <svg viewBox="0 0 120 120" class="struct-donut" aria-hidden="true">
                 <circle cx="60" cy="60" r="45" fill="none" stroke="var(--border-card)" stroke-width="20"/>
               <circle
-                v-for="seg in ageSegments" :key="seg.label"
+                v-for="seg in activeWhoLivesHereSegments" :key="seg.label"
                 cx="60" cy="60" r="45" fill="none"
                 :stroke="seg.color" stroke-width="20" stroke-linecap="butt"
                 :stroke-dasharray="`${seg.dash} ${DONUT_C}`"
@@ -430,7 +506,7 @@ const commuteBars = computed(() => {
               />
               </svg>
               <div class="struct-legend struct-legend--vertical">
-                <div v-for="seg in ageSegments" :key="seg.label" class="struct-legend__item">
+                <div v-for="seg in activeWhoLivesHereSegments" :key="seg.label" class="struct-legend__item">
                   <span class="struct-legend__dot" :style="{background:seg.color}"></span>
                   <span class="struct-legend__label">{{ seg.label }}</span>
                   <span class="struct-legend__pct">{{ seg.pct }}%</span>
@@ -440,7 +516,7 @@ const commuteBars = computed(() => {
           </section>
 
           <!-- Education -->
-          <section v-if="educationBars.length" class="data-card housing-exp__panel housing-exp__panel--compact">
+          <section v-if="educationBars.length" class="data-card housing-exp__panel housing-exp__panel--compact city-exp__panel--education">
             <div class="housing-exp__panel-head">
               <span class="data-card__icon mdi mdi-school-outline"></span>
               <span class="housing-exp__panel-title">Education</span>
