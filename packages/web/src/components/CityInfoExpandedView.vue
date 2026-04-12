@@ -625,7 +625,7 @@ const commuteBars = computed(() => {
           </section>
 
           <!-- Community -->
-          <section v-if="hasCommunityData" class="data-card housing-exp__panel housing-exp__panel--compact">
+          <section v-if="hasCommunityData" class="data-card housing-exp__panel housing-exp__panel--compact city-exp__panel--community">
             <div class="housing-exp__panel-head">
               <span class="data-card__icon mdi mdi-earth"></span>
               <span class="housing-exp__panel-title">Community</span>

@@ -334,7 +334,8 @@
     height: 100%;
   }
 
-  .city-exp__panel--education {
+  .city-exp__panel--education,
+  .city-exp__panel--community {
     flex: 1 1 auto;
   }
 }
