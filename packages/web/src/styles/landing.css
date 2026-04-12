@@ -325,6 +325,21 @@ body.body--scroll-locked {
   background: none;
 }
 
+.housing-exp__panel-metrics--buying .buying-metric--hero {
+  grid-column: 1 / -1;
+}
+
+.housing-exp__panel-metrics--buying .buying-metric--hero .metric__value {
+  font-size: 1.9rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.housing-exp__panel-metrics--buying .buying-metric--hero .metric__label {
+  font-size: 0.62rem;
+  margin-bottom: 6px;
+}
+
 .housing-exp__note--skeleton {
   display: block;
   width: min(320px, 72%);
@@ -1049,8 +1064,7 @@ body.body--scroll-locked {
   }
 
   .industry-modal__panel .housing-exp__note {
-    margin-top: 10px;
-    font-size: 0.74rem;
+    display: none;
   }
 
   .housing-exp__summary,
@@ -1061,6 +1075,44 @@ body.body--scroll-locked {
   .housing-exp__panel--bridge .housing-exp__panel-metrics--bridge {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
+  }
+
+  .housing-exp__panel--buying .housing-exp__panel-metrics--buying {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .housing-exp__panel--buying .buying-metric {
+    min-width: 0;
+    padding: 14px 14px 13px;
+  }
+
+  .housing-exp__panel--buying .buying-metric--hero {
+    padding: 16px 16px 15px;
+  }
+
+  .housing-exp__panel--buying .buying-metric--hero .metric__value {
+    font-size: 1.65rem;
+  }
+
+  .housing-exp__panel--buying .buying-metric .metric__label {
+    white-space: normal;
+    line-height: 1.3;
+  }
+
+  .housing-exp__panel--income-bridge .housing-exp__panel-metrics--income-bridge {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .housing-exp__panel--income-bridge .income-bridge-metric {
+    min-width: 0;
+    padding: 14px 14px 13px;
+  }
+
+  .housing-exp__panel--income-bridge .income-bridge-metric .metric__label {
+    white-space: normal;
+    line-height: 1.3;
   }
 
   .housing-exp__panel--bridge .bridge-metric {
@@ -1087,6 +1139,14 @@ body.body--scroll-locked {
 
 @media (max-width: 520px) {
   .housing-exp__insights {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .housing-exp__panel--buying .housing-exp__panel-metrics--buying {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .housing-exp__panel--income-bridge .housing-exp__panel-metrics--income-bridge {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 

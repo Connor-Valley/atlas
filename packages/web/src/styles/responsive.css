@@ -316,6 +316,21 @@
     grid-template-columns: 1fr;
   }
 
+  .data-card--wide .data-card__metrics.affordability-card__metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .data-card--wide .data-card__metrics.affordability-card__metrics .affordability-card__metric--status {
+    grid-column: 1 / -1;
+    order: -1;
+  }
+
+  .data-card--wide .data-card__metrics.affordability-card__metrics .affordability-card__metric--rent,
+  .data-card--wide .data-card__metrics.affordability-card__metrics .affordability-card__metric--ratio {
+    grid-column: span 1;
+    min-width: 0;
+  }
+
   .data-card--wide .data-card__bar-row {
     max-width: 100%;
   }

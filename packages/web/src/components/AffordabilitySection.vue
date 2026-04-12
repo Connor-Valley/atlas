@@ -79,32 +79,32 @@ watch(
     </div>
 
     <div class="data-card__body">
-      <div v-if="loading" class="data-card__metrics">
-        <div class="metric skeleton-block skeleton-block--hero">
+      <div v-if="loading" class="data-card__metrics affordability-card__metrics">
+        <div class="metric skeleton-block skeleton-block--hero affordability-card__metric affordability-card__metric--rent">
           <span class="metric__label skeleton-line skeleton-line--label"></span>
           <span class="metric__value skeleton-line skeleton-line--value"></span>
         </div>
-        <div class="metric skeleton-block">
+        <div class="metric skeleton-block affordability-card__metric affordability-card__metric--ratio">
           <span class="metric__label skeleton-line skeleton-line--label"></span>
           <span class="metric__value skeleton-line skeleton-line--value-sm"></span>
         </div>
-        <div class="metric skeleton-block">
+        <div class="metric skeleton-block affordability-card__metric affordability-card__metric--status">
           <span class="metric__label skeleton-line skeleton-line--label"></span>
           <span class="metric__value skeleton-line skeleton-line--value-sm"></span>
         </div>
       </div>
       <p v-else-if="error" class="muted">{{ error }}</p>
 
-      <div v-else-if="data" class="data-card__metrics">
-        <div class="metric">
+      <div v-else-if="data" class="data-card__metrics affordability-card__metrics">
+        <div class="metric affordability-card__metric affordability-card__metric--rent">
           <span class="metric__label">Median Rent</span>
           <span class="metric__value">${{ data.medianRent.toLocaleString() }}</span>
         </div>
-        <div class="metric">
+        <div class="metric affordability-card__metric affordability-card__metric--ratio">
           <span class="metric__label">Rent / Income</span>
           <span class="metric__value">{{ (data.rentToIncomeRatio * 100).toFixed(1) }}%</span>
         </div>
-        <div class="metric">
+        <div class="metric affordability-card__metric affordability-card__metric--status">
           <span class="metric__label">Status</span>
           <span class="metric__value" :class="statusClass">
             {{ data.affordability }}
