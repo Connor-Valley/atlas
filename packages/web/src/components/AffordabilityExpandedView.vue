@@ -135,7 +135,7 @@ const buyVsRentInsight = computed(() => {
 });
 
 const insights = computed(() =>
-  [burdenInsight.value, gapInsight.value, buyVsRentInsight.value].filter(Boolean),
+  [burdenInsight.value, buyVsRentInsight.value, gapInsight.value].filter(Boolean),
 );
 
 // ── Status helpers ────────────────────────────────────────────────────────────
@@ -198,7 +198,7 @@ const loadingInsightCards = [1, 2, 3];
       </div>
 
       <div v-if="loading" class="housing-exp__snapshot-skeleton" aria-hidden="true">
-        <div class="housing-exp__snapshot-primary">
+        <div class="housing-exp__snapshot-grid">
           <div class="snap-metric snap-metric--primary snap-metric--skeleton">
             <span class="snap-metric__label snap-metric__label--skeleton skeleton-line"></span>
             <span class="snap-metric__value snap-metric__value--skeleton snap-metric__value--skeleton-lg skeleton-line"></span>
@@ -211,8 +211,6 @@ const loadingInsightCards = [1, 2, 3];
             <span class="snap-metric__label snap-metric__label--skeleton skeleton-line"></span>
             <span class="snap-metric__value snap-metric__value--skeleton snap-metric__value--skeleton-lg skeleton-line"></span>
           </div>
-        </div>
-        <div class="housing-exp__snapshot-secondary">
           <div class="snap-metric snap-metric--secondary snap-metric--skeleton">
             <span class="snap-metric__label snap-metric__label--skeleton skeleton-line"></span>
             <span class="snap-metric__value snap-metric__value--skeleton skeleton-line"></span>
@@ -232,7 +230,7 @@ const loadingInsightCards = [1, 2, 3];
       </div>
 
       <template v-else-if="data">
-        <div class="housing-exp__snapshot-primary">
+        <div class="housing-exp__snapshot-grid">
           <div class="snap-metric snap-metric--primary">
             <span class="snap-metric__label"><span class="mdi mdi-home-outline snap-metric__icon"></span>Median Rent</span>
             <span class="snap-metric__value">${{ data.medianRent.toLocaleString() }}/mo</span>
@@ -245,8 +243,6 @@ const loadingInsightCards = [1, 2, 3];
             <span class="snap-metric__label"><span class="mdi mdi-percent snap-metric__icon"></span>Rent / Income</span>
             <span class="snap-metric__value" :class="statusClass">{{ (data.rentToIncomeRatio * 100).toFixed(1) }}%</span>
           </div>
-        </div>
-        <div class="housing-exp__snapshot-secondary">
           <div v-if="data.medianHomeValue" class="snap-metric snap-metric--secondary">
             <span class="snap-metric__label"><span class="mdi mdi-office-building-outline snap-metric__icon"></span>Median Home Value</span>
             <span class="snap-metric__value">${{ data.medianHomeValue.toLocaleString() }}</span>

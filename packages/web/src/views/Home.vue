@@ -294,6 +294,13 @@ function onResize() {
   isMobile.value = window.innerWidth < 640;
 }
 
+function scrollMobileDetailToTop() {
+  if (!isMobile.value) return;
+  window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+}
+
 onMounted(() => {
   window.addEventListener('keydown', onKeydown);
   window.addEventListener('resize', onResize);
@@ -309,6 +316,7 @@ onMounted(() => {
       expandedPhase.value = 'expanded';
       openedSections[props.section] = true;
       getPrefetcher(props.section)(props.state, props.city);
+      scrollMobileDetailToTop();
     }
     displayedTagline.value = taglines[0];
     typewriterDone.value = true;
@@ -335,6 +343,8 @@ watch(() => props.section, async (newSection, oldSection) => {
     expandedPhase.value = 'expanded';
     openedSections[newSection] = true;
     getPrefetcher(newSection)(state.value, city.value);
+    await nextTick();
+    scrollMobileDetailToTop();
   } else if (!newSection && expandedPhase.value === 'expanded' && oldSection) {
     // Browser back button from section URL to city URL
     await animateSectionTransition(oldSection, false);
@@ -1026,6 +1036,7 @@ let programmaticNavigation = false;
 
 async function openSectionDetails(section: ExpandableSection) {
   if (expandedPhase.value !== "collapsed") return;
+  scrollMobileDetailToTop();
   expandedSection.value = section;
   openedSections[section] = true;
   getPrefetcher(section)(state.value, city.value);

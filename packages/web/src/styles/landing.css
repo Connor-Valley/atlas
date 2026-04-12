@@ -12,6 +12,11 @@
   overflow: hidden;
 }
 
+body.body--scroll-locked {
+  overflow: hidden;
+  touch-action: none;
+}
+
 .hero-landing--transitioning {
   position: fixed;
   inset: 0;
@@ -403,13 +408,8 @@
   color: var(--text-secondary);
 }
 
-.housing-exp__snapshot-primary {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
+.housing-exp__snapshot-grid,
+.housing-exp__snapshot-primary,
 .housing-exp__snapshot-secondary {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -889,18 +889,194 @@
 }
 
 @media (max-width: 700px) {
+  .housing-exp__snapshot-grid,
   .housing-exp__snapshot-primary,
   .housing-exp__snapshot-secondary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .snap-metric {
+    min-width: 0;
+  }
+
   .housing-exp__insights {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .insight-card {
+    gap: 10px;
+    align-items: flex-start;
+    padding: 12px;
+    min-height: 80px;
+  }
+
+  .insight-card__icon {
+    font-size: 1.05rem;
+    margin-top: 0;
+  }
+
+  .insight-card__body {
+    gap: 0;
+  }
+
+  .insight-card__headline {
+    display: -webkit-box;
+    font-size: 0.76rem;
+    line-height: 1.35;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .insight-card__detail {
+    display: none;
+  }
+
+  .insight-card--skeleton {
+    min-height: 80px;
+  }
+
+  .insight-card__headline--skeleton {
+    width: 100%;
+    height: 32px;
+  }
+
+  .insight-card__detail--skeleton {
+    display: none;
+  }
+
+  .housing-exp__insights > .insight-card:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    min-height: 0;
+  }
+
+  .housing-exp__insights > .insight-card:last-child:nth-child(odd) .insight-card__body {
+    gap: 4px;
+  }
+
+  .housing-exp__insights > .insight-card:last-child:nth-child(odd) .insight-card__headline {
+    -webkit-line-clamp: 2;
+  }
+
+  .housing-exp__insights > .insight-card:last-child:nth-child(odd) .insight-card__detail {
+    display: block;
+    font-size: 0.72rem;
+    line-height: 1.4;
+  }
+
+  .housing-exp .bar-list--wide .bar-list__row {
+    display: flex;
+    align-items: center;
+    column-gap: 10px;
+  }
+
+  .housing-exp .bar-list--wide .bar-list__label {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .housing-exp .bar-list--wide .bar-list__track {
+    width: 120px;
+    flex-shrink: 0;
+  }
+
+  .housing-exp .bar-list--wide .bar-list__value {
+    width: 56px;
+    min-width: 56px;
+  }
+
+  .industry-modal__backdrop {
+    align-items: center;
+    padding: 12px;
+  }
+
+  .industry-modal__panel {
+    max-width: none;
+    max-height: min(72vh, 640px);
+    padding: 16px 14px 14px;
+    border-radius: 18px 18px 16px 16px;
+  }
+
+  .industry-modal__header {
+    margin-bottom: 12px;
+  }
+
+  .industry-modal__panel .housing-exp__panel-head {
+    gap: 8px;
+  }
+
+  .industry-modal__panel .housing-exp__panel-title {
+    font-size: 0.78rem;
+    letter-spacing: 0.09em;
+  }
+
+  .bar-list--modal .bar-list__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 10px;
+    padding: 4px 0 9px;
+    border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 55%, transparent);
+    background:
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--accent) 82%, white 6%) 0%,
+        color-mix(in srgb, var(--accent) 82%, white 6%) var(--row-fill, 0%),
+        color-mix(in srgb, var(--border-subtle) 80%, transparent) var(--row-fill, 0%),
+        color-mix(in srgb, var(--border-subtle) 80%, transparent) 100%
+      )
+      left bottom / 100% 2px no-repeat;
+  }
+
+  .bar-list--modal .bar-list__label {
+    min-width: 0;
+    white-space: normal;
+    font-size: 0.76rem;
+    line-height: 1.3;
+  }
+
+  .bar-list--modal .bar-list__track {
+    display: none;
+  }
+
+  .bar-list--modal .bar-list__value {
+    width: auto;
+    min-width: 44px;
+    font-size: 0.78rem;
+  }
+
+  .industry-modal__panel .housing-exp__note {
+    margin-top: 10px;
+    font-size: 0.74rem;
   }
 
   .housing-exp__summary,
   .housing-exp__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .housing-exp__panel--bridge .housing-exp__panel-metrics--bridge {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .housing-exp__panel--bridge .bridge-metric {
+    min-width: 0;
+    padding: 14px 14px 13px;
+  }
+
+  .housing-exp__panel--bridge .bridge-metric .metric__label {
+    white-space: normal;
+    line-height: 1.3;
+  }
+
+  .housing-exp__note--bridge {
+    margin-top: 12px;
+    font-size: 0.75rem;
+    line-height: 1.4;
   }
 
   .housing-exp__panel-metrics,
@@ -910,6 +1086,14 @@
 }
 
 @media (max-width: 520px) {
+  .housing-exp__insights {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .housing-exp__panel--bridge .housing-exp__panel-metrics--bridge {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .housing-exp__summary,
   .housing-exp__grid,
   .housing-exp__panel-metrics,
