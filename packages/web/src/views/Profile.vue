@@ -520,6 +520,10 @@ onBeforeUnmount(() => {
       </section>
     </div>
 
+    <button class="profile-page__mobile-back" @click="goBack">
+      <span class="mdi mdi-arrow-left"></span>
+    </button>
+
     <Teleport to="body">
       <Transition name="industry-modal">
         <div v-if="activeSettingsAction" class="auth-modal__backdrop" @click.self="closeSettingsModal">
@@ -697,6 +701,29 @@ onBeforeUnmount(() => {
 .profile-page__title-icon {
   color: var(--accent);
   font-size: 1.5rem;
+}
+
+.profile-page__mobile-back {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  width: 54px;
+  height: 54px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border-card));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--bg-card) 94%, transparent);
+  color: var(--accent);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--card-shadow);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 30;
+}
+
+.profile-page__mobile-back .mdi {
+  font-size: 1.2rem;
 }
 
 .profile-empty {
@@ -1258,8 +1285,48 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 640px) {
+  .profile-page,
+  .profile-layout,
+  .profile-card,
+  .profile-card__hero-top,
+  .profile-card__identity,
+  .profile-card__identity-copy,
+  .profile-card__name-row,
+  .profile-hero-actions,
+  .profile-visibility-control,
+  .profile-visibility-btn,
+  .profile-friends-btn,
+  .profile-stats,
+  .profile-stat,
+  .profile-actions,
+  .profile-action,
+  .profile-list,
+  .profile-list__item,
+  .profile-settings,
+  .profile-settings__action {
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .profile-page {
+    overflow-x: clip;
+  }
+
+  :deep(.site-header__search),
+  :deep(.site-header__search-spacer),
+  :deep(.site-header__search--mobile),
+  :deep(.site-header__search-full),
+  :deep(.site-header__search-pill) {
+    display: none !important;
+  }
+
+  :deep(.site-header) {
+    padding-bottom: 0;
+    margin-bottom: 0;
+  }
+
   .profile-page__heading {
-    padding: 4px 16px 16px;
+    padding: 0 16px 14px;
     flex-direction: column;
     align-items: flex-start;
   }
@@ -1271,11 +1338,34 @@ onBeforeUnmount(() => {
   .profile-card {
     padding: 20px;
     border-radius: 18px;
+    width: 100%;
   }
 
   .profile-card__identity {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .profile-card__hero-top {
+    width: 100%;
+    min-width: 0;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .profile-card__name-row {
+    min-width: 0;
+  }
+
+  .profile-card__name {
+    font-size: 1.7rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .profile-card__username {
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   .profile-visibility-control {
@@ -1311,6 +1401,19 @@ onBeforeUnmount(() => {
   .profile-list__item {
     flex-direction: column;
     align-items: flex-start;
+    width: 100%;
+  }
+
+  .profile-page__heading .breadcrumb {
+    display: none;
+  }
+
+  .profile-page__mobile-back {
+    display: inline-flex;
+  }
+
+  :deep(.auth-modal__input) {
+    font-size: 16px !important;
   }
 }
 
