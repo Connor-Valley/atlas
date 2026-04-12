@@ -292,6 +292,7 @@ watch(() => user.value?.id, loadProfile);
             </div>
           </div>
 
+
           <div v-if="canViewProfileContent && friendCount !== null" class="profile-friends-count">
             <span class="mdi mdi-account-group-outline"></span>
             <span>{{ friendCount }} {{ friendCount === 1 ? 'friend' : 'friends' }}</span>
@@ -309,7 +310,8 @@ watch(() => user.value?.id, loadProfile);
           <div class="profile-stat">
             <div class="profile-stat__label-row">
               <span class="mdi mdi-bookmark-multiple-outline profile-stat__icon"></span>
-              <span class="profile-stat__label">Saved comparisons</span>
+              <span class="profile-stat__label profile-stat__label--desktop">Saved comparisons</span>
+              <span class="profile-stat__label profile-stat__label--mobile">Comps</span>
             </div>
             <span class="profile-stat__value">{{ canViewProfileContent ? friendCompCount : 'Hidden' }}</span>
           </div>
@@ -330,6 +332,7 @@ watch(() => user.value?.id, loadProfile);
           <div>
             <p class="profile-card__eyebrow">Quick links</p>
             <h2 class="profile-card__section-title">View {{ friendName }}'s content</h2>
+            <span class="profile-card__mobile-title">Quick Links</span>
           </div>
         </div>
 
@@ -357,6 +360,7 @@ watch(() => user.value?.id, loadProfile);
           <div>
             <p class="profile-card__eyebrow">Recent places</p>
             <h2 class="profile-card__section-title">{{ friendName }}'s favorites</h2>
+            <span class="profile-card__mobile-title">Recent Favorites</span>
           </div>
         </div>
 
@@ -389,6 +393,7 @@ watch(() => user.value?.id, loadProfile);
           <div>
             <p class="profile-card__eyebrow">Recent comparisons</p>
             <h2 class="profile-card__section-title">{{ friendName }}'s matchups</h2>
+            <span class="profile-card__mobile-title">Recent Comparisons</span>
           </div>
         </div>
 
@@ -437,6 +442,7 @@ watch(() => user.value?.id, loadProfile);
           <div>
             <p class="profile-card__eyebrow">{{ friendName }}</p>
             <h2 class="profile-card__section-title">Actions</h2>
+            <span class="profile-card__mobile-title">Actions</span>
           </div>
         </div>
 
@@ -517,6 +523,10 @@ watch(() => user.value?.id, loadProfile);
       </div>
 
     </div>
+
+    <button class="profile-page__mobile-back" @click="router.back()">
+      <span class="mdi mdi-arrow-left"></span>
+    </button>
   </div>
 </template>
 
@@ -524,6 +534,30 @@ watch(() => user.value?.id, loadProfile);
 :deep(.site-header) {
   margin-bottom: 0;
   padding-bottom: 8px;
+}
+
+.profile-page__mobile-back {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  width: 54px;
+  height: 54px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border-card));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--bg-card) 94%, transparent);
+  color: var(--accent);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--card-shadow);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 30;
+  cursor: pointer;
+}
+
+.profile-page__mobile-back .mdi {
+  font-size: 1.2rem;
 }
 
 @keyframes spin {
@@ -803,6 +837,14 @@ watch(() => user.value?.id, loadProfile);
   font-weight: 700;
 }
 
+.profile-stat__label--mobile {
+  display: none;
+}
+
+.profile-card__mobile-title {
+  display: none;
+}
+
 .profile-stat__value {
   font-size: 1.65rem;
   line-height: 1.1;
@@ -1080,21 +1122,136 @@ watch(() => user.value?.id, loadProfile);
     border-radius: 18px;
   }
 
+  /* Hero top: identity + friend count in one row */
+  .profile-card__hero-top {
+    align-items: center;
+  }
+
+  /* Identity: avatar + stacked name/username */
   .profile-card__identity {
-    align-items: flex-start;
+    align-items: center;
+    flex-direction: row;
+    gap: 12px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .profile-card__identity-copy {
+    min-width: 0;
+    flex: 1;
+  }
+
+  /* Hide eyebrow in hero on mobile */
+  .profile-card__hero-top .profile-card__eyebrow {
+    display: none;
+  }
+
+  /* Stack name above username */
+  .profile-card__name-row {
     flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    flex-wrap: nowrap;
+    margin-bottom: 0;
+  }
+
+  .profile-card__name {
+    font-size: 1.2rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    margin: 0;
+  }
+
+  .profile-card__username {
+    font-size: 0.85rem;
   }
 
   .profile-card__avatar {
-    width: 64px;
-    height: 64px;
+    width: 52px;
+    height: 52px;
     border-radius: 50%;
-    font-size: 1.4rem;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+
+  /* Stats: 2-col grid, all horizontal rows */
+  .profile-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .profile-stats .profile-stat:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .profile-stat {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .profile-stat__label {
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+  }
+
+  .profile-stat__label--desktop {
+    display: none;
+  }
+
+  .profile-stat__label--mobile {
+    display: inline;
+  }
+
+  .profile-stat__value {
+    font-size: 1.2rem;
+  }
+
+  .profile-stat__value--small {
+    font-size: 1rem;
+    white-space: nowrap;
+  }
+
+  /* Section headers: hide eyebrow + desktop title, show mobile title */
+  .profile-card__header .profile-card__eyebrow {
+    display: none;
+  }
+
+  .profile-card__header .profile-card__section-title {
+    display: none;
+  }
+
+  .profile-card__mobile-title {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  /* Limit recent lists to 2 items */
+  .profile-list .profile-list__item:nth-child(n+3) {
+    display: none;
   }
 
   .profile-list__item {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .profile-page__mobile-back {
+    display: inline-flex;
+  }
+
+  .profile-page__heading .breadcrumb {
+    display: none;
+  }
+
+  :deep(.site-header__search),
+  :deep(.site-header__search-spacer) {
+    display: none;
   }
 }
 </style>

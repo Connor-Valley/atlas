@@ -33,24 +33,28 @@ const settingsActions: Array<{
   id: SettingsActionId;
   title: string;
   subtitle: string;
+  mobileSubtitle: string;
   icon: string;
 }> = [
   {
     id: 'name',
     title: 'Edit display name',
     subtitle: 'Update the name shown across your account',
+    mobileSubtitle: 'Your public display name',
     icon: 'mdi-account-edit-outline',
   },
   {
     id: 'username',
     title: 'Edit username',
     subtitle: 'Change your @username used to find friends',
+    mobileSubtitle: 'Your @username for friends',
     icon: 'mdi-at',
   },
   {
     id: 'password',
     title: 'Change password',
     subtitle: 'Set a new password for future sign-ins',
+    mobileSubtitle: 'Update your sign-in password',
     icon: 'mdi-lock-reset',
   },
 ];
@@ -386,7 +390,8 @@ onBeforeUnmount(() => {
           <div class="profile-stat">
             <div class="profile-stat__label-row">
               <span class="mdi mdi-bookmark-multiple-outline profile-stat__icon"></span>
-              <span class="profile-stat__label">Saved comparisons</span>
+              <span class="profile-stat__label profile-stat__label--desktop">Saved comparisons</span>
+              <span class="profile-stat__label profile-stat__label--mobile">Comps</span>
             </div>
             <span class="profile-stat__value">{{ savedComparisons.length }}</span>
           </div>
@@ -405,6 +410,7 @@ onBeforeUnmount(() => {
           <div>
             <p class="profile-card__eyebrow">Shortcuts</p>
             <h2 class="profile-card__section-title">Jump back in</h2>
+            <span class="profile-card__mobile-title">Jump Back In</span>
           </div>
         </div>
 
@@ -438,6 +444,7 @@ onBeforeUnmount(() => {
           <div>
             <p class="profile-card__eyebrow">Recent places</p>
             <h2 class="profile-card__section-title">Latest favorites</h2>
+            <span class="profile-card__mobile-title">Recent Favorites</span>
           </div>
         </div>
 
@@ -469,6 +476,7 @@ onBeforeUnmount(() => {
           <div>
             <p class="profile-card__eyebrow">Recent comparisons</p>
             <h2 class="profile-card__section-title">Latest matchups</h2>
+            <span class="profile-card__mobile-title">Recent Comparisons</span>
           </div>
         </div>
 
@@ -500,6 +508,7 @@ onBeforeUnmount(() => {
           <div>
             <p class="profile-card__eyebrow">Account settings</p>
             <h2 class="profile-card__section-title">Manage your profile</h2>
+            <span class="profile-card__mobile-title">Manage Profile</span>
           </div>
         </div>
 
@@ -513,7 +522,8 @@ onBeforeUnmount(() => {
             <span class="mdi profile-settings__action-icon" :class="action.icon"></span>
             <span class="profile-settings__action-copy">
               <span class="profile-settings__action-title">{{ action.title }}</span>
-              <span class="profile-settings__action-subtitle">{{ action.subtitle }}</span>
+              <span class="profile-settings__action-subtitle profile-settings__action-subtitle--desktop">{{ action.subtitle }}</span>
+              <span class="profile-settings__action-subtitle profile-settings__action-subtitle--mobile">{{ action.mobileSubtitle }}</span>
             </span>
           </button>
         </div>
@@ -804,6 +814,10 @@ onBeforeUnmount(() => {
   color: var(--text-muted);
 }
 
+.profile-card__mobile-title {
+  display: none;
+}
+
 .profile-card__name {
   margin: 0 0 4px;
   font-size: 2rem;
@@ -953,6 +967,10 @@ onBeforeUnmount(() => {
   letter-spacing: 0.08em;
   color: var(--text-muted);
   font-weight: 700;
+}
+
+.profile-stat__label--mobile {
+  display: none;
 }
 
 .profile-stat__value {
@@ -1152,6 +1170,10 @@ onBeforeUnmount(() => {
   color: var(--text-secondary);
 }
 
+.profile-settings__action-subtitle--mobile {
+  display: none;
+}
+
 .profile-settings__message {
   margin: 14px 0 0;
   font-size: 0.84rem;
@@ -1280,8 +1302,71 @@ onBeforeUnmount(() => {
   }
 
   .profile-stats {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
   }
+
+  .profile-stats .profile-stat:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .profile-stat__label {
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+  }
+
+  .profile-stat__label--desktop {
+    display: none;
+  }
+
+  .profile-stat__label--mobile {
+    display: inline;
+  }
+
+  .profile-stat__value {
+    font-size: 1.2rem;
+  }
+
+  .profile-stat {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .profile-stat__value--small {
+    font-size: 1rem;
+    white-space: nowrap;
+  }
+}
+
+/* ── Username in hero ───────────────────────────────────────── */
+.profile-card__name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.profile-card__name-row .profile-card__name {
+  margin: 0;
+}
+
+.profile-card__username {
+  font-size: 0.95rem;
+  color: var(--accent);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+/* ── Hero top row (identity + friends button) ───────────────── */
+.profile-card__hero-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
 @media (max-width: 640px) {
@@ -1342,8 +1427,22 @@ onBeforeUnmount(() => {
   }
 
   .profile-card__identity {
-    align-items: flex-start;
+    align-items: center;
+    flex-direction: row;
+    gap: 14px;
+  }
+
+  .profile-card__identity-copy {
+    min-width: 0;
+    flex: 1;
+    display: flex;
     flex-direction: column;
+    align-items: stretch;
+  }
+
+  .profile-card__eyebrow {
+    margin-bottom: 2px;
+    text-align: right;
   }
 
   .profile-card__hero-top {
@@ -1355,10 +1454,13 @@ onBeforeUnmount(() => {
 
   .profile-card__name-row {
     min-width: 0;
+    flex-wrap: nowrap;
+    gap: 6px;
+    justify-content: flex-end;
   }
 
   .profile-card__name {
-    font-size: 1.7rem;
+    font-size: 1.3rem;
     min-width: 0;
     overflow-wrap: anywhere;
   }
@@ -1369,19 +1471,26 @@ onBeforeUnmount(() => {
   }
 
   .profile-visibility-control {
-    width: 100%;
     min-width: 0;
   }
 
   .profile-hero-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     width: 100%;
     margin-left: 0;
-    flex-wrap: wrap;
+    gap: 10px;
   }
 
-  .profile-visibility-btn,
+  .profile-visibility-btn {
+    width: 100%;
+    min-width: 0;
+    justify-content: space-between;
+  }
+
   .profile-friends-btn {
     width: 100%;
+    min-width: 0;
     justify-content: space-between;
   }
 
@@ -1415,36 +1524,36 @@ onBeforeUnmount(() => {
   :deep(.auth-modal__input) {
     font-size: 16px !important;
   }
-}
 
-/* ── Username in hero ───────────────────────────────────────── */
-.profile-card__name-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 4px;
-}
+  .profile-list .profile-list__item:nth-child(n+3) {
+    display: none;
+  }
 
-.profile-card__name-row .profile-card__name {
-  margin: 0;
-}
+  .profile-settings__action-subtitle--desktop {
+    display: none;
+  }
 
-.profile-card__username {
-  font-size: 0.95rem;
-  color: var(--accent);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  white-space: nowrap;
-}
+  .profile-settings__action-subtitle--mobile {
+    display: block;
+  }
 
-/* ── Hero top row (identity + friends button) ───────────────── */
-.profile-card__hero-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 24px;
+  .profile-card__header .profile-card__eyebrow {
+    display: none;
+  }
+
+  .profile-card__header .profile-card__section-title {
+    display: none;
+  }
+
+  .profile-card__mobile-title {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 0;
+  }
 }
 
 .profile-friends-btn__count {
