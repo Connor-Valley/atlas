@@ -24,6 +24,10 @@ export type CityProfileSummary = {
 
 export type CityProfileDetails = CityProfileSummary & {
   ageDistribution: PercentageBreakdown[];
+  politicalAffiliationDistribution: PercentageBreakdown[] | null;
+  politicalAffiliationSourceScope: 'city' | 'county' | null;
+  politicalAffiliationSourceName: string | null;
+  politicalAffiliationAsOf: string | null;
   householdComposition: PercentageBreakdown[];
   raceEthnicityMix: PercentageBreakdown[];
   foreignBornShare: number | null;

@@ -2,6 +2,7 @@ import type { MetricWithSource, SourceAttribution } from "../common/source.types
 import type { City } from "../cities/cities.types.js";
 import { buildCensusGeoQuery } from "../common/census.js";
 import { BTS_ENPLANEMENTS_AS_OF, BTS_SOURCE_URL, FAA_AIRPORT_REFERENCE_AS_OF, FAA_AIRPORT_SOURCE_URL, findNearestAirport, getAirportBusyness } from "./airport-reference.js";
+import { getTransitInfo, NTD_AS_OF, NTD_SOURCE_URL } from "./transit-reference.js";
 import type { AirportInfo, QualityOfLifeDetails, QualityOfLifeSummary } from "./quality-of-life.types.js";
 
 export async function getQualityOfLifeSummary(city: City, year: number): Promise<QualityOfLifeSummary> {
@@ -34,6 +35,15 @@ export async function getQualityOfLifeSummary(city: City, year: number): Promise
         sourceName: "Bureau of Transportation Statistics",
         sourceUrl: BTS_SOURCE_URL,
         asOf: BTS_ENPLANEMENTS_AS_OF,
+        geographyLevel: "place",
+      },
+    },
+    transitInfo: {
+      value: city.lat != null && city.lon != null ? getTransitInfo(city.lat, city.lon) : null,
+      source: {
+        sourceName: "Federal Transit Administration National Transit Database",
+        sourceUrl: NTD_SOURCE_URL,
+        asOf: NTD_AS_OF,
         geographyLevel: "place",
       },
     },
