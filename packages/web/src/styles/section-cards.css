@@ -303,12 +303,101 @@
   padding-bottom: 4px;
 }
 
+.city-exp__community-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.city-exp__community-chip {
+  border: 1px solid var(--border-card);
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.73rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+
+.city-exp__community-chip--active {
+  background: rgba(20, 184, 166, 0.14);
+  border-color: rgba(20, 184, 166, 0.32);
+  color: var(--accent);
+}
+
+.city-exp__community-subtitle {
+  font-size: 0.73rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+  margin: 0 0 0 4px;
+}
+
+.city-exp__community-legend {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 14px;
+  align-content: start;
+}
+
+.city-exp__community-legend--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.city-exp__community-legend--col-flow {
+  grid-auto-flow: column;
+  grid-template-rows: repeat(4, auto);
+}
+
+.city-exp__community-legend .struct-legend__item {
+  min-width: 0;
+}
+
+.city-exp__community-chart {
+  flex: 1;
+  align-items: center;
+}
+
+.city-exp__community-donut {
+  width: 112px;
+  height: 112px;
+}
+
 /* Grid */
 .city-exp__grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  align-items: stretch;
   gap: 16px;
+}
+
+.city-exp__column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (min-width: 961px) {
+  .city-exp__column {
+    height: 100%;
+  }
+
+  .city-exp__panel--education,
+  .city-exp__panel--community {
+    flex: 1 1 auto;
+  }
+
+  .city-exp__community-chart {
+    justify-content: center;
+  }
+
+  .city-exp__community-donut {
+    width: clamp(112px, 9vw, 160px);
+    height: clamp(112px, 9vw, 160px);
+  }
 }
 
 /* Economy panel */
@@ -420,8 +509,8 @@
   margin-top: 1px;
 }
 
-/* Force grid panels to fill their cell height */
-.city-exp__grid > .data-card {
+/* Keep cards at their natural height inside each column */
+.city-exp__column > .data-card {
   display: flex;
   flex-direction: column;
   align-self: stretch;
@@ -468,6 +557,72 @@
   color: var(--accent);
 }
 
+.city-exp__transit {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-card);
+}
+
+.city-exp__transit-header {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.city-exp__transit-agencies {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.city-exp__transit-agency {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.city-exp__transit-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 60px;
+  flex-shrink: 0;
+}
+
+.city-exp__transit-modes {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.city-exp__transit-mode {
+  font-size: 0.68rem;
+  font-weight: 500;
+  border-radius: 4px;
+  padding: 0 6px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.city-exp__transit-ridership {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+.city-exp__transit-ridership:focus-visible {
+  outline: 1px solid rgba(148, 163, 184, 0.55);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
 .city-exp__airline-tags {
   position: absolute;
   top: 10px;
@@ -497,7 +652,10 @@
   font-weight: 500;
   letter-spacing: 0.01em;
   color: #d1d5db;
-  white-space: nowrap;
+  line-height: 1.35;
+  white-space: normal;
+  max-width: 220px;
+  text-align: center;
   pointer-events: none;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
   z-index: 9999;

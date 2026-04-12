@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(curl -s \"http://localhost:3000/quality-of-life/ca/san-francisco/details\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('lat/lon from city:', d.get\\('transitInfo'\\)\\); print\\('airport:', d.get\\('nearestMajorAirport',{}\\).get\\('value',{}\\).get\\('code'\\)\\)\")",
+      "Bash(python3 -c \" import sys,json d=json.load\\(sys.stdin\\) print\\('transitInfo:', json.dumps\\(d.get\\('transitInfo'\\), indent=2\\)\\) \")",
+      "Bash(curl -s \"http://localhost:3000/cities/ca/san-francisco\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('lat:', d.get\\('lat'\\), 'lon:', d.get\\('lon'\\)\\)\")",
+      "Bash(ps:*)",
+      "Bash(git checkout:*)",
+      "Bash(grep -n \"\\\\.data-card\" /Users/hannahchiu/Documents/atlas/packages/web/src/styles/*.css)",
+      "Bash(git merge:*)"
+    ]
+  }
+}
