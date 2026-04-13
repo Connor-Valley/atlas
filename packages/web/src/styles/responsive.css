@@ -169,7 +169,12 @@
   }
 
   .compare-view .site-header {
-    grid-template-columns: 1fr;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
   }
 
   .compare-view .site-header__leading {
@@ -177,35 +182,45 @@
   }
 
   .compare-view .site-header__identity {
+    min-width: 0;
     gap: 12px;
   }
 
-  .compare-view__actions {
-    width: 100%;
+  .compare-view .site-header__controls {
+    margin-left: 0;
     justify-content: flex-end;
+    gap: 6px;
   }
 
-  .compare-view__share-wrap,
-  .compare-view__save-wrap {
-    flex: 1 1 0;
+  .compare-view .site-header__title,
+  .compare-view .site-header__slot-actions {
+    display: none;
   }
 
-  .compare-view__share-btn,
-  .compare-view__save-btn {
-    width: 100%;
-    justify-content: center;
+  .compare-view .theme-toggle {
+    flex-shrink: 0;
   }
 
   .compare-ticker {
-    margin-top: 0;
-    padding: 0 12px;
+    display: none;
   }
 
-  .compare-ticker__track {
-    animation: none;
-    padding: 10px 12px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+  .compare-view__setup {
+    display: none;
+  }
+
+  .compare-mobile-summary,
+  .compare-mobile-sheet {
+    display: block;
+  }
+
+  .compare-key-diff,
+  .compare-city-info {
+    display: none;
+  }
+
+  .compare-view__divider {
+    margin-bottom: 28px;
   }
 
   .compare-summary__card,

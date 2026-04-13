@@ -12,6 +12,7 @@ const props = defineProps<{
   themeTogglePlacement?: 'before-actions' | 'after-actions';
   initialCity?: string;
   initialState?: string;
+  mobileCompact?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -75,7 +76,7 @@ function handleLogoClick() {
 </script>
 
 <template>
-  <header class="site-header">
+  <header class="site-header" :class="{ 'site-header--mobile-compact': mobileCompact }">
     <div v-if="$slots.leading" class="site-header__leading">
       <slot name="leading" />
     </div>
@@ -124,7 +125,9 @@ function handleLogoClick() {
 
     <div class="site-header__controls">
       <ThemeToggle v-if="showThemeToggle && (themeTogglePlacement ?? 'before-actions') === 'before-actions'" />
-      <slot name="actions" />
+      <div v-if="$slots.actions" class="site-header__slot-actions">
+        <slot name="actions" />
+      </div>
       <ThemeToggle v-if="showThemeToggle && themeTogglePlacement === 'after-actions'" />
       <div v-if="user" ref="userMenuRef" class="user-menu">
         <button class="user-menu__btn" @click="toggleMenu">
@@ -373,6 +376,11 @@ function handleLogoClick() {
 
   .site-header__search-collapse:hover {
     color: var(--text-primary);
+  }
+
+  .site-header--mobile-compact .site-header__title,
+  .site-header--mobile-compact .site-header__slot-actions {
+    display: none;
   }
 }
 </style>

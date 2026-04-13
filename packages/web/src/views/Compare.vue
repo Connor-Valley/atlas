@@ -37,7 +37,25 @@ const showAuthModal = ref(false);
 const shareMenuRef = ref<HTMLElement | null>(null);
 const shareMenuOpen = ref(false);
 const shareCopied = ref(false);
+const mobileDraft = ref({
+  stateA: props.stateA,
+  cityA: props.cityA,
+  stateB: props.stateB ?? "",
+  cityB: props.cityB ?? "",
+});
+const mobileDraftPhotos = ref<{ a: string | null; b: string | null }>({ a: null, b: null });
+const isMobileViewport = ref(false);
+const isMobileEditorOpen = ref(false);
+const mobileEditorTarget = ref<"a" | "b">("a");
+const mobileSheetPanelRef = ref<HTMLElement | null>(null);
+const mobileSheetTranslateY = ref(0);
+const mobileSheetDragging = ref(false);
+const mobileSheetExpanded = ref(false);
+const mobileKeyboardInset = ref(0);
 let shareCopiedTimeout: ReturnType<typeof setTimeout> | null = null;
+let mobileDraftPhotoRequestToken = 0;
+let mobileSheetDragStartY = 0;
+let mobileSheetDragLastY = 0;
 
 fetchComparisons();
 const comparison = ref<{ a: ComparedCity; b: ComparedCity } | null>(null);
@@ -45,6 +63,12 @@ let requestToken = 0;
 
 const hasCityB = computed(() => Boolean(props.stateB && props.cityB));
 const compareReady = computed(() => Boolean(props.stateA && props.cityA && props.stateB && props.cityB));
+const mobileDraftDirty = computed(() =>
+  mobileDraft.value.stateA !== props.stateA ||
+  mobileDraft.value.cityA !== props.cityA ||
+  (mobileDraft.value.stateB || "") !== (props.stateB ?? "") ||
+  (mobileDraft.value.cityB || "") !== (props.cityB ?? ""),
+);
 const summaryCards = computed(() => {
   if (!comparison.value) return [];
   return buildSummaryCards(comparison.value.a, comparison.value.b);
@@ -113,6 +137,51 @@ const tickerItems = computed(() => {
     `${cityLabel(props.cityA, props.stateA)} vs ${cityLabel(props.cityB!, props.stateB!)}`,
   ];
 });
+const mobileCityCards = computed(() => [
+  {
+    key: "a" as const,
+    tone: "a" as const,
+    label: "City A",
+    city:
+      !mobileDraftDirty.value && comparison.value?.a.cityInfo.name
+        ? comparison.value.a.cityInfo.name
+        : (mobileDraft.value.cityA ? slugToDisplay(mobileDraft.value.cityA) : "Choose a city"),
+    state: mobileDraft.value.stateA ? mobileDraft.value.stateA.toUpperCase() : "Not set",
+    photoUrl:
+      !mobileDraftDirty.value && comparison.value?.a.cityInfo.photoUrl
+        ? comparison.value.a.cityInfo.photoUrl
+        : mobileDraftPhotos.value.a,
+    isEmpty: !mobileDraft.value.cityA || !mobileDraft.value.stateA,
+  },
+  {
+    key: "b" as const,
+    tone: "b" as const,
+    label: "City B",
+    city:
+      !mobileDraftDirty.value && comparison.value?.b.cityInfo.name
+        ? comparison.value.b.cityInfo.name
+        : (mobileDraft.value.cityB ? slugToDisplay(mobileDraft.value.cityB) : "Add a city"),
+    state: mobileDraft.value.stateB ? mobileDraft.value.stateB.toUpperCase() : "Ready to compare",
+    photoUrl:
+      !mobileDraftDirty.value && comparison.value?.b.cityInfo.photoUrl
+        ? comparison.value.b.cityInfo.photoUrl
+        : mobileDraftPhotos.value.b,
+    isEmpty: !mobileDraft.value.cityB || !mobileDraft.value.stateB,
+  },
+]);
+const mobileComparisonCta = computed(() =>
+  !mobileDraft.value.stateB || !mobileDraft.value.cityB ? "Add comparison city" : "Update comparison",
+);
+const mobileSheetMaxLift = computed(() => Math.min(280, Math.max(118, mobileKeyboardInset.value + 84)));
+const mobileSheetLift = computed(() => Math.max(0, -mobileSheetTranslateY.value));
+const mobileSheetDrop = computed(() => Math.max(0, mobileSheetTranslateY.value));
+const mobileSheetStyle = computed(() => ({
+  "--sheet-extend": `${mobileSheetLift.value}px`,
+  "--sheet-content-offset": `${-mobileSheetLift.value}px`,
+  "--sheet-transition": mobileSheetDragging.value ? "none" : "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)",
+  transform: `translateY(${mobileSheetDrop.value}px)`,
+  transition: mobileSheetDragging.value ? "none" : "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)",
+}));
 
 async function loadComparedCity(key: "a" | "b", state: string, city: string): Promise<ComparedCity> {
   const [cityInfo, income, housing, affordability, photoUrl] = await Promise.all([
@@ -170,10 +239,40 @@ async function loadComparison() {
   }
 }
 
+async function loadMobileDraftPhotos() {
+  const token = ++mobileDraftPhotoRequestToken;
+
+  const [photoA, photoB] = await Promise.all([
+    mobileDraft.value.stateA && mobileDraft.value.cityA
+      ? fetchCityPhoto(mobileDraft.value.stateA, mobileDraft.value.cityA).catch(() => null)
+      : Promise.resolve(null),
+    mobileDraft.value.stateB && mobileDraft.value.cityB
+      ? fetchCityPhoto(mobileDraft.value.stateB, mobileDraft.value.cityB).catch(() => null)
+      : Promise.resolve(null),
+  ]);
+
+  if (token !== mobileDraftPhotoRequestToken) return;
+  mobileDraftPhotos.value = { a: photoA, b: photoB };
+}
+
 watch(
   () => [props.stateA, props.cityA, props.stateB, props.cityB],
   () => {
+    mobileDraft.value = {
+      stateA: props.stateA,
+      cityA: props.cityA,
+      stateB: props.stateB ?? "",
+      cityB: props.cityB ?? "",
+    };
     void loadComparison();
+  },
+  { immediate: true },
+);
+
+watch(
+  () => [mobileDraft.value.stateA, mobileDraft.value.cityA, mobileDraft.value.stateB, mobileDraft.value.cityB],
+  () => {
+    void loadMobileDraftPhotos();
   },
   { immediate: true },
 );
@@ -259,6 +358,15 @@ function updateRoute(params: { stateA: string; cityA: string; stateB?: string; c
 }
 
 function updateCityA(payload: { city: string; state: string }) {
+  if (isMobileViewport.value) {
+    mobileDraft.value = {
+      ...mobileDraft.value,
+      stateA: payload.state,
+      cityA: payload.city,
+    };
+    closeMobileEditor();
+    return;
+  }
   updateRoute({
     stateA: payload.state,
     cityA: payload.city,
@@ -268,6 +376,15 @@ function updateCityA(payload: { city: string; state: string }) {
 }
 
 function updateCityB(payload: { city: string; state: string }) {
+  if (isMobileViewport.value) {
+    mobileDraft.value = {
+      ...mobileDraft.value,
+      stateB: payload.state,
+      cityB: payload.city,
+    };
+    closeMobileEditor();
+    return;
+  }
   updateRoute({
     stateA: props.stateA,
     cityA: props.cityA,
@@ -378,19 +495,116 @@ function shareToLinkedIn() {
   openShareTarget(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl.value)}`);
 }
 
+function syncMobileViewport() {
+  if (typeof window === "undefined") return;
+  isMobileViewport.value = window.innerWidth <= 640;
+  const viewport = window.visualViewport;
+  mobileKeyboardInset.value = viewport
+    ? Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop)
+    : 0;
+
+  if (!isMobileViewport.value) {
+    isMobileEditorOpen.value = false;
+  }
+}
+
+function setMobileSheetExpanded(expanded: boolean) {
+  mobileSheetExpanded.value = expanded;
+  mobileSheetTranslateY.value = expanded ? -mobileSheetMaxLift.value : 0;
+}
+
+function closeMobileEditor() {
+  mobileSheetDragging.value = false;
+  mobileSheetTranslateY.value = 0;
+  mobileSheetExpanded.value = false;
+  isMobileEditorOpen.value = false;
+}
+
+function openMobileEditor(target: "a" | "b") {
+  mobileEditorTarget.value = target;
+  mobileSheetTranslateY.value = 0;
+  mobileSheetExpanded.value = false;
+  isMobileEditorOpen.value = true;
+}
+
+function applyMobileDraftComparison() {
+  if (!mobileDraft.value.stateA || !mobileDraft.value.cityA) return;
+
+  updateRoute({
+    stateA: mobileDraft.value.stateA,
+    cityA: mobileDraft.value.cityA,
+    stateB: mobileDraft.value.stateB || undefined,
+    cityB: mobileDraft.value.cityB || undefined,
+  });
+}
+
+function onMobileSheetPointerMove(event: PointerEvent) {
+  if (!mobileSheetDragging.value) return;
+  mobileSheetDragLastY = event.clientY;
+  mobileSheetTranslateY.value = Math.min(220, Math.max(-mobileSheetMaxLift.value, event.clientY - mobileSheetDragStartY));
+}
+
+function stopMobileSheetDragging() {
+  window.removeEventListener("pointermove", onMobileSheetPointerMove);
+  window.removeEventListener("pointerup", onMobileSheetPointerUp);
+  window.removeEventListener("pointercancel", onMobileSheetPointerUp);
+}
+
+function onMobileSheetPointerUp() {
+  if (!mobileSheetDragging.value) return;
+  mobileSheetDragging.value = false;
+  stopMobileSheetDragging();
+
+  if (mobileSheetTranslateY.value > 120) {
+    closeMobileEditor();
+    return;
+  }
+
+  if (mobileSheetTranslateY.value < -56) {
+    setMobileSheetExpanded(true);
+    return;
+  }
+
+  setMobileSheetExpanded(false);
+}
+
+function startMobileSheetDrag(event: PointerEvent) {
+  mobileSheetDragging.value = true;
+  mobileSheetDragStartY = event.clientY - mobileSheetTranslateY.value;
+  mobileSheetDragLastY = event.clientY;
+  stopMobileSheetDragging();
+  window.addEventListener("pointermove", onMobileSheetPointerMove);
+  window.addEventListener("pointerup", onMobileSheetPointerUp);
+  window.addEventListener("pointercancel", onMobileSheetPointerUp);
+}
+
 onMounted(() => {
+  syncMobileViewport();
+  window.addEventListener("resize", syncMobileViewport);
+  window.visualViewport?.addEventListener("resize", syncMobileViewport);
+  window.visualViewport?.addEventListener("scroll", syncMobileViewport);
   document.addEventListener("click", handleShareClickOutside, { capture: true });
 });
 
+watch(isMobileEditorOpen, (open) => {
+  if (typeof document === "undefined") return;
+  document.body.style.overflow = open ? "hidden" : "";
+});
+
 onBeforeUnmount(() => {
+  stopMobileSheetDragging();
+  window.removeEventListener("resize", syncMobileViewport);
+  window.visualViewport?.removeEventListener("resize", syncMobileViewport);
+  window.visualViewport?.removeEventListener("scroll", syncMobileViewport);
   document.removeEventListener("click", handleShareClickOutside, { capture: true });
+  document.body.style.overflow = "";
   if (shareCopiedTimeout) clearTimeout(shareCopiedTimeout);
 });
 </script>
 
 <template>
   <div class="container compare-view">
-    <SiteHeader :show-theme-toggle="true" theme-toggle-placement="after-actions" @logo-click="resetToHome">
+    <SiteHeader :show-theme-toggle="true" theme-toggle-placement="after-actions" :mobile-compact="true" @logo-click="resetToHome">
       <template #leading>
         <button class="breadcrumb compare-view__back" @click="goBack">
           <span class="breadcrumb__arr breadcrumb__arr--1 mdi mdi-arrow-left"></span>
@@ -484,6 +698,41 @@ onBeforeUnmount(() => {
       <div class="compare-ticker__overlay" aria-hidden="true"></div>
     </section>
 
+    <section v-if="isMobileViewport" class="compare-mobile-summary">
+      <div class="compare-mobile-summary__cards">
+        <article
+          v-for="cityCard in mobileCityCards"
+          :key="cityCard.key"
+          class="compare-mobile-summary__card"
+          :class="`compare-mobile-summary__card--${cityCard.tone}`"
+        >
+          <div class="compare-mobile-summary__thumb">
+            <img v-if="cityCard.photoUrl" :src="cityCard.photoUrl" alt="" class="compare-mobile-summary__thumb-image" />
+            <div v-else class="compare-mobile-summary__thumb-fallback"></div>
+          </div>
+          <div class="compare-mobile-summary__card-body">
+            <div class="compare-mobile-summary__card-meta">
+              <span class="compare-mobile-summary__badge" :class="`compare-mobile-summary__badge--${cityCard.tone}`">{{ cityCard.label.slice(-1) }}</span>
+              <div class="compare-mobile-summary__card-text">
+                <div class="compare-mobile-summary__card-city" :class="{ 'compare-mobile-summary__card-city--empty': cityCard.isEmpty }">
+                  {{ cityCard.city }}
+                </div>
+                <div class="compare-mobile-summary__card-state">{{ cityCard.state }}</div>
+              </div>
+            </div>
+          </div>
+          <button class="compare-mobile-summary__card-edit" @click="openMobileEditor(cityCard.key)">
+            Edit
+          </button>
+        </article>
+      </div>
+
+      <button v-if="mobileDraftDirty" class="compare-mobile-summary__edit-btn" @click="applyMobileDraftComparison">
+        <span class="mdi mdi-autorenew"></span>
+        {{ mobileComparisonCta }}
+      </button>
+    </section>
+
     <section class="compare-view__setup">
       <CompareCitySearch
         label="Choose City"
@@ -503,6 +752,61 @@ onBeforeUnmount(() => {
       />
     </section>
 
+    <Teleport to="body">
+      <div v-if="isMobileViewport && isMobileEditorOpen" class="compare-mobile-sheet">
+        <div class="compare-mobile-sheet__backdrop" aria-hidden="true" @click="closeMobileEditor"></div>
+        <div
+          ref="mobileSheetPanelRef"
+          class="compare-mobile-sheet__panel"
+          :class="{ 'compare-mobile-sheet__panel--expanded': mobileSheetExpanded }"
+          :style="mobileSheetStyle"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="compare-mobile-sheet-title"
+        >
+          <div class="compare-mobile-sheet__panel-scroll">
+            <div class="compare-mobile-sheet__drag-zone" @pointerdown="startMobileSheetDrag">
+              <div class="compare-mobile-sheet__handle" aria-hidden="true"></div>
+            </div>
+            <div class="compare-mobile-sheet__header">
+              <div>
+                <p class="compare-mobile-sheet__eyebrow">City editor</p>
+                <h2 id="compare-mobile-sheet-title" class="compare-mobile-sheet__title">
+                  {{ mobileEditorTarget === 'a' ? 'Update City A' : 'Update City B' }}
+                </h2>
+              </div>
+              <button class="compare-mobile-sheet__close" aria-label="Close city editor" @click="closeMobileEditor">
+                <span class="mdi mdi-close"></span>
+              </button>
+            </div>
+
+            <div class="compare-mobile-sheet__content">
+              <CompareCitySearch
+                v-if="mobileEditorTarget === 'a'"
+                label="City A"
+                tone="a"
+                variant="sheet"
+                :initial-city="mobileDraft.cityA"
+                :initial-state="mobileDraft.stateA"
+                :button-label="mobileDraft.cityA && mobileDraft.stateA ? 'Update City A' : 'Set City A'"
+                @search="updateCityA"
+              />
+              <CompareCitySearch
+                v-else
+                label="City B"
+                tone="b"
+                variant="sheet"
+                :initial-city="mobileDraft.cityB"
+                :initial-state="mobileDraft.stateB"
+                :button-label="mobileDraft.cityB && mobileDraft.stateB ? 'Update City B' : 'Set City B'"
+                @search="updateCityB"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
     <div class="compare-view__divider" aria-hidden="true"></div>
 
     <section v-if="!hasCityB" class="compare-empty">
@@ -512,7 +816,7 @@ onBeforeUnmount(() => {
       <div class="compare-empty__content">
         <h2 class="compare-empty__title">Choose a second city to begin</h2>
         <p class="compare-empty__body">
-          City A is already loaded from the dashboard. Add City B to unlock the verdict cards, tradeoff insights, and side-by-side metric comparisons.
+          Add City B to unlock the verdict cards, tradeoff insights, and side-by-side metric comparisons.
         </p>
       </div>
     </section>

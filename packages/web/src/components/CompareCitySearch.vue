@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { getCitiesForState, getStates, type StateOption } from "../api/states";
 import { slugToDisplay } from "../lib/compare";
 
@@ -10,6 +10,7 @@ const props = defineProps<{
   initialCity?: string;
   initialState?: string;
   buttonLabel?: string;
+  variant?: "card" | "sheet";
 }>();
 
 const emit = defineEmits<{
@@ -18,35 +19,81 @@ const emit = defineEmits<{
 
 const localCity = ref(slugToDisplay(props.initialCity || ""));
 const localState = ref(props.initialState || "");
+const stateQuery = ref("");
+const showStateSuggestions = ref(false);
+const highlightedStateIndex = ref(-1);
 const states = ref<StateOption[]>([]);
 const cities = ref<{ name: string; slug: string }[]>([]);
 const searchQuery = ref(slugToDisplay(props.initialCity || ""));
 const showSuggestions = ref(false);
+const highlightedCityIndex = ref(-1);
+const cityInput = ref<HTMLInputElement | null>(null);
+const stateClearedOnFocus = ref(false);
+const cityClearedOnFocus = ref(false);
 
 watch(() => props.initialCity, (newCity) => {
   const display = newCity ? slugToDisplay(newCity) : "";
   localCity.value = display;
   searchQuery.value = display;
+  cityClearedOnFocus.value = false;
 });
 
 watch(() => props.initialState, (newState) => {
-  localState.value = newState || "";
   if (newState) {
+    localState.value = newState;
+    const match = states.value.find((state) => state.code === newState);
+    if (match) stateQuery.value = match.name;
     void fetchCities();
   } else {
+    localState.value = "";
+    stateQuery.value = "";
     cities.value = [];
   }
+  stateClearedOnFocus.value = false;
+});
+
+const filteredStates = computed(() => {
+  const query = stateQuery.value.trim().toLowerCase();
+  if (!query) return states.value;
+
+  return states.value
+    .filter((state) =>
+      state.name.toLowerCase().includes(query) ||
+      state.code.toLowerCase().startsWith(query),
+    )
+    .sort((a, b) => {
+      const aExact = a.code.toLowerCase() === query;
+      const bExact = b.code.toLowerCase() === query;
+      if (aExact && !bExact) return -1;
+      if (bExact && !aExact) return 1;
+      return a.name.localeCompare(b.name);
+    });
 });
 
 const filteredCities = computed(() => {
-  if (!searchQuery.value || searchQuery.value.length < 2) return [];
+  if (!searchQuery.value || searchQuery.value.length < 2) return cities.value.slice(0, 9);
+
   return cities.value
     .filter((city) => city.name.toLowerCase().includes(searchQuery.value.toLowerCase()))
     .slice(0, 10);
 });
 
 onMounted(async () => {
-  states.value = await getStates();
+  try {
+    states.value = await getStates();
+    if (props.initialState) {
+      const match = states.value.find((state) => state.code === props.initialState);
+      if (match) stateQuery.value = match.name;
+    }
+  } catch (error) {
+    console.error("Failed to load states:", error);
+  }
+
+  document.addEventListener("keydown", onDocumentKeydown);
+});
+
+onUnmounted(() => {
+  document.removeEventListener("keydown", onDocumentKeydown);
 });
 
 async function fetchCities() {
@@ -57,32 +104,158 @@ async function fetchCities() {
 
   try {
     cities.value = await getCitiesForState(localState.value);
-  } catch {
+  } catch (error) {
+    console.error("Failed to load cities:", error);
     cities.value = [];
   }
 }
 
-function onInput() {
-  searchQuery.value = localCity.value;
-  showSuggestions.value = true;
+function onStateInput() {
+  localState.value = "";
+  showStateSuggestions.value = true;
+  highlightedStateIndex.value = -1;
 }
 
-function onFocus() {
-  if (localCity.value.length >= 2) {
-    showSuggestions.value = true;
+function onStateFocus() {
+  if (props.variant === "sheet" && !stateClearedOnFocus.value && stateQuery.value) {
+    stateQuery.value = "";
+    localState.value = "";
+    cities.value = [];
+    localCity.value = "";
+    searchQuery.value = "";
+    stateClearedOnFocus.value = true;
+    cityClearedOnFocus.value = false;
+  }
+  showStateSuggestions.value = true;
+}
+
+function onStateKeydown(event: KeyboardEvent) {
+  const list = filteredStates.value;
+
+  if (event.key === "ArrowDown") {
+    event.preventDefault();
+    if (!showStateSuggestions.value) showStateSuggestions.value = true;
+    highlightedStateIndex.value = Math.min(highlightedStateIndex.value + 1, list.length - 1);
+  } else if (event.key === "ArrowUp") {
+    event.preventDefault();
+    highlightedStateIndex.value = Math.max(highlightedStateIndex.value - 1, -1);
+  } else if (event.key === "Enter") {
+    event.preventDefault();
+    if (highlightedStateIndex.value >= 0 && list[highlightedStateIndex.value]) {
+      selectState(list[highlightedStateIndex.value]);
+    } else if (list.length > 0) {
+      selectState(list[0]);
+    } else if (localState.value) {
+      showStateSuggestions.value = false;
+    }
+    cityInput.value?.focus();
   }
 }
 
-function onBlur() {
-  setTimeout(() => {
-    showSuggestions.value = false;
+function onStateBlur() {
+  window.setTimeout(() => {
+    showStateSuggestions.value = false;
+    highlightedStateIndex.value = -1;
+
+    if (!localState.value && stateQuery.value) {
+      const query = stateQuery.value.trim().toLowerCase();
+      const match = states.value.find(
+        (state) => state.name.toLowerCase() === query || state.code.toLowerCase() === query,
+      );
+
+      if (match) {
+        selectState(match);
+      } else if (filteredStates.value.length > 0) {
+        selectState(filteredStates.value[0]);
+      } else {
+        stateQuery.value = "";
+      }
+    }
   }, 150);
+}
+
+function selectState(state: StateOption) {
+  localState.value = state.code;
+  stateQuery.value = state.name;
+  showStateSuggestions.value = false;
+  highlightedStateIndex.value = -1;
+  localCity.value = "";
+  searchQuery.value = "";
+  void fetchCities();
+}
+
+let recentBlurTimer: number | null = null;
+const recentlyBlurred = ref(false);
+
+function onInput() {
+  searchQuery.value = localCity.value;
+  showSuggestions.value = true;
+  highlightedCityIndex.value = -1;
+}
+
+function onFocus() {
+  if (props.variant === "sheet" && !cityClearedOnFocus.value && localCity.value) {
+    localCity.value = "";
+    searchQuery.value = "";
+    cityClearedOnFocus.value = true;
+  }
+  showSuggestions.value = true;
+}
+
+function onBlur() {
+  window.setTimeout(() => {
+    if (showSuggestions.value && filteredCities.value.length > 0) {
+      selectCity(filteredCities.value[0]);
+    }
+    showSuggestions.value = false;
+    highlightedCityIndex.value = -1;
+    recentlyBlurred.value = true;
+    if (recentBlurTimer !== null) clearTimeout(recentBlurTimer);
+    recentBlurTimer = window.setTimeout(() => {
+      recentlyBlurred.value = false;
+    }, 4000);
+  }, 150);
+}
+
+function onDocumentKeydown(event: KeyboardEvent) {
+  if (event.key === "Enter" && recentlyBlurred.value) {
+    recentlyBlurred.value = false;
+    submit();
+  }
+}
+
+function onCityKeydown(event: KeyboardEvent) {
+  const list = filteredCities.value;
+
+  if (event.key === "ArrowDown") {
+    event.preventDefault();
+    highlightedCityIndex.value = Math.min(highlightedCityIndex.value + 1, list.length - 1);
+  } else if (event.key === "ArrowUp") {
+    event.preventDefault();
+    highlightedCityIndex.value = Math.max(highlightedCityIndex.value - 1, -1);
+  } else if (event.key === "Enter") {
+    event.preventDefault();
+
+    if (!showSuggestions.value) {
+      submit();
+      return;
+    }
+
+    if (highlightedCityIndex.value >= 0 && list[highlightedCityIndex.value]) {
+      selectCity(list[highlightedCityIndex.value]);
+    } else if (list.length > 0) {
+      selectCity(list[0]);
+    } else {
+      submit();
+    }
+  }
 }
 
 function selectCity(city: { name: string; slug: string }) {
   localCity.value = city.name;
   searchQuery.value = city.name;
   showSuggestions.value = false;
+  highlightedCityIndex.value = -1;
 }
 
 function cityToSlug(city: string) {
@@ -104,30 +277,60 @@ watch(() => localState.value, () => {
 </script>
 
 <template>
-  <section class="compare-search-card" :class="`compare-search-card--${tone ?? 'a'}`">
+  <section
+    class="compare-search-card"
+    :class="[
+      `compare-search-card--${tone ?? 'a'}`,
+      `compare-search-card--${props.variant ?? 'card'}`,
+    ]"
+  >
     <div class="compare-search-card__header">
       <span class="compare-search-card__label">{{ label }}</span>
       <span v-if="caption" class="compare-search-card__caption">{{ caption }}</span>
     </div>
 
     <div class="search-bar compare-search-card__bar">
-      <select v-model="localState">
-        <option value="" disabled selected>Select State</option>
-        <option v-for="state in states" :key="state.code" :value="state.code">
-          {{ state.name }} ({{ state.code }})
-        </option>
-      </select>
+      <div class="state-search-container">
+        <input
+          v-model="stateQuery"
+          @input="onStateInput"
+          @focus="onStateFocus"
+          @blur="onStateBlur"
+          @keydown="onStateKeydown"
+          placeholder="Select State"
+          autocomplete="off"
+        />
+        <ul v-if="showStateSuggestions && filteredStates.length > 0" class="state-suggestions">
+          <li
+            v-for="(state, index) in filteredStates"
+            :key="state.code"
+            :class="{ 'state-suggestions__item--highlighted': index === highlightedStateIndex }"
+            @mousedown.prevent="selectState(state)"
+          >
+            <span class="state-suggestions__name">{{ state.name }}</span>
+            <span class="state-suggestions__code">{{ state.code }}</span>
+          </li>
+        </ul>
+      </div>
 
       <div class="city-search-container">
         <input
+          ref="cityInput"
           v-model="localCity"
           @input="onInput"
           @focus="onFocus"
           @blur="onBlur"
+          @keydown="onCityKeydown"
           placeholder="Search cities..."
+          :disabled="!localState"
         />
         <ul v-if="showSuggestions && filteredCities.length > 0" class="city-suggestions">
-          <li v-for="city in filteredCities" :key="city.slug" @click="selectCity(city)">
+          <li
+            v-for="(city, index) in filteredCities"
+            :key="city.slug"
+            :class="{ 'city-suggestions__item--highlighted': index === highlightedCityIndex }"
+            @mousedown.prevent="selectCity(city)"
+          >
             {{ city.name }}
           </li>
         </ul>
@@ -193,25 +396,21 @@ watch(() => localState.value, () => {
   background: transparent;
 }
 
-.compare-search-card--a :deep(select),
 .compare-search-card--a :deep(input) {
   border-color: color-mix(in srgb, var(--compare-city-a) 35%, var(--border-card));
   background-color: color-mix(in srgb, var(--compare-city-a) 7%, var(--bg-input));
 }
 
-.compare-search-card--b :deep(select),
 .compare-search-card--b :deep(input) {
   border-color: color-mix(in srgb, var(--compare-city-b) 35%, var(--border-card));
   background-color: color-mix(in srgb, var(--compare-city-b) 7%, var(--bg-input));
 }
 
-.compare-search-card--a :deep(input:focus),
-.compare-search-card--a :deep(select:focus) {
+.compare-search-card--a :deep(input:focus) {
   border-color: var(--compare-city-a);
 }
 
-.compare-search-card--b :deep(input:focus),
-.compare-search-card--b :deep(select:focus) {
+.compare-search-card--b :deep(input:focus) {
   border-color: var(--compare-city-b);
 }
 
@@ -239,6 +438,63 @@ watch(() => localState.value, () => {
   margin-right: 5px;
 }
 
+.compare-search-card--sheet {
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.compare-search-card--sheet .compare-search-card__header {
+  margin-bottom: 10px;
+}
+
+.compare-search-card--sheet .compare-search-card__label {
+  font-size: 0.88rem;
+  letter-spacing: 0.06em;
+}
+
+.compare-search-card--sheet :deep(.search-bar) {
+  gap: 8px;
+  padding: 0;
+  margin-bottom: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.compare-search-card--sheet :deep(.search-bar > button) {
+  width: 100%;
+  min-height: 50px;
+  border-radius: 12px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  border: 1px solid color-mix(in srgb, white 36%, var(--border-card));
+  box-shadow:
+    0 12px 24px rgba(15, 23, 42, 0.16),
+    0 0 0 1px rgba(255, 255, 255, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.compare-search-card--a.compare-search-card--sheet :deep(.search-bar > button) {
+  background: color-mix(in srgb, var(--compare-city-a) 18%, #2a2d38);
+  border-color: color-mix(in srgb, var(--compare-city-a) 78%, white 8%);
+  color: #eefcf9;
+}
+
+.compare-search-card--b.compare-search-card--sheet :deep(.search-bar > button) {
+  background: color-mix(in srgb, var(--compare-city-b) 16%, #2a2d38);
+  border-color: color-mix(in srgb, var(--compare-city-b) 72%, white 8%);
+  color: #eff6ff;
+}
+
+.compare-search-card--sheet :deep(.search-bar > button:hover) {
+  filter: brightness(1.06);
+}
+
 @media (max-width: 640px) {
   .compare-search-card {
     padding: 16px;
@@ -249,6 +505,10 @@ watch(() => localState.value, () => {
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
+  }
+
+  .compare-search-card--sheet {
+    padding: 0;
   }
 }
 </style>
