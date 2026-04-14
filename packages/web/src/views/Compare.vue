@@ -46,6 +46,7 @@ const mobileDraft = ref({
 const mobileDraftPhotos = ref<{ a: string | null; b: string | null }>({ a: null, b: null });
 const isMobileViewport = ref(false);
 const isMobileEditorOpen = ref(false);
+const mobileImagePreview = ref<{ src: string; city: string } | null>(null);
 const mobileEditorTarget = ref<"a" | "b">("a");
 const mobileSheetPanelRef = ref<HTMLElement | null>(null);
 const mobileSheetTranslateY = ref(0);
@@ -520,6 +521,14 @@ function closeMobileEditor() {
   isMobileEditorOpen.value = false;
 }
 
+function openMobileImagePreview(city: string, src: string) {
+  mobileImagePreview.value = { city, src };
+}
+
+function closeMobileImagePreview() {
+  mobileImagePreview.value = null;
+}
+
 function openMobileEditor(target: "a" | "b") {
   mobileEditorTarget.value = target;
   mobileSheetTranslateY.value = 0;
@@ -586,9 +595,9 @@ onMounted(() => {
   document.addEventListener("click", handleShareClickOutside, { capture: true });
 });
 
-watch(isMobileEditorOpen, (open) => {
+watch([isMobileEditorOpen, mobileImagePreview], ([editorOpen, imagePreview]) => {
   if (typeof document === "undefined") return;
-  document.body.style.overflow = open ? "hidden" : "";
+  document.body.style.overflow = editorOpen || Boolean(imagePreview) ? "hidden" : "";
 });
 
 onBeforeUnmount(() => {
@@ -706,11 +715,24 @@ onBeforeUnmount(() => {
           class="compare-mobile-summary__card"
           :class="`compare-mobile-summary__card--${cityCard.tone}`"
         >
-          <div class="compare-mobile-summary__thumb">
-            <img v-if="cityCard.photoUrl" :src="cityCard.photoUrl" alt="" class="compare-mobile-summary__thumb-image" />
-            <div v-else class="compare-mobile-summary__thumb-fallback"></div>
+          <button
+            v-if="cityCard.photoUrl"
+            class="compare-mobile-summary__thumb compare-mobile-summary__thumb--interactive"
+            :aria-label="`Preview photo for ${cityCard.city}`"
+            type="button"
+            @click.stop="openMobileImagePreview(cityCard.city, cityCard.photoUrl)"
+          >
+            <img :src="cityCard.photoUrl" alt="" class="compare-mobile-summary__thumb-image" />
+          </button>
+          <div v-else class="compare-mobile-summary__thumb">
+            <div class="compare-mobile-summary__thumb-fallback"></div>
           </div>
-          <div class="compare-mobile-summary__card-body">
+          <button
+            class="compare-mobile-summary__card-body compare-mobile-summary__card-body-button"
+            :aria-label="`Edit ${cityCard.label}`"
+            type="button"
+            @click="openMobileEditor(cityCard.key)"
+          >
             <div class="compare-mobile-summary__card-meta">
               <span class="compare-mobile-summary__badge" :class="`compare-mobile-summary__badge--${cityCard.tone}`">{{ cityCard.label.slice(-1) }}</span>
               <div class="compare-mobile-summary__card-text">
@@ -720,8 +742,8 @@ onBeforeUnmount(() => {
                 <div class="compare-mobile-summary__card-state">{{ cityCard.state }}</div>
               </div>
             </div>
-          </div>
-          <button class="compare-mobile-summary__card-edit" @click="openMobileEditor(cityCard.key)">
+          </button>
+          <button class="compare-mobile-summary__card-edit" type="button" @click="openMobileEditor(cityCard.key)">
             Edit
           </button>
         </article>
@@ -753,6 +775,25 @@ onBeforeUnmount(() => {
     </section>
 
     <Teleport to="body">
+      <div v-if="isMobileViewport && mobileImagePreview !== null" class="compare-mobile-image-modal">
+        <div class="compare-mobile-image-modal__backdrop" aria-hidden="true" @click="closeMobileImagePreview"></div>
+        <div
+          class="compare-mobile-image-modal__dialog"
+          role="dialog"
+          aria-modal="true"
+          :aria-label="`${mobileImagePreview.city} photo`"
+          @click="closeMobileImagePreview"
+        >
+          <button class="compare-mobile-image-modal__close" aria-label="Close image preview" @click="closeMobileImagePreview">
+            <span class="mdi mdi-close"></span>
+          </button>
+          <div class="compare-mobile-image-modal__frame" @click.stop>
+            <img :src="mobileImagePreview.src" :alt="mobileImagePreview.city" class="compare-mobile-image-modal__image" />
+          </div>
+          <div class="compare-mobile-image-modal__caption" @click.stop>{{ mobileImagePreview.city }}</div>
+        </div>
+      </div>
+
       <div v-if="isMobileViewport && isMobileEditorOpen" class="compare-mobile-sheet">
         <div class="compare-mobile-sheet__backdrop" aria-hidden="true" @click="closeMobileEditor"></div>
         <div

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { cityLabel, type CompareSectionData } from "../lib/compare";
 
 const props = defineProps<{
@@ -27,6 +27,11 @@ const heroPillClass = computed(() => {
   return "compare-section__hero-pill--difference";
 });
 
+const activeMobileFace = ref<"a" | "b">("a");
+const mobileFrontRef = ref<HTMLElement | null>(null);
+const mobileBackRef = ref<HTMLElement | null>(null);
+const mobileFlipHeight = ref<number | null>(null);
+
 function metricClass(winner: "a" | "b" | "tie" | "difference", side: "a" | "b") {
   if (winner === "difference") return side === "a" ? "compare-section__metric-val--wins-a" : "compare-section__metric-val--wins-b";
   if (winner === side) return side === "a" ? "compare-section__metric-val--wins-a" : "compare-section__metric-val--wins-b";
@@ -39,10 +44,230 @@ function diffBadgeClass(winner: "a" | "b" | "tie" | "difference") {
   if (winner === "b") return "compare-section__diff--b";
   return "";
 }
+
+function toggleMobileFace() {
+  activeMobileFace.value = activeMobileFace.value === "a" ? "b" : "a";
+}
+
+function mobileFaceCity(side: "a" | "b") {
+  return side === "a" ? cityALabel.value : cityBLabel.value;
+}
+
+function mobileFaceSummary(side: "a" | "b") {
+  return side === "a" ? props.section.aSummary : props.section.bSummary;
+}
+
+function mobileMetricText(metric: CompareSectionData["metrics"][number], side: "a" | "b") {
+  return side === "a" ? metric.aText : metric.bText;
+}
+
+function mobileMetricResult(metric: CompareSectionData["metrics"][number], side: "a" | "b") {
+  if (metric.winner === "tie" || metric.winner === "difference") return "neutral" as const;
+  return metric.winner === side ? "win" as const : "loss" as const;
+}
+
+function mobileMetricDeltaClass(metric: CompareSectionData["metrics"][number], side: "a" | "b") {
+  const result = mobileMetricResult(metric, side);
+  if (result === "win") return "compare-section__mobile-metric-delta--win";
+  if (result === "loss") return "compare-section__mobile-metric-delta--loss";
+  return "compare-section__mobile-metric-delta--neutral";
+}
+
+function mobileMetricArrowCount(metric: CompareSectionData["metrics"][number]) {
+  if (metric.winner === "tie" || metric.winner === "difference") return 0;
+  if (metric.aVisual == null || metric.bVisual == null) return 1;
+
+  const gap = Math.abs(metric.aVisual - metric.bVisual);
+  if (gap >= 32) return 3;
+  if (gap >= 14) return 2;
+  return 1;
+}
+
+async function updateMobileFlipHeight() {
+  await nextTick();
+  const activeHeight = activeMobileFace.value === "a"
+    ? (mobileFrontRef.value?.scrollHeight ?? 0)
+    : (mobileBackRef.value?.scrollHeight ?? 0);
+  mobileFlipHeight.value = Math.max(activeHeight, 0);
+}
+
+onMounted(() => {
+  void updateMobileFlipHeight();
+  window.addEventListener("resize", updateMobileFlipHeight);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("resize", updateMobileFlipHeight);
+});
+
+watch(() => props.section, () => {
+  void updateMobileFlipHeight();
+}, { deep: true });
+
+watch(activeMobileFace, () => {
+  void updateMobileFlipHeight();
+});
 </script>
 
 <template>
   <section class="compare-section" :class="`compare-section--${section.variant}`">
+    <div class="compare-section__mobile">
+      <div
+        class="compare-section__mobile-flip"
+        :class="{ 'compare-section__mobile-flip--show-b': activeMobileFace === 'b' }"
+        :style="mobileFlipHeight ? { height: `${mobileFlipHeight}px` } : undefined"
+      >
+        <article
+          ref="mobileFrontRef"
+          class="compare-section__mobile-face compare-section__mobile-face--front"
+          role="button"
+          tabindex="0"
+          aria-label="Show other city"
+          @click="toggleMobileFace"
+          @keydown.enter.prevent="toggleMobileFace"
+          @keydown.space.prevent="toggleMobileFace"
+        >
+          <div class="compare-section__mobile-header">
+            <div class="compare-section__mobile-title-wrap">
+              <span class="mdi compare-section__icon" :class="section.icon"></span>
+              <div>
+                <h2 class="compare-section__title">{{ section.title }}</h2>
+                <p class="compare-section__mobile-city">{{ mobileFaceCity('a') }}</p>
+              </div>
+            </div>
+            <button class="compare-section__mobile-flip-btn" @click.stop="toggleMobileFace" aria-label="Show other city">
+              <span class="compare-section__mobile-flip-indicator compare-section__mobile-flip-indicator--a">A</span>
+              <span class="mdi mdi-autorenew"></span>
+            </button>
+          </div>
+
+          <div class="compare-section__mobile-summary">
+            <span class="compare-section__mobile-summary-label">{{ section.summaryLabel }}</span>
+            <div class="compare-section__mobile-summary-row">
+              <span class="compare-section__mobile-summary-value">{{ mobileFaceSummary('a') }}</span>
+              <span class="compare-section__mobile-verdict" :class="heroPillClass">{{ section.verdict }}</span>
+            </div>
+          </div>
+
+          <div class="compare-section__mobile-metrics">
+            <div v-for="metric in section.metrics" :key="`a-${metric.label}`" class="compare-section__mobile-metric">
+              <div class="compare-section__mobile-metric-head">
+                <span class="compare-section__mobile-metric-name">{{ metric.label }}</span>
+              </div>
+              <div class="compare-section__mobile-metric-body">
+                <div class="compare-section__mobile-metric-main">
+                  <span
+                    class="compare-section__mobile-metric-signal"
+                    :class="`compare-section__mobile-metric-signal--${mobileMetricResult(metric, 'a')}`"
+                  >
+                    <span
+                      v-if="mobileMetricArrowCount(metric) === 0"
+                      class="compare-section__mobile-signal-dot"
+                    ></span>
+                    <template v-else>
+                      <span
+                        v-for="index in mobileMetricArrowCount(metric)"
+                        :key="`a-${metric.label}-${index}`"
+                        class="compare-section__mobile-triangle"
+                        :class="`compare-section__mobile-triangle--${mobileMetricResult(metric, 'a')}`"
+                      ></span>
+                    </template>
+                  </span>
+                  <div
+                    class="compare-section__mobile-metric-value"
+                    :class="`compare-section__mobile-metric-value--${mobileMetricResult(metric, 'a')}`"
+                  >
+                    {{ mobileMetricText(metric, 'a') }}
+                  </div>
+                </div>
+                <div
+                  class="compare-section__mobile-metric-delta"
+                  :class="mobileMetricDeltaClass(metric, 'a')"
+                >
+                  {{ metric.centerLabel }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article
+          ref="mobileBackRef"
+          class="compare-section__mobile-face compare-section__mobile-face--back"
+          role="button"
+          tabindex="0"
+          aria-label="Show other city"
+          @click="toggleMobileFace"
+          @keydown.enter.prevent="toggleMobileFace"
+          @keydown.space.prevent="toggleMobileFace"
+        >
+          <div class="compare-section__mobile-header">
+            <div class="compare-section__mobile-title-wrap">
+              <span class="mdi compare-section__icon" :class="section.icon"></span>
+              <div>
+                <h2 class="compare-section__title">{{ section.title }}</h2>
+                <p class="compare-section__mobile-city">{{ mobileFaceCity('b') }}</p>
+              </div>
+            </div>
+            <button class="compare-section__mobile-flip-btn" @click.stop="toggleMobileFace" aria-label="Show other city">
+              <span class="compare-section__mobile-flip-indicator compare-section__mobile-flip-indicator--b">B</span>
+              <span class="mdi mdi-autorenew"></span>
+            </button>
+          </div>
+
+          <div class="compare-section__mobile-summary">
+            <span class="compare-section__mobile-summary-label">{{ section.summaryLabel }}</span>
+            <div class="compare-section__mobile-summary-row">
+              <span class="compare-section__mobile-summary-value">{{ mobileFaceSummary('b') }}</span>
+              <span class="compare-section__mobile-verdict" :class="heroPillClass">{{ section.verdict }}</span>
+            </div>
+          </div>
+
+          <div class="compare-section__mobile-metrics">
+            <div v-for="metric in section.metrics" :key="`b-${metric.label}`" class="compare-section__mobile-metric">
+              <div class="compare-section__mobile-metric-head">
+                <span class="compare-section__mobile-metric-name">{{ metric.label }}</span>
+              </div>
+              <div class="compare-section__mobile-metric-body">
+                <div class="compare-section__mobile-metric-main">
+                  <span
+                    class="compare-section__mobile-metric-signal"
+                    :class="`compare-section__mobile-metric-signal--${mobileMetricResult(metric, 'b')}`"
+                  >
+                    <span
+                      v-if="mobileMetricArrowCount(metric) === 0"
+                      class="compare-section__mobile-signal-dot"
+                    ></span>
+                    <template v-else>
+                      <span
+                        v-for="index in mobileMetricArrowCount(metric)"
+                        :key="`b-${metric.label}-${index}`"
+                        class="compare-section__mobile-triangle"
+                        :class="`compare-section__mobile-triangle--${mobileMetricResult(metric, 'b')}`"
+                      ></span>
+                    </template>
+                  </span>
+                  <div
+                    class="compare-section__mobile-metric-value"
+                    :class="`compare-section__mobile-metric-value--${mobileMetricResult(metric, 'b')}`"
+                  >
+                    {{ mobileMetricText(metric, 'b') }}
+                  </div>
+                </div>
+                <div
+                  class="compare-section__mobile-metric-delta"
+                  :class="mobileMetricDeltaClass(metric, 'b')"
+                >
+                  {{ metric.centerLabel }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <div class="compare-section__desktop">
     <!-- Header -->
     <div class="compare-section__header">
       <div class="compare-section__title-wrap">
@@ -107,16 +332,36 @@ function diffBadgeClass(winner: "a" | "b" | "tie" | "difference") {
         </div>
       </div>
     </div>
+    </div>
   </section>
 </template>
 
 <style scoped>
+.compare-section {
+  --compare-success: #22c55e;
+  --compare-success-soft: color-mix(in srgb, var(--compare-success) 14%, var(--bg-card));
+  --compare-success-border: color-mix(in srgb, var(--compare-success) 34%, var(--border-card));
+  --compare-danger: #f87171;
+  --compare-danger-soft: color-mix(in srgb, var(--compare-danger) 14%, var(--bg-card));
+  --compare-danger-border: color-mix(in srgb, var(--compare-danger) 34%, var(--border-card));
+}
+
 .compare-section {
   padding: 26px 28px;
   border: 1px solid color-mix(in srgb, var(--border-card) 84%, transparent);
   border-radius: 28px;
   background: linear-gradient(180deg, color-mix(in srgb, var(--bg-card) 96%, white 4%) 0%, var(--bg-card) 100%);
   box-shadow: 0 18px 38px rgba(0, 0, 0, 0.16);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.compare-section__mobile {
+  display: none;
+}
+
+.compare-section__desktop {
+  display: block;
 }
 
 /* ── Header ── */
@@ -427,25 +672,296 @@ function diffBadgeClass(winner: "a" | "b" | "tie" | "difference") {
 }
 
 @media (max-width: 640px) {
+  .compare-section__mobile {
+    display: block;
+  }
+
+  .compare-section__desktop {
+    display: none;
+  }
+
   .compare-section {
     padding: 20px 16px;
     border-radius: 20px;
   }
 
-  .compare-section__table {
-    margin: 0 -16px;
+  .compare-section__mobile-flip {
+    position: relative;
+    perspective: 1400px;
   }
 
-  .compare-section__metric-block {
-    padding: 12px 16px;
+  .compare-section__mobile-flip--show-b .compare-section__mobile-face--front {
+    transform: rotateY(180deg);
   }
 
-  .compare-section__hero-value {
-    font-size: 1.5rem;
+  .compare-section__mobile-flip--show-b .compare-section__mobile-face--back {
+    transform: rotateY(0deg);
   }
 
-  .compare-section__metric-val {
-    font-size: 1.1rem;
+  .compare-section__mobile-face {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .compare-section__mobile-face--front {
+    transform: rotateY(0deg);
+  }
+
+  .compare-section__mobile-face--back {
+    transform: rotateY(-180deg);
+  }
+
+  .compare-section__mobile-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .compare-section__mobile-title-wrap {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .compare-section__mobile-city {
+    margin: 4px 0 0;
+    font-size: clamp(0.74rem, 2.5vw, 0.82rem);
+    color: var(--text-secondary);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .compare-section__mobile-flip-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 62px;
+    height: 44px;
+    padding: 0 12px;
+    border-radius: 14px;
+    border: 1px solid var(--border-card);
+    background: color-mix(in srgb, var(--bg-card) 84%, transparent);
+    color: var(--text-secondary);
+    flex-shrink: 0;
+  }
+
+  .compare-section__mobile-flip-btn .mdi {
+    font-size: 1.15rem;
+  }
+
+  .compare-section__mobile-flip-indicator {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    border: 1px solid currentColor;
+    font-size: 0.68rem;
+    font-weight: 800;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .compare-section__mobile-flip-indicator--a {
+    color: var(--compare-city-a);
+  }
+
+  .compare-section__mobile-flip-indicator--b {
+    color: var(--compare-city-b);
+  }
+
+  .compare-section__mobile-summary {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px;
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--bg-card-subtle) 86%, transparent);
+    border: 1px solid color-mix(in srgb, var(--border-card) 72%, transparent);
+  }
+
+  .compare-section__mobile-summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .compare-section__mobile-summary-label {
+    font-size: clamp(0.68rem, 2.2vw, 0.72rem);
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .compare-section__mobile-summary-value {
+    font-size: clamp(1.48rem, 5.4vw, 1.72rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    color: var(--text-primary);
+    min-width: 0;
+  }
+
+  .compare-section__mobile-verdict {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    font-size: clamp(0.72rem, 2.5vw, 0.78rem);
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .compare-section__mobile-metrics {
+    display: grid;
+    gap: 10px;
+  }
+
+  .compare-section__mobile-metric {
+    padding: 14px;
+    border-radius: 18px;
+    border: 1px solid color-mix(in srgb, var(--border-card) 72%, transparent);
+    background: color-mix(in srgb, var(--bg-card-subtle) 74%, transparent);
+  }
+
+  .compare-section__mobile-metric-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .compare-section__mobile-metric-name {
+    font-size: clamp(0.68rem, 2.25vw, 0.72rem);
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .compare-section__mobile-metric-body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .compare-section__mobile-metric-main {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .compare-section__mobile-metric-signal {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-width: 10px;
+    flex-shrink: 0;
+  }
+
+  .compare-section__mobile-triangle {
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+  }
+
+  .compare-section__mobile-signal-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-secondary) 78%, transparent);
+  }
+
+  .compare-section__mobile-triangle--win {
+    border-bottom: 8px solid var(--compare-success);
+  }
+
+  .compare-section__mobile-triangle--loss {
+    border-top: 8px solid var(--compare-danger);
+  }
+
+  .compare-section__mobile-metric-value {
+    font-size: clamp(1.22rem, 4.9vw, 1.48rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--text-primary);
+    word-break: break-word;
+    min-width: 0;
+  }
+
+  .compare-section__mobile-metric-value--win {
+    color: var(--compare-success);
+  }
+
+  .compare-section__mobile-metric-value--loss {
+    color: var(--compare-danger);
+  }
+
+  .compare-section__mobile-metric-value--neutral {
+    color: var(--text-primary);
+  }
+
+  .compare-section__mobile-metric-delta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--border-card) 75%, transparent);
+    background: color-mix(in srgb, var(--bg-card) 78%, transparent);
+    color: var(--text-secondary);
+    font-size: clamp(0.7rem, 2.35vw, 0.77rem);
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .compare-section__mobile-metric-delta--win {
+    border-color: var(--compare-success-border);
+    background: var(--compare-success-soft);
+    color: var(--compare-success);
+  }
+
+  .compare-section__mobile-metric-delta--loss {
+    border-color: var(--compare-danger-border);
+    background: var(--compare-danger-soft);
+    color: var(--compare-danger);
+  }
+
+  .compare-section__mobile-metric-delta--neutral {
+    color: var(--text-secondary);
+  }
+
+  .compare-section__mobile-metric-delta--neutral,
+  .compare-section__mobile-metric-signal--neutral {
+    border-color: color-mix(in srgb, var(--text-secondary) 25%, var(--border-card));
   }
 }
 </style>
