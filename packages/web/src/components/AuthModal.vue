@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useAuth } from '../composables/useAuth';
-import HCaptchaWidget from './HCaptchaWidget.vue';
+import TurnstileWidget from './TurnstileWidget.vue';
 import { PROFILE_VISIBILITY_OPTIONS, type ProfileVisibility } from '../lib/profilePrivacy';
 
 const props = defineProps<{ mode?: 'login' | 'register' }>();
@@ -24,7 +24,7 @@ const showPasswordLocked = ref(false);
 const showPassword = computed(() => showPasswordHover.value || showPasswordLocked.value);
 const captchaToken = ref<string | null>(null);
 const captchaKey = ref(0);
-const hcaptchaSiteKey = (import.meta.env.VITE_HCAPTCHA_SITE_KEY as string | undefined)?.trim() ?? '';
+const captchaSiteKey = (import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined)?.trim() ?? '';
 
 const isRegister = computed(() => activeMode.value === 'register');
 const modalTitle = computed(() => {
@@ -51,7 +51,7 @@ function resetRegisterFlow() {
 
 async function handleSubmit() {
   error.value = null;
-  if (hcaptchaSiteKey && !captchaToken.value) {
+  if (captchaSiteKey && !captchaToken.value) {
     error.value = 'Please complete the CAPTCHA.';
     return;
   }
@@ -219,13 +219,13 @@ function goBackToRegisterDetails() {
             </div>
 
             <div
-              v-if="hcaptchaSiteKey && (!isRegister || registerStep === 'details')"
+              v-if="captchaSiteKey && (!isRegister || registerStep === 'details')"
               class="auth-modal__field auth-modal__field--captcha"
             >
               <label class="auth-modal__label">Verification</label>
-              <HCaptchaWidget
+              <TurnstileWidget
                 :key="captchaKey"
-                :site-key="hcaptchaSiteKey"
+                :site-key="captchaSiteKey"
                 theme="dark"
                 @verified="captchaToken = $event"
                 @expired="captchaToken = null"
