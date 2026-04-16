@@ -3,6 +3,8 @@ import type { CityAffordability, DetailedCityAffordability, AffordabilityLevel, 
 import { buildCensusGeoQuery } from "../common/census.js";
 import { getCityIncome, getDetailedCityIncome } from "../income/income.service.js";
 import { getCityHousing, getDetailedCityHousing } from "../housing/housing.service.js";
+import { STATE_GAS_PREMIUMS, NATIONAL_MEDIAN_HOUSEHOLD_INCOME } from "./gas-price-reference.js";
+import { STATE_ELECTRICITY_PREMIUMS, STATE_EV_CHARGERS_PER_100K, STATE_EV_ADOPTION_PCT } from "./ev-reference.js";
 
 function classifyAffordability(ratio: number): AffordabilityLevel {
   if (ratio <= 0.25) return "Comfortably Affordable";
@@ -100,6 +102,21 @@ export async function getDetailedCityAffordability(
       ? annualRent / income.medianRenterIncome
       : 0;
 
+  const electricityPremiumDecimal = STATE_ELECTRICITY_PREMIUMS[city.state] ?? null;
+  const electricityVsNationalPct = electricityPremiumDecimal !== null ? electricityPremiumDecimal * 100 : null;
+  const evChargersPerCapita = STATE_EV_CHARGERS_PER_100K[city.state] ?? null;
+  const evAdoptionPct = STATE_EV_ADOPTION_PCT[city.state] ?? null;
+
+  const gasPremiumDecimal = STATE_GAS_PREMIUMS[city.state] ?? null;
+  const incomeDecimal = income.medianHouseholdIncome > 0
+    ? (income.medianHouseholdIncome - NATIONAL_MEDIAN_HOUSEHOLD_INCOME) / NATIONAL_MEDIAN_HOUSEHOLD_INCOME
+    : null;
+  const gasVsNationalPct = gasPremiumDecimal !== null ? gasPremiumDecimal * 100 : null;
+  const incomeVsNationalPct = incomeDecimal !== null ? incomeDecimal * 100 : null;
+  const adjustedFuelBurden = gasVsNationalPct !== null && incomeVsNationalPct !== null
+    ? gasVsNationalPct - incomeVsNationalPct
+    : null;
+
   return {
     city: city.name.replace(/\s+city$/i, ""),
     state: city.state,
@@ -121,5 +138,11 @@ export async function getDetailedCityAffordability(
     rentBurdenPercent: housing.rentBurdenPercent,
     rentBurdenBands,
     fhfaYoyChange: housing.fhfaData?.yoyChange ?? null,
+    gasVsNationalPct,
+    incomeVsNationalPct,
+    adjustedFuelBurden,
+    electricityVsNationalPct,
+    evChargersPerCapita,
+    evAdoptionPct,
   };
 }
