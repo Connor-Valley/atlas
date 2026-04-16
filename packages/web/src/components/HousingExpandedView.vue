@@ -221,7 +221,7 @@ const loadingStructureRows = [1, 2, 3, 4];
       </div>
 
       <div v-if="loading" class="housing-exp__snapshot-skeleton" aria-hidden="true">
-        <div class="housing-exp__snapshot-primary">
+        <div class="housing-exp__snapshot-grid">
           <div class="snap-metric snap-metric--primary snap-metric--skeleton">
             <span class="snap-metric__label snap-metric__label--skeleton skeleton-line"></span>
             <span class="snap-metric__value snap-metric__value--skeleton snap-metric__value--skeleton-lg skeleton-line"></span>
@@ -234,8 +234,6 @@ const loadingStructureRows = [1, 2, 3, 4];
             <span class="snap-metric__label snap-metric__label--skeleton skeleton-line"></span>
             <span class="snap-metric__value snap-metric__value--skeleton snap-metric__value--skeleton-lg skeleton-line"></span>
           </div>
-        </div>
-        <div class="housing-exp__snapshot-secondary">
           <div class="snap-metric snap-metric--secondary snap-metric--skeleton">
             <span class="snap-metric__label snap-metric__label--skeleton skeleton-line"></span>
             <span class="snap-metric__value snap-metric__value--skeleton skeleton-line"></span>
@@ -255,8 +253,7 @@ const loadingStructureRows = [1, 2, 3, 4];
       </div>
 
       <template v-else-if="data">
-        <!-- Primary metrics -->
-        <div class="housing-exp__snapshot-primary">
+        <div class="housing-exp__snapshot-grid">
           <div v-if="data.housing?.medianRent" class="snap-metric snap-metric--primary">
             <span class="snap-metric__label"><span class="mdi mdi-home-outline snap-metric__icon"></span>Median Rent</span>
             <span class="snap-metric__value">${{ data.housing.medianRent.toLocaleString() }}</span>
@@ -269,10 +266,6 @@ const loadingStructureRows = [1, 2, 3, 4];
             <span class="snap-metric__label"><span class="mdi mdi-wallet-outline snap-metric__icon"></span>Household Income</span>
             <span class="snap-metric__value">${{ data.housing.medianHouseholdIncome.toLocaleString() }}</span>
           </div>
-        </div>
-
-        <!-- Secondary metrics -->
-        <div class="housing-exp__snapshot-secondary">
           <div v-if="data.housing?.renterShare != null" class="snap-metric snap-metric--secondary">
             <span class="snap-metric__label"><span class="mdi mdi-key-outline snap-metric__icon"></span>Renter Share</span>
             <span class="snap-metric__value">{{ (data.housing.renterShare * 100).toFixed(1) }}%</span>

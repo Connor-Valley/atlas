@@ -309,6 +309,10 @@ function onMouseLeave(el: HTMLElement) {
       </div>
     </div>
 
+    <button class="fav-page__mobile-back" @click="router.back()">
+      <span class="mdi mdi-arrow-left"></span>
+    </button>
+
   </div>
 </template>
 
@@ -588,5 +592,159 @@ function onMouseLeave(el: HTMLElement) {
   font-size: 0.88rem;
   font-weight: 700;
   color: white;
+}
+
+/* ── Floating back button ─────────────────────────────── */
+.fav-page__mobile-back {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  width: 54px;
+  height: 54px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border-card));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--bg-card) 94%, transparent);
+  color: var(--accent);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--card-shadow);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 30;
+  cursor: pointer;
+}
+
+.fav-page__mobile-back .mdi {
+  font-size: 1.2rem;
+}
+
+/* ── Mobile: list layout ──────────────────────────────── */
+@media (max-width: 640px) {
+  :deep(.site-header__search),
+  :deep(.site-header__search-spacer) {
+    display: none;
+  }
+
+  .fav-page__heading {
+    padding: 4px 16px 12px;
+  }
+
+  .fav-page__heading .breadcrumb {
+    display: none;
+  }
+
+  .fav-page__mobile-back {
+    display: inline-flex;
+  }
+
+  .fav-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 0 16px;
+  }
+
+  /* Flat list row with thumbnail */
+  .trading-card {
+    aspect-ratio: unset;
+    min-height: 90px;
+    border-radius: 16px;
+    transform: none !important;
+    will-change: auto;
+    transition: border-color 0.18s ease;
+    background: color-mix(in srgb, var(--bg-card-subtle) 84%, transparent);
+    border: 1px solid var(--border-subtle);
+    box-shadow: none;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    overflow: hidden;
+  }
+
+  .trading-card:active {
+    border-color: color-mix(in srgb, var(--accent) 34%, var(--border-card));
+  }
+
+  /* Thumbnail on the left */
+  .trading-card__bg {
+    position: relative;
+    inset: auto;
+    width: 90px;
+    flex-shrink: 0;
+    background-color: color-mix(in srgb, var(--accent) 30%, transparent);
+    background-size: cover;
+    background-position: center;
+    transition: none;
+  }
+
+  .trading-card__bg--loading {
+    background-image: linear-gradient(
+      140deg,
+      rgba(10, 125, 114, 0.7) 0%,
+      rgba(20, 184, 166, 0.5) 100%
+    );
+  }
+
+  .trading-card__shine {
+    display: none;
+  }
+
+  .trading-card::before {
+    display: none;
+  }
+
+  .trading-card__body {
+    position: static;
+    flex: 1;
+    min-width: 0;
+    padding: 14px 80px 14px 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .trading-card__name {
+    font-size: 0.96rem;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+  }
+
+  .trading-card__county {
+    font-size: 0.84rem;
+    color: var(--text-secondary);
+    margin-bottom: 0;
+  }
+
+  .trading-card__stats {
+    display: none;
+  }
+
+  /* Badge repositioned to right, vertically centered */
+  .trading-card__badge {
+    left: auto;
+    right: 46px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    border-color: color-mix(in srgb, var(--accent) 25%, transparent);
+    color: var(--accent);
+  }
+
+  /* Remove button always visible, vertically centered */
+  .trading-card__remove {
+    top: 50%;
+    right: 12px;
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+    color: var(--text-muted);
+  }
+
+  .trading-card__remove .trading-card__trash-lid {
+    display: none;
+  }
+
+  .trading-card__trash-body {
+    font-size: 1.1rem;
+  }
 }
 </style>

@@ -10,7 +10,8 @@
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('lat:', d.get\\('lat'\\), 'lon:', d.get\\('lon'\\)\\)\")",
       "Bash(ps:*)",
       "Bash(git checkout:*)",
-      "Bash(grep -n \"\\\\.data-card\" /Users/hannahchiu/Documents/atlas/packages/web/src/styles/*.css)"
+      "Bash(grep -n \"\\\\.data-card\" /Users/hannahchiu/Documents/atlas/packages/web/src/styles/*.css)",
+      "Bash(git merge:*)"
     ]
   }
 }

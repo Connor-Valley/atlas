@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import SiteHeader from '../components/SiteHeader.vue';
 import { useAuth } from '../composables/useAuth';
@@ -9,6 +9,7 @@ import { supabase } from '../lib/supabase';
 
 const router = useRouter();
 const { user } = useAuth();
+const isMobile = ref(typeof window !== 'undefined' && window.innerWidth < 640);
 const {
   friends, incomingRequests, outgoingRequests,
   fetchAll, sendFriendRequest, acceptFriendRequest,
@@ -121,6 +122,18 @@ const pendingCount = computed(() => incomingRequests.value.length);
 
 // ── Load ─────────────────────────────────────────────────────
 watch(() => user.value?.id, (id) => { if (id) fetchAll(); }, { immediate: true });
+
+function handleResize() {
+  isMobile.value = window.innerWidth < 640;
+}
+
+onMounted(() => {
+  window.addEventListener('resize', handleResize);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize);
+});
 </script>
 
 <template>
@@ -140,6 +153,17 @@ watch(() => user.value?.id, (id) => { if (id) fetchAll(); }, { immediate: true }
         <span class="mdi mdi-account-group-outline friends-page__title-icon"></span>
         Friends
       </h1>
+      <div v-if="user" class="friends-page__mobile-actions">
+        <button class="friends-toolbar__requests-btn" @click="openRequestsModal">
+          <span class="mdi mdi-account-clock-outline"></span>
+          Requests
+          <span v-if="pendingCount" class="friends-toolbar__badge">{{ pendingCount }}</span>
+        </button>
+        <button class="friends-toolbar__add-btn" @click="openSearchModal">
+          <span class="mdi mdi-account-search-outline"></span>
+          Search users
+        </button>
+      </div>
       <button class="breadcrumb" @click="router.back()">
         <span class="breadcrumb__arr breadcrumb__arr--1 mdi mdi-arrow-left"></span>
         <span class="breadcrumb__text">Back</span>
@@ -222,6 +246,10 @@ watch(() => user.value?.id, (id) => { if (id) fetchAll(); }, { immediate: true }
       </div>
     </div>
 
+    <button class="friends-page__mobile-back" @click="router.back()">
+      <span class="mdi mdi-arrow-left"></span>
+    </button>
+
     <!-- ── Search users modal ────────────────────────────────── -->
     <Teleport to="body">
       <Transition name="industry-modal">
@@ -242,7 +270,7 @@ watch(() => user.value?.id, (id) => { if (id) fetchAll(); }, { immediate: true }
                   v-model="userSearchQuery"
                   class="auth-modal__input search-modal__input"
                   type="text"
-                  placeholder="Search by name or @username…"
+                  :placeholder="isMobile ? 'Name or @user' : 'Search by name or @username…'"
                   autocomplete="off"
                 />
                 <span v-if="userSearchLoading" class="mdi mdi-loading search-modal__input-spin"></span>
@@ -408,6 +436,33 @@ watch(() => user.value?.id, (id) => { if (id) fetchAll(); }, { immediate: true }
 .friends-page__title-icon {
   color: var(--accent);
   font-size: 1.5rem;
+}
+
+.friends-page__mobile-back {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  width: 54px;
+  height: 54px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border-card));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--bg-card) 94%, transparent);
+  color: var(--accent);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--card-shadow);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 30;
+}
+
+.friends-page__mobile-back .mdi {
+  font-size: 1.2rem;
+}
+
+.friends-page__mobile-actions {
+  display: none;
 }
 
 /* ── Toolbar ──────────────────────────────────────────────── */
@@ -1013,6 +1068,19 @@ watch(() => user.value?.id, (id) => { if (id) fetchAll(); }, { immediate: true }
 
 /* ── Responsive ───────────────────────────────────────────── */
 @media (max-width: 640px) {
+  :deep(.site-header__search),
+  :deep(.site-header__search-spacer),
+  :deep(.site-header__search--mobile),
+  :deep(.site-header__search-full),
+  :deep(.site-header__search-pill) {
+    display: none !important;
+  }
+
+  :deep(.site-header) {
+    padding-bottom: 0;
+    margin-bottom: 0;
+  }
+
   .friends-page__heading,
   .friends-toolbar,
   .friends-content {
@@ -1021,16 +1089,133 @@ watch(() => user.value?.id, (id) => { if (id) fetchAll(); }, { immediate: true }
   }
 
   .friends-page__heading {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-top: -10px;
+    gap: 6px;
+  }
+
+  .friends-page__title {
+    font-size: 1.5rem;
+    gap: 8px;
+    line-height: 1;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+  }
+
+  .friends-page__title-icon {
+    font-size: 1.3rem;
   }
 
   .friends-toolbar {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-end;
+    margin-bottom: 16px;
+    margin-top: 0;
   }
 
   .friends-toolbar__search {
-    flex: 1 1 100%;
+    display: none;
+  }
+
+  .friends-page__mobile-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+  }
+
+  .friends-toolbar__actions {
+    display: none;
+  }
+
+  .friends-toolbar__actions {
+    width: auto;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  .friends-toolbar__requests-btn,
+  .friends-toolbar__add-btn {
+    height: 36px;
+    padding: 8px 10px;
+    font-size: 0.76rem;
+    border-radius: 11px;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .friends-toolbar__requests-btn .mdi,
+  .friends-toolbar__add-btn .mdi {
+    font-size: 0.9rem;
+  }
+
+  .friends-page__heading .breadcrumb {
+    display: none;
+  }
+
+  .friends-page__mobile-back {
+    display: inline-flex;
+  }
+
+  .flist__item,
+  .slist__item {
+    align-items: flex-start;
+  }
+
+  .flist__actions,
+  .slist__actions {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .flist__item {
+    flex-direction: column;
+  }
+
+  .flist__actions {
+    width: 100%;
+  }
+
+  .flist__action-btn {
+    flex: 1 1 0;
+    justify-content: center;
+  }
+
+  .slist__item {
+    flex-direction: column;
+  }
+
+  .slist__actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .slist__action-btn,
+  .slist__status {
+    justify-content: center;
+  }
+
+  .search-modal {
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+    min-height: 52vh !important;
+  }
+
+  .search-modal__input {
+    font-size: 0.92rem !important;
+    padding-left: 36px !important;
+    padding-right: 14px !important;
+  }
+
+  .search-modal__input::placeholder {
+    font-size: 0.88rem;
   }
 }
 </style>

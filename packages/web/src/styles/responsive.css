@@ -10,6 +10,7 @@
   .dashboard-panel--housing,
   .dashboard-panel--affordability {
     grid-column: 1;
+    grid-row: auto;
   }
 
   .dashboard-panel--expanded {
@@ -46,7 +47,11 @@
 
 @media (max-width: 640px) {
   .container {
-    padding: 20px 16px 32px;
+    padding: 12px 16px 32px;
+  }
+
+  .hero-section {
+    margin-bottom: 0;
   }
 
   .search-bar {
@@ -56,13 +61,42 @@
 
   .site-header {
     display: flex;
-    flex-direction: column;
-    align-items: stretch;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 12px;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+  }
+
+  .site-header__identity {
+    flex: 0 0 auto;
+    order: 1;
+  }
+
+  .site-header__title {
+    display: none;
+  }
+
+  .site-header__controls {
+    flex: 0 0 auto;
+    margin-left: auto;
+    order: 2;
+    justify-content: flex-end;
+  }
+
+  .site-header__search,
+  .site-header__search-spacer {
+    flex: 1 0 100%;
+    order: 3;
   }
 
   .site-header .search-bar {
     margin-bottom: 0;
+  }
+
+  .user-menu__name,
+  .auth-btn__label {
+    display: none;
   }
 
   .hero-content .search-bar {
@@ -70,10 +104,11 @@
   }
 
   .score-pills {
-    overflow-x: auto;
+    overflow-x: visible;
     flex-wrap: nowrap;
-    padding-bottom: 4px;
-    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0;
+    margin-top: 2px;
+    margin-bottom: 16px;
   }
 
   .score-pills--expanded {
@@ -81,11 +116,40 @@
   }
 
   .score-pills__page-title {
-    margin-left: 0;
+    display: none;
+  }
+
+  /* Hide stat pills on mobile */
+  .score-pills__pills {
+    display: none;
+  }
+
+  .score-pills:not(.score-pills--expanded) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  /* Share + Compare buttons split equally, full width */
+  .score-pills__share-wrap {
     width: 100%;
+    min-width: 0;
+    display: flex;
+    align-self: stretch;
+    margin-left: 0;
+  }
+
+  .score-pills__share-wrap .score-pills__compare-btn,
+  .score-pills > .score-pills__compare-btn {
+    width: 100%;
+    min-height: 48px;
+    justify-content: center;
   }
 
   .score-pills__compare-btn {
+    width: 100%;
+    justify-content: center;
     margin-left: 0;
   }
 
@@ -105,7 +169,12 @@
   }
 
   .compare-view .site-header {
-    grid-template-columns: 1fr;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
   }
 
   .compare-view .site-header__leading {
@@ -113,35 +182,45 @@
   }
 
   .compare-view .site-header__identity {
+    min-width: 0;
     gap: 12px;
   }
 
-  .compare-view__actions {
-    width: 100%;
+  .compare-view .site-header__controls {
+    margin-left: 0;
     justify-content: flex-end;
+    gap: 6px;
   }
 
-  .compare-view__share-wrap,
-  .compare-view__save-wrap {
-    flex: 1 1 0;
+  .compare-view .site-header__title,
+  .compare-view .site-header__slot-actions {
+    display: none;
   }
 
-  .compare-view__share-btn,
-  .compare-view__save-btn {
-    width: 100%;
-    justify-content: center;
+  .compare-view .theme-toggle {
+    flex-shrink: 0;
   }
 
   .compare-ticker {
-    margin-top: 0;
-    padding: 0 12px;
+    display: none;
   }
 
-  .compare-ticker__track {
-    animation: none;
-    padding: 10px 12px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+  .compare-view__setup {
+    display: none;
+  }
+
+  .compare-mobile-summary,
+  .compare-mobile-sheet {
+    display: block;
+  }
+
+  .compare-key-diff,
+  .compare-city-info {
+    display: none;
+  }
+
+  .compare-view__divider {
+    margin-bottom: 28px;
   }
 
   .compare-summary__card,
@@ -157,11 +236,291 @@
     grid-column: 1 / -1;
   }
 
+  .city-exp__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .city-exp__portrait,
+  .city-exp__portrait--loading {
+    padding: 18px 20px;
+    gap: 8px;
+    min-height: 0;
+  }
+
+  .city-exp__portrait-desktop {
+    display: none;
+  }
+
+  .city-exp__portrait-mobile {
+    display: flex;
+    gap: 10px;
+  }
+
+  .city-exp__lead {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  .city-exp__lead--mobile {
+    font-size: 0.96rem;
+    line-height: 1.45;
+  }
+
+  .city-exp__body {
+    font-size: 0.88rem;
+    line-height: 1.55;
+  }
+
+  .city-exp__economy {
+    gap: 8px;
+  }
+
+  .city-exp__airport {
+    margin-top: 8px;
+  }
+
+  .city-exp__economy-mobile-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .city-exp__economy-copy {
+    display: none;
+  }
+
+  .city-exp__mini-stats {
+    gap: 8px;
+  }
+
+  .city-exp__mini-stat {
+    padding-top: 7px;
+  }
+
+  .city-exp__mini-stat-label {
+    font-size: 0.66rem;
+  }
+
+  .city-exp__mini-stat-value {
+    font-size: 0.9rem;
+  }
+
+  .city-exp__grid .bar-list--wide .bar-list__track {
+    width: 130px;
+  }
+
+  .city-exp__grid .bar-list__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 130px 56px;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .city-exp__grid .bar-list__label {
+    min-width: 0;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  .city-exp__grid .bar-list__track {
+    width: 100%;
+  }
+
+  .city-exp__grid .bar-list__value {
+    width: 56px;
+  }
+
   .data-card--wide .data-card__metrics {
     grid-template-columns: 1fr;
   }
 
+  .data-card--wide .data-card__metrics.affordability-card__metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .data-card--wide .data-card__metrics.affordability-card__metrics .affordability-card__metric--status {
+    grid-column: 1 / -1;
+    order: -1;
+  }
+
+  .data-card--wide .data-card__metrics.affordability-card__metrics .affordability-card__metric--rent,
+  .data-card--wide .data-card__metrics.affordability-card__metrics .affordability-card__metric--ratio {
+    grid-column: span 1;
+    min-width: 0;
+  }
+
   .data-card--wide .data-card__bar-row {
     max-width: 100%;
+  }
+
+  .breadcrumb {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 12px;
+    box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--accent) 40%, transparent);
+  }
+
+  .breadcrumb__text,
+  .breadcrumb__arr--2,
+  .breadcrumb__circle {
+    display: none;
+  }
+
+  .breadcrumb__arr {
+    position: static;
+    font-size: 1rem;
+    color: color-mix(in srgb, var(--accent) 78%, white 22%);
+    transform: none;
+    transition: none;
+  }
+
+  .breadcrumb__arr--1 {
+    display: inline-flex;
+  }
+
+  .score-pills--expanded .score-pills__back {
+    display: none;
+  }
+}
+
+@media (max-width: 430px) {
+  .city-exp__community-summary {
+    grid-template-areas:
+      "toggle toggle"
+      "donut narrative";
+    gap: 12px;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .city-exp__community-copy {
+    display: contents;
+  }
+
+  .city-exp__community-toggle {
+    grid-area: toggle;
+    align-self: start;
+    margin-bottom: 0;
+  }
+
+  .city-exp__community-copy .city-exp__panel-narrative {
+    grid-area: narrative;
+    align-self: center;
+  }
+
+  .city-exp__community-subtitle {
+    flex-basis: auto;
+    margin-left: 4px;
+  }
+
+  .city-exp__who-lives-narrative {
+    padding-top: 6px;
+    padding-bottom: 2px;
+  }
+
+  .city-exp__community-donut-wrap {
+    grid-area: donut;
+    justify-self: start;
+  }
+
+  .city-exp__community-donut {
+    width: clamp(104px, 30vw, 120px);
+    height: clamp(104px, 30vw, 120px);
+  }
+
+  .city-exp__community-legend {
+    gap: 8px 12px;
+  }
+
+  .city-exp__community-legend .struct-legend__label,
+  .city-exp__community-legend .struct-legend__pct {
+    font-size: 0.8rem;
+  }
+
+  .city-exp__economy-mobile-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .city-exp__economy-mini {
+    padding: 8px 9px;
+    gap: 8px;
+  }
+
+  .city-exp__arc-svg {
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+  }
+
+  .city-exp__economy-icon {
+    font-size: 1.15rem;
+    flex: 0 0 30px;
+    width: 30px;
+    line-height: 30px;
+  }
+
+  .city-exp__economy-mini-label {
+    font-size: 0.6rem;
+  }
+
+  .city-exp__economy-mini-value {
+    font-size: 0.82rem;
+  }
+
+  .city-exp__grid .bar-list__row {
+    grid-template-columns: minmax(0, 1fr) 118px 52px;
+    gap: 8px;
+  }
+
+  .city-exp__grid .bar-list__label {
+    font-size: 0.78rem;
+  }
+
+  .city-exp__grid .bar-list__value {
+    width: 52px;
+    font-size: 0.78rem;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .data-card:hover {
+    box-shadow: var(--card-shadow);
+    transform: none;
+  }
+
+  .data-card:hover::before {
+    opacity: 0;
+  }
+
+  .metric:hover {
+    background: var(--bg-card-subtle);
+  }
+
+  .section-header[aria-disabled="false"]:hover {
+    background: transparent;
+    color: var(--text-secondary);
+  }
+
+  .section-action:hover {
+    color: var(--text-secondary);
+  }
+
+  .structure-chart__segment:hover {
+    filter: none;
+  }
+
+  .breadcrumb:hover {
+    box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--accent) 40%, transparent);
+    color: color-mix(in srgb, var(--accent) 60%, var(--text-secondary));
+    border-radius: 12px;
+  }
+
+  .breadcrumb:hover .breadcrumb__arr {
+    color: color-mix(in srgb, var(--accent) 78%, white 22%);
   }
 }

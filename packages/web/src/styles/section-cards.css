@@ -222,6 +222,17 @@
   gap: 12px;
 }
 
+.city-exp__portrait-desktop,
+.city-exp__portrait-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.city-exp__portrait-mobile {
+  display: none;
+}
+
 .city-exp__portrait--loading {
   padding: 28px 32px;
 }
@@ -250,6 +261,36 @@
 .city-exp__accent {
   color: var(--accent);
   font-weight: 600;
+}
+
+.city-exp__mini-stats {
+  display: grid;
+  gap: 10px;
+}
+
+.city-exp__mini-stat {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.city-exp__mini-stat-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.city-exp__mini-stat-value {
+  min-width: 0;
+  text-align: right;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
 /* Panel narrative text */
@@ -296,11 +337,30 @@
   margin: 0 0 0 4px;
 }
 
+.city-exp__community-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+}
+
+.city-exp__community-copy {
+  min-width: 0;
+}
+
+.city-exp__community-donut-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
 .city-exp__community-legend {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px 14px;
   align-content: start;
+  margin-top: 12px;
 }
 
 .city-exp__community-legend--single {
@@ -313,7 +373,15 @@
 }
 
 .city-exp__community-legend .struct-legend__item {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) max-content;
+  align-items: start;
   min-width: 0;
+}
+
+.city-exp__community-legend .struct-legend__pct {
+  justify-self: end;
+  white-space: nowrap;
 }
 
 .city-exp__community-chart {
@@ -368,12 +436,71 @@
   flex: 1;
 }
 
+.city-exp__economy-mobile-stats {
+  display: none;
+}
+
+.city-exp__economy-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .city-exp__economy-para {
   font-size: 0.92rem;
   line-height: 1.65;
   color: var(--text-primary);
   opacity: 0.85;
   margin: 0;
+}
+
+.city-exp__economy-mini {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: color-mix(in srgb, var(--bg-card-subtle) 58%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 80%, transparent);
+  border-radius: 14px;
+  padding: 10px 11px;
+}
+
+.city-exp__economy-mini-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.city-exp__economy-mini-value {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.city-exp__economy-mini-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.city-exp__arc-svg {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+}
+
+.city-exp__economy-icon {
+  font-size: 1.3rem;
+  color: var(--accent);
+  opacity: 0.72;
+  flex: 0 0 34px;
+  width: 34px;
+  text-align: center;
+  line-height: 34px;
 }
 
 .city-exp__airport {

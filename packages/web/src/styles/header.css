@@ -99,6 +99,14 @@
   transition: background 0.2s, border-color 0.2s, padding 0.2s ease, min-width 0.2s ease;
 }
 
+.hero-auth__menu-btn:not(.hero-auth__menu-btn--open) {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
 .hero-auth__menu-name {
   white-space: nowrap;
 }
@@ -110,7 +118,7 @@
   padding-left: 14px;
 }
 
-.hero-auth__menu-btn:hover,
+.hero-auth__menu-btn:hover.hero-auth__menu-btn--open,
 .hero-auth__menu-btn--open {
   background: color-mix(in srgb, var(--accent) 10%, var(--bg-card));
   border-color: color-mix(in srgb, var(--accent) 34%, var(--border-card));

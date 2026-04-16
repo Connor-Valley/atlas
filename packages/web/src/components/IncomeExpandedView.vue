@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onUnmounted, ref, watch } from "vue";
 import { fetchDetailedIncome } from "../api/income";
 
 const props = defineProps<{ city: string; state: string }>();
@@ -183,6 +183,16 @@ const loadingEduRows       = [1, 2, 3, 4, 5];
 const loadingIndustryRows    = [1, 2, 3, 4, 5];
 const industryModalOpen      = ref(false);
 const loadingDistRows      = [1, 2, 3, 4];
+
+watch(industryModalOpen, (open) => {
+  if (typeof document === "undefined") return;
+  document.body.classList.toggle("body--scroll-locked", open);
+});
+
+onUnmounted(() => {
+  if (typeof document === "undefined") return;
+  document.body.classList.remove("body--scroll-locked");
+});
 </script>
 
 <template>
@@ -226,13 +236,11 @@ const loadingDistRows      = [1, 2, 3, 4];
       </div>
 
       <div v-if="loading" class="housing-exp__snapshot-skeleton" aria-hidden="true">
-        <div class="housing-exp__snapshot-primary">
+        <div class="housing-exp__snapshot-grid">
           <div v-for="i in 3" :key="i" class="snap-metric snap-metric--primary snap-metric--skeleton">
             <span class="snap-metric__label snap-metric__label--skeleton skeleton-line"></span>
             <span class="snap-metric__value snap-metric__value--skeleton snap-metric__value--skeleton-lg skeleton-line"></span>
           </div>
-        </div>
-        <div class="housing-exp__snapshot-secondary">
           <div v-for="i in 3" :key="i" class="snap-metric snap-metric--secondary snap-metric--skeleton">
             <span class="snap-metric__label snap-metric__label--skeleton skeleton-line"></span>
             <span class="snap-metric__value snap-metric__value--skeleton skeleton-line"></span>
@@ -244,7 +252,7 @@ const loadingDistRows      = [1, 2, 3, 4];
       </div>
 
       <template v-else-if="data">
-        <div class="housing-exp__snapshot-primary">
+        <div class="housing-exp__snapshot-grid">
           <div class="snap-metric snap-metric--primary">
             <span class="snap-metric__label">
               <span class="mdi mdi-home-account snap-metric__icon"></span>Household Income
@@ -263,8 +271,6 @@ const loadingDistRows      = [1, 2, 3, 4];
             </span>
             <span class="snap-metric__value">${{ data.medianRenterIncome.toLocaleString() }}</span>
           </div>
-        </div>
-        <div class="housing-exp__snapshot-secondary">
           <div v-if="data.medianOwnerIncome" class="snap-metric snap-metric--secondary">
             <span class="snap-metric__label">
               <span class="mdi mdi-home-outline snap-metric__icon"></span>Owner Income
@@ -357,32 +363,32 @@ const loadingDistRows      = [1, 2, 3, 4];
     <div v-else-if="data" class="housing-exp__grid">
 
       <!-- Affordability bridge -->
-      <section class="data-card housing-exp__panel housing-exp__panel--compact housing-exp__panel--affordability">
+      <section class="data-card housing-exp__panel housing-exp__panel--compact housing-exp__panel--affordability housing-exp__panel--bridge">
         <div class="housing-exp__panel-head">
           <span class="data-card__icon mdi mdi-scale-balance"></span>
           <span class="housing-exp__panel-title">Affordability Bridge</span>
         </div>
-        <div class="housing-exp__panel-metrics">
-          <div v-if="data.affordabilityMetrics?.incomeNeededForRent" class="metric">
-            <span class="metric__label">Income Needed for Rent</span>
+        <div class="housing-exp__panel-metrics housing-exp__panel-metrics--bridge">
+          <div v-if="data.affordabilityMetrics?.incomeNeededForRent" class="metric bridge-metric">
+            <span class="metric__label">Income Needed</span>
             <span class="metric__value">${{ Math.round(data.affordabilityMetrics.incomeNeededForRent).toLocaleString() }}/yr</span>
           </div>
-          <div v-if="data.affordabilityMetrics?.affordabilityGap != null" class="metric">
+          <div v-if="data.affordabilityMetrics?.affordabilityGap != null" class="metric bridge-metric">
             <span class="metric__label">Affordability Gap</span>
             <span class="metric__value" :class="data.affordabilityMetrics.affordabilityGap >= 0 ? 'positive' : 'status-warning'">
               {{ data.affordabilityMetrics.affordabilityGap >= 0 ? '+' : '−' }}${{ Math.abs(data.affordabilityMetrics.affordabilityGap).toLocaleString() }}
             </span>
           </div>
-          <div v-if="data.affordabilityMetrics?.priceToIncomeRatio != null" class="metric">
-            <span class="metric__label">Price-to-Income Ratio</span>
+          <div v-if="data.affordabilityMetrics?.priceToIncomeRatio != null" class="metric bridge-metric">
+            <span class="metric__label">Price / Income</span>
             <span class="metric__value">{{ data.affordabilityMetrics.priceToIncomeRatio }}×</span>
           </div>
-          <div v-if="data.affordabilityMetrics?.downPaymentSavingsYears != null" class="metric">
-            <span class="metric__label">Years to Save Down Payment</span>
+          <div v-if="data.affordabilityMetrics?.downPaymentSavingsYears != null" class="metric bridge-metric">
+            <span class="metric__label">Down Payment Years</span>
             <span class="metric__value">{{ data.affordabilityMetrics.downPaymentSavingsYears }} yrs</span>
           </div>
         </div>
-        <p class="muted housing-exp__note">30% rent threshold · 20% down · 10% annual savings rate</p>
+        <p class="muted housing-exp__note housing-exp__note--bridge">30% rent threshold · 20% down · 10% annual savings rate</p>
       </section>
 
       <!-- Earnings by education -->
@@ -476,8 +482,13 @@ const loadingDistRows      = [1, 2, 3, 4];
                 <span class="mdi mdi-close"></span>
               </button>
             </div>
-            <div class="bar-list">
-              <div v-for="sector in allIndustries" :key="sector.name" class="bar-list__row">
+            <div class="bar-list bar-list--modal">
+              <div
+                v-for="sector in allIndustries"
+                :key="sector.name"
+                class="bar-list__row"
+                :style="{ '--row-fill': `${sector.barPct}%` }"
+              >
                 <span class="bar-list__label">{{ sector.name }}</span>
                 <div class="bar-list__track">
                   <div class="bar-list__fill" :style="{ width: sector.barPct + '%' }"></div>

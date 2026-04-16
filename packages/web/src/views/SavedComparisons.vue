@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import SiteHeader from '../components/SiteHeader.vue';
 import { useAuth } from '../composables/useAuth';
@@ -75,6 +75,7 @@ interface CardData {
 }
 
 const cardData = ref<Record<string, CardData>>({});
+const openMobileMenuId = ref<string | null>(null);
 
 function cardKey(c: SavedComparison) {
   return c.id;
@@ -129,10 +130,28 @@ function goToComparison(c: SavedComparison) {
   router.push({ name: 'compare', params: { stateA: c.state_a, cityA: c.city_a, stateB: c.state_b, cityB: c.city_b } });
 }
 
+function toggleMobileMenu(e: MouseEvent, comparisonId: string) {
+  e.stopPropagation();
+  openMobileMenuId.value = openMobileMenuId.value === comparisonId ? null : comparisonId;
+}
+
 async function handleRemove(e: MouseEvent, c: SavedComparison) {
   e.stopPropagation();
+  openMobileMenuId.value = null;
   await removeComparison(c.city_a, c.state_a, c.city_b, c.state_b);
 }
+
+function handleDocumentClick() {
+  openMobileMenuId.value = null;
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleDocumentClick, { capture: true });
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleDocumentClick, { capture: true });
+});
 </script>
 
 <template>
@@ -184,6 +203,33 @@ async function handleRemove(e: MouseEvent, c: SavedComparison) {
         @click="goToComparison(c)"
         @mousemove="onMouseMove($event, $event.currentTarget as HTMLElement)"
       >
+        <button
+          v-if="isOwnPage"
+          class="cmp-card__menu-trigger"
+          aria-label="More actions"
+          @click="toggleMobileMenu($event, cardKey(c))"
+        >
+          <span class="cmp-card__menu-dots" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </button>
+
+        <div
+          v-if="isOwnPage && openMobileMenuId === cardKey(c)"
+          class="cmp-card__menu"
+          @click.stop
+        >
+          <button
+            class="cmp-card__menu-delete"
+            @click="handleRemove($event, c)"
+          >
+            <span class="mdi mdi-trash-can-outline"></span>
+            Delete comparison
+          </button>
+        </div>
+
         <!-- Photo thumbnails -->
         <div class="cmp-card__photos">
           <div
@@ -229,6 +275,10 @@ async function handleRemove(e: MouseEvent, c: SavedComparison) {
         </button>
       </div>
     </div>
+
+    <button class="cmp-page__mobile-back" @click="router.back()">
+      <span class="mdi mdi-arrow-left"></span>
+    </button>
   </div>
 </template>
 
@@ -241,6 +291,29 @@ async function handleRemove(e: MouseEvent, c: SavedComparison) {
 .cmp-page {
   min-height: 100vh;
   padding: 0 0 60px;
+}
+
+.cmp-page__mobile-back {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  width: 54px;
+  height: 54px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border-card));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--bg-card) 94%, transparent);
+  color: var(--accent);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--card-shadow);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 30;
+}
+
+.cmp-page__mobile-back .mdi {
+  font-size: 1.2rem;
 }
 
 /* ── Heading ─────────────────────────────────────────── */
@@ -429,11 +502,12 @@ async function handleRemove(e: MouseEvent, c: SavedComparison) {
   margin-top: 12px;
 }
 
-.cmp-card__city-col {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
+  .cmp-card__city-col {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
 
 .cmp-card__city-col--b {
   text-align: right;
@@ -447,7 +521,7 @@ async function handleRemove(e: MouseEvent, c: SavedComparison) {
   letter-spacing: -0.01em;
 }
 
-.cmp-card__city-sub {
+  .cmp-card__city-sub {
   font-size: 0.72rem;
   color: var(--text-secondary);
   font-weight: 500;
@@ -498,5 +572,173 @@ async function handleRemove(e: MouseEvent, c: SavedComparison) {
 
 .cmp-card__remove:hover .cmp-card__trash-lid {
   transform: rotate(-35deg) translateX(-2px) translateY(-2px);
+}
+
+.cmp-card__menu-trigger,
+.cmp-card__menu {
+  display: none;
+}
+
+.cmp-card__menu-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.cmp-card__menu-dots span {
+  width: 3px;
+  height: 3px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+@media (max-width: 640px) {
+  :deep(.site-header__search),
+  :deep(.site-header__search-spacer),
+  :deep(.site-header__search--mobile),
+  :deep(.site-header__search-full),
+  :deep(.site-header__search-pill) {
+    display: none !important;
+  }
+
+  :deep(.site-header) {
+    padding-bottom: 0;
+    margin-bottom: 0;
+  }
+
+  .cmp-page__heading {
+    padding: 0 16px 14px;
+  }
+
+  .cmp-page__heading .breadcrumb {
+    display: none;
+  }
+
+  .cmp-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 0 16px;
+  }
+
+  .cmp-card {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .cmp-card__photos {
+    padding: 18px 12px 12px;
+  }
+
+  .cmp-card__thumb {
+    height: 92px;
+  }
+
+  .cmp-card__vs-sep {
+    padding: 0 6px;
+    font-size: 0.56rem;
+  }
+
+  .cmp-card__stats {
+    padding: 8px 10px 10px;
+    margin-top: 0;
+  }
+
+  .cmp-card__city-name {
+    font-size: 0.8rem;
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .cmp-card__city-sub {
+    font-size: 0.64rem;
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+
+  .cmp-card__city-col {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 6px;
+  }
+
+  .cmp-card__city-col--b {
+    justify-content: flex-end;
+  }
+
+  .cmp-card__city-col--b .cmp-card__city-name,
+  .cmp-card__city-col--b .cmp-card__city-sub {
+    text-align: right;
+  }
+
+  .cmp-card__remove {
+    display: none;
+  }
+
+  .cmp-card__menu-trigger {
+    display: inline-flex;
+    position: absolute;
+    top: -8px;
+    right: 8px;
+    z-index: 5;
+    width: 32px;
+    height: 32px;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    color: rgba(233, 240, 252, 0.88);
+    box-shadow: none;
+  }
+
+  .cmp-card__menu-dots {
+    gap: 4px;
+  }
+
+  .cmp-card__menu {
+    display: flex;
+    position: absolute;
+    top: -8px;
+    right: 8px;
+    z-index: 6;
+    padding-top: 34px;
+  }
+
+  .cmp-card__menu-delete {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid rgba(248, 113, 113, 0.28);
+    border-radius: 12px;
+    background: rgba(60, 18, 18, 0.94);
+    color: #fda4a4;
+    padding: 10px 12px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    box-shadow: 0 14px 30px rgba(8, 10, 20, 0.34);
+  }
+
+  .cmp-card__menu-delete .mdi {
+    font-size: 0.92rem;
+  }
+
+  .cmp-card:hover {
+    box-shadow: none;
+    transform: none;
+  }
+
+  .cmp-card:hover::before {
+    opacity: 0;
+  }
+
+  .cmp-card:hover .cmp-card__thumb {
+    transform: none;
+  }
+
+  .cmp-page__mobile-back {
+    display: inline-flex;
+  }
 }
 </style>

@@ -135,7 +135,7 @@ const buyVsRentInsight = computed(() => {
 });
 
 const insights = computed(() =>
-  [burdenInsight.value, gapInsight.value, buyVsRentInsight.value].filter(Boolean),
+  [burdenInsight.value, buyVsRentInsight.value, gapInsight.value].filter(Boolean),
 );
 
 // ── Status helpers ────────────────────────────────────────────────────────────
@@ -198,7 +198,7 @@ const loadingInsightCards = [1, 2, 3];
       </div>
 
       <div v-if="loading" class="housing-exp__snapshot-skeleton" aria-hidden="true">
-        <div class="housing-exp__snapshot-primary">
+        <div class="housing-exp__snapshot-grid">
           <div class="snap-metric snap-metric--primary snap-metric--skeleton">
             <span class="snap-metric__label snap-metric__label--skeleton skeleton-line"></span>
             <span class="snap-metric__value snap-metric__value--skeleton snap-metric__value--skeleton-lg skeleton-line"></span>
@@ -211,8 +211,6 @@ const loadingInsightCards = [1, 2, 3];
             <span class="snap-metric__label snap-metric__label--skeleton skeleton-line"></span>
             <span class="snap-metric__value snap-metric__value--skeleton snap-metric__value--skeleton-lg skeleton-line"></span>
           </div>
-        </div>
-        <div class="housing-exp__snapshot-secondary">
           <div class="snap-metric snap-metric--secondary snap-metric--skeleton">
             <span class="snap-metric__label snap-metric__label--skeleton skeleton-line"></span>
             <span class="snap-metric__value snap-metric__value--skeleton skeleton-line"></span>
@@ -232,7 +230,7 @@ const loadingInsightCards = [1, 2, 3];
       </div>
 
       <template v-else-if="data">
-        <div class="housing-exp__snapshot-primary">
+        <div class="housing-exp__snapshot-grid">
           <div class="snap-metric snap-metric--primary">
             <span class="snap-metric__label"><span class="mdi mdi-home-outline snap-metric__icon"></span>Median Rent</span>
             <span class="snap-metric__value">${{ data.medianRent.toLocaleString() }}/mo</span>
@@ -245,8 +243,6 @@ const loadingInsightCards = [1, 2, 3];
             <span class="snap-metric__label"><span class="mdi mdi-percent snap-metric__icon"></span>Rent / Income</span>
             <span class="snap-metric__value" :class="statusClass">{{ (data.rentToIncomeRatio * 100).toFixed(1) }}%</span>
           </div>
-        </div>
-        <div class="housing-exp__snapshot-secondary">
           <div v-if="data.medianHomeValue" class="snap-metric snap-metric--secondary">
             <span class="snap-metric__label"><span class="mdi mdi-office-building-outline snap-metric__icon"></span>Median Home Value</span>
             <span class="snap-metric__value">${{ data.medianHomeValue.toLocaleString() }}</span>
@@ -345,32 +341,32 @@ const loadingInsightCards = [1, 2, 3];
       </section>
 
       <!-- Buying vs Renting -->
-      <section class="data-card housing-exp__panel housing-exp__panel--compact">
+      <section class="data-card housing-exp__panel housing-exp__panel--compact housing-exp__panel--buying">
         <div class="housing-exp__panel-head">
           <span class="data-card__icon mdi mdi-home-switch-outline"></span>
           <span class="housing-exp__panel-title">Buying vs Renting</span>
         </div>
-        <div class="housing-exp__panel-metrics">
-          <div v-if="data.medianRent" class="metric">
+        <div class="housing-exp__panel-metrics housing-exp__panel-metrics--buying">
+          <div v-if="data.medianRent" class="metric buying-metric buying-metric--hero">
             <span class="metric__label">Monthly Rent</span>
             <span class="metric__value">${{ data.medianRent.toLocaleString() }}</span>
           </div>
-          <div v-if="data.estimatedMortgage" class="metric">
+          <div v-if="data.estimatedMortgage" class="metric buying-metric">
             <span class="metric__label">Est. Mortgage</span>
             <span class="metric__value">${{ data.estimatedMortgage.toLocaleString() }}</span>
           </div>
-          <div v-if="data.mortgageToIncomeRatio != null" class="metric">
+          <div v-if="data.mortgageToIncomeRatio != null" class="metric buying-metric">
             <span class="metric__label">Mortgage / Income</span>
             <span
               class="metric__value"
               :class="data.mortgageToIncomeRatio > 0.28 ? 'status-warning' : 'positive'"
             >{{ (data.mortgageToIncomeRatio * 100).toFixed(1) }}%</span>
           </div>
-          <div v-if="data.priceToIncomeRatio != null" class="metric">
+          <div v-if="data.priceToIncomeRatio != null" class="metric buying-metric">
             <span class="metric__label">Price-to-Income</span>
             <span class="metric__value">{{ data.priceToIncomeRatio.toFixed(1) }}×</span>
           </div>
-          <div v-if="data.fhfaYoyChange != null" class="metric">
+          <div v-if="data.fhfaYoyChange != null" class="metric buying-metric">
             <span class="metric__label">Home Price YoY</span>
             <span class="metric__value" :class="data.fhfaYoyChange >= 0 ? 'positive' : 'status-warning'">
               {{ formatChange(data.fhfaYoyChange) }}
@@ -381,17 +377,17 @@ const loadingInsightCards = [1, 2, 3];
       </section>
 
       <!-- Income Bridge -->
-      <section class="data-card housing-exp__panel housing-exp__panel--compact">
+      <section class="data-card housing-exp__panel housing-exp__panel--compact housing-exp__panel--income-bridge">
         <div class="housing-exp__panel-head">
           <span class="data-card__icon mdi mdi-bridge"></span>
           <span class="housing-exp__panel-title">Income Bridge</span>
         </div>
-        <div class="housing-exp__panel-metrics">
-          <div v-if="data.incomeNeededForRent" class="metric">
+        <div class="housing-exp__panel-metrics housing-exp__panel-metrics--income-bridge">
+          <div v-if="data.incomeNeededForRent" class="metric income-bridge-metric">
             <span class="metric__label">Income Needed for Rent</span>
             <span class="metric__value">${{ data.incomeNeededForRent.toLocaleString() }}/yr</span>
           </div>
-          <div v-if="data.affordabilityGap != null" class="metric">
+          <div v-if="data.affordabilityGap != null" class="metric income-bridge-metric">
             <span class="metric__label">Renter Income Gap</span>
             <span
               class="metric__value"
@@ -400,11 +396,11 @@ const loadingInsightCards = [1, 2, 3];
               {{ data.affordabilityGap >= 0 ? '+' : '' }}${{ Math.abs(data.affordabilityGap).toLocaleString() }}/yr
             </span>
           </div>
-          <div v-if="data.incomeNeededForMortgage != null" class="metric">
+          <div v-if="data.incomeNeededForMortgage != null" class="metric income-bridge-metric">
             <span class="metric__label">Income for Mortgage</span>
             <span class="metric__value">${{ data.incomeNeededForMortgage.toLocaleString() }}/yr</span>
           </div>
-          <div v-if="data.downPaymentSavingsYears != null" class="metric">
+          <div v-if="data.downPaymentSavingsYears != null" class="metric income-bridge-metric">
             <span class="metric__label">Years to Save Down Payment</span>
             <span class="metric__value">{{ data.downPaymentSavingsYears }} yrs</span>
           </div>
