@@ -64,6 +64,9 @@ let requestToken = 0;
 
 const hasCityB = computed(() => Boolean(props.stateB && props.cityB));
 const compareReady = computed(() => Boolean(props.stateA && props.cityA && props.stateB && props.cityB));
+const mobileDraftHasTwoCities = computed(() =>
+  Boolean(mobileDraft.value.stateA && mobileDraft.value.cityA && mobileDraft.value.stateB && mobileDraft.value.cityB),
+);
 const mobileDraftDirty = computed(() =>
   mobileDraft.value.stateA !== props.stateA ||
   mobileDraft.value.cityA !== props.cityA ||
@@ -171,7 +174,7 @@ const mobileCityCards = computed(() => [
   },
 ]);
 const mobileComparisonCta = computed(() =>
-  !mobileDraft.value.stateB || !mobileDraft.value.cityB ? "Add comparison city" : "Update comparison",
+  compareReady.value && mobileDraftHasTwoCities.value ? "Update comparison" : "Compare",
 );
 const mobileSheetMaxLift = computed(() => Math.min(280, Math.max(118, mobileKeyboardInset.value + 84)));
 const mobileSheetLift = computed(() => Math.max(0, -mobileSheetTranslateY.value));

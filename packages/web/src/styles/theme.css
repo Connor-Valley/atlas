@@ -63,6 +63,20 @@
     inset -0.78em -0.18em 0 0 color-mix(in srgb, #f8fafc 92%, var(--accent) 8%);
 }
 
+.theme-toggle-mobile {
+  display: none;
+}
+
+.theme-toggle-mobile--light {
+  color: #111318;
+  border-color: color-mix(in srgb, #c47a12 34%, var(--border-card));
+}
+
+.theme-toggle-mobile--dark {
+  color: #b8c7ff;
+  border-color: color-mix(in srgb, #b8c7ff 34%, var(--border-card));
+}
+
 .site-header .theme-toggle {
   position: static;
   inset: auto;
@@ -111,6 +125,74 @@
   box-shadow:
     0 1px 3px rgba(0, 0, 0, 0.22),
     inset -0.38em -0.08em 0 0 color-mix(in srgb, #f8fafc 92%, var(--accent) 8%);
+}
+
+@media (max-width: 640px) {
+  .site-header .theme-toggle--switch {
+    display: none;
+  }
+
+  .site-header .theme-toggle-mobile {
+    display: inline-flex;
+  }
+}
+
+.site-header .theme-toggle-mobile {
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  flex: 0 0 auto;
+  align-self: center;
+  background: transparent;
+  border: 1.5px solid currentColor;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.site-header .theme-toggle-mobile:hover {
+  border-color: currentColor;
+}
+
+.site-header .theme-toggle-mobile:active {
+  transform: scale(0.96);
+}
+
+.site-header .theme-toggle-mobile:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 34%, transparent);
+  outline-offset: 3px;
+}
+
+.site-header .theme-toggle-mobile__icon {
+  font-size: 17px;
+  line-height: 1;
+  transform: rotate(28deg);
+}
+
+.site-header .theme-toggle-mobile--dark .theme-toggle-mobile__icon {
+  transform: translate(-1.5px, 0) rotate(28deg);
+}
+
+.site-header .theme-toggle-mobile--light {
+  color: #111318;
+  border-color: #111318;
+}
+
+.site-header .theme-toggle-mobile--dark {
+  color: #ffffff;
+  border-color: #ffffff;
+}
+
+@media (max-width: 400px) {
+  .site-header .theme-toggle-mobile {
+    width: 30px;
+    height: 30px;
+  }
 }
 
 /* =====================

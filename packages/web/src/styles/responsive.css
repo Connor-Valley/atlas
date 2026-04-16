@@ -388,6 +388,59 @@
 }
 
 @media (max-width: 430px) {
+  .city-exp__community-summary {
+    grid-template-areas:
+      "toggle toggle"
+      "donut narrative";
+    gap: 12px;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .city-exp__community-copy {
+    display: contents;
+  }
+
+  .city-exp__community-toggle {
+    grid-area: toggle;
+    align-self: start;
+    margin-bottom: 0;
+  }
+
+  .city-exp__community-copy .city-exp__panel-narrative {
+    grid-area: narrative;
+    align-self: center;
+  }
+
+  .city-exp__community-subtitle {
+    flex-basis: auto;
+    margin-left: 4px;
+  }
+
+  .city-exp__who-lives-narrative {
+    padding-top: 6px;
+    padding-bottom: 2px;
+  }
+
+  .city-exp__community-donut-wrap {
+    grid-area: donut;
+    justify-self: start;
+  }
+
+  .city-exp__community-donut {
+    width: clamp(104px, 30vw, 120px);
+    height: clamp(104px, 30vw, 120px);
+  }
+
+  .city-exp__community-legend {
+    gap: 8px 12px;
+  }
+
+  .city-exp__community-legend .struct-legend__label,
+  .city-exp__community-legend .struct-legend__pct {
+    font-size: 0.8rem;
+  }
+
   .city-exp__economy-mobile-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;

@@ -337,11 +337,30 @@
   margin: 0 0 0 4px;
 }
 
+.city-exp__community-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+}
+
+.city-exp__community-copy {
+  min-width: 0;
+}
+
+.city-exp__community-donut-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
 .city-exp__community-legend {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px 14px;
   align-content: start;
+  margin-top: 12px;
 }
 
 .city-exp__community-legend--single {
@@ -354,7 +373,15 @@
 }
 
 .city-exp__community-legend .struct-legend__item {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) max-content;
+  align-items: start;
   min-width: 0;
+}
+
+.city-exp__community-legend .struct-legend__pct {
+  justify-self: end;
+  white-space: nowrap;
 }
 
 .city-exp__community-chart {

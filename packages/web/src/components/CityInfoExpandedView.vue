@@ -351,7 +351,7 @@ const politicsNarrative = computed(() => {
   const [republican, democratic, thirdParty] = politicsSegments.value;
   const electionDate = politicsElectionYear.value;
   if (!republican || !democratic || !thirdParty) return null;
-  return `In the ${electionDate} Presidental Election, Republican candidates received ${republican.pct}% of votes here, Democrats received ${democratic.pct}%, and Third Party / Independent candidates received ${thirdParty.pct}%.`;
+  return `In the ${electionDate} Presidential Election, Republican candidates received ${republican.pct}% of votes here, Democrats received ${democratic.pct}%, and Third Party / Independent candidates received ${thirdParty.pct}%.`;
 });
 
 const activeWhoLivesHereSegments = computed(() =>
@@ -370,7 +370,7 @@ const whoLivesHereNarrative = computed(() => {
 const whoLivesHereSubtitle = computed(() =>
   whoLivesHereView.value === 'age'
     ? 'Age breakdown across all residents'
-    : `${politicsElectionYear.value} Presidental Election${politicsSourceLabel.value ? ` · ${politicsSourceLabel.value}` : ''}`,
+    : politicsSourceLabel.value ?? 'Election result',
 );
 
 const hasPoliticsData = computed(() => politicsSegments.value.length > 0);
@@ -411,8 +411,8 @@ const activeCommunitySegments = computed(() =>
 
 const communitySubtitle = computed(() =>
   communityView.value === 'race'
-    ? 'Race breakdown across all residents'
-    : 'Latino/Hispanic ethnicity across all residents',
+    ? 'Race breakdown'
+    : 'Latino/Hispanic ethnicity',
 );
 
 const communityNarrative = computed(() => {
@@ -573,7 +573,7 @@ const commuteBars = computed(() => {
               <span class="city-exp__community-subtitle">{{ whoLivesHereSubtitle }}</span>
             </div>
             <p v-else class="city-exp__community-subtitle">{{ whoLivesHereSubtitle }}</p>
-            <p v-if="whoLivesHereNarrative" class="city-exp__panel-narrative">{{ whoLivesHereNarrative }}</p>
+            <p v-if="whoLivesHereNarrative" class="city-exp__panel-narrative city-exp__who-lives-narrative">{{ whoLivesHereNarrative }}</p>
             <div class="struct-donut-wrap" style="margin-top: 12px;">
               <svg viewBox="0 0 120 120" class="struct-donut" aria-hidden="true">
                 <circle cx="60" cy="60" r="45" fill="none" stroke="var(--border-card)" stroke-width="20"/>
@@ -745,42 +745,46 @@ const commuteBars = computed(() => {
               <span class="data-card__icon mdi mdi-earth"></span>
               <span class="housing-exp__panel-title">Community</span>
             </div>
-            <div class="city-exp__community-toggle" role="tablist" aria-label="Community demographic view">
-              <button
-                type="button"
-                class="city-exp__community-chip"
-                :class="{ 'city-exp__community-chip--active': communityView === 'race' }"
-                @click="communityView = 'race'"
-              >Race</button>
-              <button
-                type="button"
-                class="city-exp__community-chip"
-                :class="{ 'city-exp__community-chip--active': communityView === 'ethnicity' }"
-                @click="communityView = 'ethnicity'"
-              >Ethnicity</button>
-              <span class="city-exp__community-subtitle">{{ communitySubtitle }}</span>
-            </div>
-            <p v-if="communityNarrative" class="city-exp__panel-narrative">{{ communityNarrative }}</p>
-            <div class="struct-donut-wrap city-exp__community-chart" style="margin-top: 12px;">
-              <svg viewBox="0 0 120 120" class="struct-donut city-exp__community-donut" aria-hidden="true">
-                <circle cx="60" cy="60" r="45" fill="none" stroke="var(--border-card)" stroke-width="20"/>
-                <circle
-                  v-for="seg in activeCommunitySegments" :key="seg.label"
-                  cx="60" cy="60" r="45" fill="none"
-                  :stroke="seg.color" stroke-width="20" stroke-linecap="butt"
-                  :stroke-dasharray="`${seg.dash} ${DONUT_C}`"
-                  :stroke-dashoffset="seg.dashOffset"
-                  @mouseenter="e => showDonutTooltip(e, seg.label, seg.color)"
-                  @mouseleave="hideTooltip"
-                  style="transform:rotate(-90deg);transform-origin:60px 60px;"
-                />
-              </svg>
-              <div class="struct-legend struct-legend--vertical city-exp__community-legend" :class="communityView === 'ethnicity' ? 'city-exp__community-legend--single' : 'city-exp__community-legend--col-flow'">
-                <div v-for="seg in activeCommunitySegments" :key="seg.label" class="struct-legend__item">
-                  <span class="struct-legend__dot" :style="{background:seg.color}"></span>
-                  <span class="struct-legend__label">{{ seg.label }}</span>
-                  <span class="struct-legend__pct">{{ seg.pct }}%</span>
+            <div class="city-exp__community-summary">
+              <div class="city-exp__community-copy">
+                <div class="city-exp__community-toggle" role="tablist" aria-label="Community demographic view">
+                  <button
+                    type="button"
+                    class="city-exp__community-chip"
+                    :class="{ 'city-exp__community-chip--active': communityView === 'race' }"
+                    @click="communityView = 'race'"
+                  >Race</button>
+                  <button
+                    type="button"
+                    class="city-exp__community-chip"
+                    :class="{ 'city-exp__community-chip--active': communityView === 'ethnicity' }"
+                    @click="communityView = 'ethnicity'"
+                  >Ethnicity</button>
+                  <span class="city-exp__community-subtitle">{{ communitySubtitle }}</span>
                 </div>
+                <p v-if="communityNarrative" class="city-exp__panel-narrative">{{ communityNarrative }}</p>
+              </div>
+              <div class="city-exp__community-donut-wrap">
+                <svg viewBox="0 0 120 120" class="struct-donut city-exp__community-donut" aria-hidden="true">
+                  <circle cx="60" cy="60" r="45" fill="none" stroke="var(--border-card)" stroke-width="20"/>
+                  <circle
+                    v-for="seg in activeCommunitySegments" :key="seg.label"
+                    cx="60" cy="60" r="45" fill="none"
+                    :stroke="seg.color" stroke-width="20" stroke-linecap="butt"
+                    :stroke-dasharray="`${seg.dash} ${DONUT_C}`"
+                    :stroke-dashoffset="seg.dashOffset"
+                    @mouseenter="e => showDonutTooltip(e, seg.label, seg.color)"
+                    @mouseleave="hideTooltip"
+                    style="transform:rotate(-90deg);transform-origin:60px 60px;"
+                  />
+                </svg>
+              </div>
+            </div>
+            <div class="struct-legend struct-legend--vertical city-exp__community-legend" :class="communityView === 'ethnicity' ? 'city-exp__community-legend--single' : 'city-exp__community-legend--col-flow'">
+              <div v-for="seg in activeCommunitySegments" :key="seg.label" class="struct-legend__item">
+                <span class="struct-legend__dot" :style="{background:seg.color}"></span>
+                <span class="struct-legend__label">{{ seg.label }}</span>
+                <span class="struct-legend__pct">{{ seg.pct }}%</span>
               </div>
             </div>
           </section>

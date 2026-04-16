@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { cityLabel, type CompareSectionData } from "../lib/compare";
+import { cityLabel, slugToDisplay, type CompareSectionData } from "../lib/compare";
 
 const props = defineProps<{
   section: CompareSectionData;
@@ -49,8 +49,12 @@ function toggleMobileFace() {
   activeMobileFace.value = activeMobileFace.value === "a" ? "b" : "a";
 }
 
-function mobileFaceCity(side: "a" | "b") {
-  return side === "a" ? cityALabel.value : cityBLabel.value;
+function setMobileFace(side: "a" | "b") {
+  activeMobileFace.value = side;
+}
+
+function mobileCitySwitchLabel(side: "a" | "b") {
+  return side === "a" ? slugToDisplay(props.cityA) : slugToDisplay(props.cityB);
 }
 
 function mobileFaceSummary(side: "a" | "b") {
@@ -120,24 +124,47 @@ watch(activeMobileFace, () => {
         <article
           ref="mobileFrontRef"
           class="compare-section__mobile-face compare-section__mobile-face--front"
-          role="button"
-          tabindex="0"
-          aria-label="Show other city"
-          @click="toggleMobileFace"
-          @keydown.enter.prevent="toggleMobileFace"
-          @keydown.space.prevent="toggleMobileFace"
         >
           <div class="compare-section__mobile-header">
             <div class="compare-section__mobile-title-wrap">
               <span class="mdi compare-section__icon" :class="section.icon"></span>
               <div>
                 <h2 class="compare-section__title">{{ section.title }}</h2>
-                <p class="compare-section__mobile-city">{{ mobileFaceCity('a') }}</p>
               </div>
             </div>
-            <button class="compare-section__mobile-flip-btn" @click.stop="toggleMobileFace" aria-label="Show other city">
-              <span class="compare-section__mobile-flip-indicator compare-section__mobile-flip-indicator--a">A</span>
-              <span class="mdi mdi-autorenew"></span>
+          </div>
+          <div class="compare-section__mobile-switcher" role="tablist" aria-label="Choose city view">
+            <button
+              class="compare-section__mobile-switcher-btn"
+              :class="{ 'compare-section__mobile-switcher-btn--active': activeMobileFace === 'a' }"
+              type="button"
+              role="tab"
+              :aria-selected="activeMobileFace === 'a'"
+              @click="setMobileFace('a')"
+            >
+              <span
+                class="compare-section__mobile-flip-indicator"
+                :class="`compare-section__mobile-flip-indicator--a`"
+              >
+                A
+              </span>
+              <span class="compare-section__mobile-switcher-copy">{{ mobileCitySwitchLabel('a') }}</span>
+            </button>
+            <button
+              class="compare-section__mobile-switcher-btn"
+              :class="{ 'compare-section__mobile-switcher-btn--active': activeMobileFace === 'b' }"
+              type="button"
+              role="tab"
+              :aria-selected="activeMobileFace === 'b'"
+              @click="setMobileFace('b')"
+            >
+              <span
+                class="compare-section__mobile-flip-indicator"
+                :class="`compare-section__mobile-flip-indicator--b`"
+              >
+                B
+              </span>
+              <span class="compare-section__mobile-switcher-copy">{{ mobileCitySwitchLabel('b') }}</span>
             </button>
           </div>
 
@@ -194,24 +221,47 @@ watch(activeMobileFace, () => {
         <article
           ref="mobileBackRef"
           class="compare-section__mobile-face compare-section__mobile-face--back"
-          role="button"
-          tabindex="0"
-          aria-label="Show other city"
-          @click="toggleMobileFace"
-          @keydown.enter.prevent="toggleMobileFace"
-          @keydown.space.prevent="toggleMobileFace"
         >
           <div class="compare-section__mobile-header">
             <div class="compare-section__mobile-title-wrap">
               <span class="mdi compare-section__icon" :class="section.icon"></span>
               <div>
                 <h2 class="compare-section__title">{{ section.title }}</h2>
-                <p class="compare-section__mobile-city">{{ mobileFaceCity('b') }}</p>
               </div>
             </div>
-            <button class="compare-section__mobile-flip-btn" @click.stop="toggleMobileFace" aria-label="Show other city">
-              <span class="compare-section__mobile-flip-indicator compare-section__mobile-flip-indicator--b">B</span>
-              <span class="mdi mdi-autorenew"></span>
+          </div>
+          <div class="compare-section__mobile-switcher" role="tablist" aria-label="Choose city view">
+            <button
+              class="compare-section__mobile-switcher-btn"
+              :class="{ 'compare-section__mobile-switcher-btn--active': activeMobileFace === 'a' }"
+              type="button"
+              role="tab"
+              :aria-selected="activeMobileFace === 'a'"
+              @click="setMobileFace('a')"
+            >
+              <span
+                class="compare-section__mobile-flip-indicator"
+                :class="`compare-section__mobile-flip-indicator--a`"
+              >
+                A
+              </span>
+              <span class="compare-section__mobile-switcher-copy">{{ mobileCitySwitchLabel('a') }}</span>
+            </button>
+            <button
+              class="compare-section__mobile-switcher-btn"
+              :class="{ 'compare-section__mobile-switcher-btn--active': activeMobileFace === 'b' }"
+              type="button"
+              role="tab"
+              :aria-selected="activeMobileFace === 'b'"
+              @click="setMobileFace('b')"
+            >
+              <span
+                class="compare-section__mobile-flip-indicator"
+                :class="`compare-section__mobile-flip-indicator--b`"
+              >
+                B
+              </span>
+              <span class="compare-section__mobile-switcher-copy">{{ mobileCitySwitchLabel('b') }}</span>
             </button>
           </div>
 
@@ -681,21 +731,23 @@ watch(activeMobileFace, () => {
   }
 
   .compare-section {
-    padding: 20px 16px;
+    padding: 14px 16px 16px;
     border-radius: 20px;
   }
 
   .compare-section__mobile-flip {
     position: relative;
-    perspective: 1400px;
+    overflow: hidden;
   }
 
   .compare-section__mobile-flip--show-b .compare-section__mobile-face--front {
-    transform: rotateY(180deg);
+    opacity: 0;
+    pointer-events: none;
   }
 
   .compare-section__mobile-flip--show-b .compare-section__mobile-face--back {
-    transform: rotateY(0deg);
+    opacity: 1;
+    pointer-events: auto;
   }
 
   .compare-section__mobile-face {
@@ -703,71 +755,104 @@ watch(activeMobileFace, () => {
     inset: 0;
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-    transform-style: preserve-3d;
-    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    gap: 8px;
+    transition: opacity 0s linear;
   }
 
   .compare-section__mobile-face--front {
-    transform: rotateY(0deg);
+    opacity: 1;
+    pointer-events: auto;
   }
 
   .compare-section__mobile-face--back {
-    transform: rotateY(-180deg);
+    opacity: 0;
+    pointer-events: none;
   }
 
   .compare-section__mobile-header {
     display: flex;
     align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
+    gap: 10px;
   }
 
   .compare-section__mobile-title-wrap {
     display: flex;
     align-items: flex-start;
-    gap: 10px;
+    gap: 8px;
     min-width: 0;
   }
 
-  .compare-section__mobile-city {
-    margin: 4px 0 0;
-    font-size: clamp(0.74rem, 2.5vw, 0.82rem);
-    color: var(--text-secondary);
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+  .compare-section__mobile-switcher {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    padding: 2px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--bg-card-subtle) 86%, transparent);
+    border: 1px solid color-mix(in srgb, var(--border-card) 72%, transparent);
   }
 
-  .compare-section__mobile-flip-btn {
+  .compare-section__mobile-switcher::before {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: calc(50% - 2px);
+    height: calc(100% - 4px);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--bg-card) 92%, white 8%);
+    border: 1px solid color-mix(in srgb, var(--border-card) 88%, transparent);
+    box-sizing: border-box;
+    transform: translateX(0);
+    transition: transform 0.68s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+  }
+
+  .compare-section__mobile-flip--show-b .compare-section__mobile-switcher::before {
+    transform: translateX(100%);
+  }
+
+  .compare-section__mobile-switcher-btn {
+    position: relative;
+    z-index: 1;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    min-width: 62px;
-    height: 44px;
-    padding: 0 12px;
-    border-radius: 14px;
-    border: 1px solid var(--border-card);
-    background: color-mix(in srgb, var(--bg-card) 84%, transparent);
+    gap: 6px;
+    min-width: 0;
+    height: 34px;
+    padding: 0 8px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: transparent;
     color: var(--text-secondary);
-    flex-shrink: 0;
+    transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
   }
 
-  .compare-section__mobile-flip-btn .mdi {
-    font-size: 1.15rem;
+  .compare-section__mobile-switcher-btn--active {
+    color: var(--text-primary);
+  }
+
+  .compare-section__mobile-switcher-copy {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-primary);
   }
 
   .compare-section__mobile-flip-indicator {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 18px;
-    height: 18px;
+    width: 14px;
+    height: 14px;
     border-radius: 999px;
     border: 1px solid currentColor;
-    font-size: 0.68rem;
+    font-size: 0.56rem;
     font-weight: 800;
     line-height: 1;
     flex-shrink: 0;
@@ -790,6 +875,36 @@ watch(activeMobileFace, () => {
     border-radius: 18px;
     background: color-mix(in srgb, var(--bg-card-subtle) 86%, transparent);
     border: 1px solid color-mix(in srgb, var(--border-card) 72%, transparent);
+  }
+
+  .compare-section__mobile-summary,
+  .compare-section__mobile-metrics {
+    transition: transform 0.68s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.52s ease;
+    will-change: transform, opacity;
+  }
+
+  .compare-section__mobile-face--front .compare-section__mobile-summary,
+  .compare-section__mobile-face--front .compare-section__mobile-metrics {
+    transform: translateX(0);
+    opacity: 1;
+  }
+
+  .compare-section__mobile-face--back .compare-section__mobile-summary,
+  .compare-section__mobile-face--back .compare-section__mobile-metrics {
+    transform: translateX(28px);
+    opacity: 0.08;
+  }
+
+  .compare-section__mobile-flip--show-b .compare-section__mobile-face--front .compare-section__mobile-summary,
+  .compare-section__mobile-flip--show-b .compare-section__mobile-face--front .compare-section__mobile-metrics {
+    transform: translateX(-28px);
+    opacity: 0.08;
+  }
+
+  .compare-section__mobile-flip--show-b .compare-section__mobile-face--back .compare-section__mobile-summary,
+  .compare-section__mobile-flip--show-b .compare-section__mobile-face--back .compare-section__mobile-metrics {
+    transform: translateX(0);
+    opacity: 1;
   }
 
   .compare-section__mobile-summary-row {
