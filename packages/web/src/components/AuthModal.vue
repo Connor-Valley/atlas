@@ -24,7 +24,7 @@ const showPasswordLocked = ref(false);
 const showPassword = computed(() => showPasswordHover.value || showPasswordLocked.value);
 const captchaToken = ref<string | null>(null);
 const captchaKey = ref(0);
-const captchaSiteKey = (import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined)?.trim() ?? '';
+const turnstileSiteKey = (import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined)?.trim() ?? '';
 
 const isRegister = computed(() => activeMode.value === 'register');
 const modalTitle = computed(() => {
@@ -51,7 +51,7 @@ function resetRegisterFlow() {
 
 async function handleSubmit() {
   error.value = null;
-  if (captchaSiteKey && !captchaToken.value) {
+  if (turnstileSiteKey && !captchaToken.value) {
     error.value = 'Please complete the CAPTCHA.';
     return;
   }
@@ -219,13 +219,13 @@ function goBackToRegisterDetails() {
             </div>
 
             <div
-              v-if="captchaSiteKey && (!isRegister || registerStep === 'details')"
+              v-if="turnstileSiteKey && (!isRegister || registerStep === 'details')"
               class="auth-modal__field auth-modal__field--captcha"
             >
               <label class="auth-modal__label">Verification</label>
               <TurnstileWidget
                 :key="captchaKey"
-                :site-key="captchaSiteKey"
+                :site-key="turnstileSiteKey"
                 theme="dark"
                 @verified="captchaToken = $event"
                 @expired="captchaToken = null"
