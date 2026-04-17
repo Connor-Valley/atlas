@@ -1,23 +1,29 @@
 :root {
   /* === Backgrounds === */
-  --bg-main: #F4F2ED;
-  --bg-card: #FFFFFF;
-  --bg-card-subtle: #F8F7F5;
-  --bg-input: rgba(0, 0, 0, 0.04);
+  --bg-main: #F5F0E8;
+  --bg-card: #EDE6D8;
+  --bg-card-inner: #D8CEBC;
+  --bg-card-subtle: #EDE6D8;
+  --bg-input: rgba(237, 232, 224, 0.08);
 
   /* === Text === */
-  --text-primary: #1a1a1a;
-  --text-secondary: #6B7280;
-  --text-muted: #9CA3AF;
+  --text-primary: #2C2218;
+  --text-secondary: #8A7A6A;
+  --text-muted: #A89880;
 
   /* === Borders === */
-  --border-subtle: rgba(0, 0, 0, 0.07);
-  --border-card: rgba(0, 0, 0, 0.09);
+  --border-color: #CFC5B0;
+  --border-subtle: #CFC5B0;
+  --border-card: #CFC5B0;
 
-  /* === Accent (teal) === */
-  --accent: #14B8A6;
-  --accent-hover: #0d9488;
-  --accent-light: rgba(20, 184, 166, 0.08);
+  /* === Accent (sandy clay) === */
+  --accent: #A0522D;
+  --accent-hover: #B5622F;
+  --accent-light: #A0522D1A;
+  --accent-soft: #B4A292;
+  --accent-soft-light: #B4A2921A;
+  --city-a: #5B8DB8;
+  --city-b: #7A9E7E;
 
   /* === Shadows === */
   --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.07), 0 4px 14px rgba(0, 0, 0, 0.06);
@@ -25,7 +31,7 @@
   --card-shadow-hover: 0 8px 28px rgba(0, 0, 0, 0.13), 0 4px 10px rgba(0, 0, 0, 0.07);
 
   /* === Progress bar === */
-  --progress-bg: #E5E7EB;
+  --progress-bg: #CFC5B0;
 
   /* === Status === */
   --positive: #10B981;
@@ -34,26 +40,35 @@
   --danger: #EF4444;
 
   /* === Logo === */
-  --logo-gradient: linear-gradient(135deg, #0d9488 0%, #14B8A6 60%, #2dd4bf 100%);
+  --logo-gradient: linear-gradient(135deg, var(--accent) 0%, var(--accent) 60%, var(--accent) 100%);
 }
 
 /* =====================
    DARK MODE VARIABLES
 ===================== */
 html.dark {
-  --bg-main: #111318;
-  --bg-card: #1a1d27;
-  --bg-card-subtle: #14161e;
-  --bg-input: rgba(255, 255, 255, 0.06);
-  --text-primary: #F1F5F9;
-  --text-secondary: #94A3B8;
-  --text-muted: #64748B;
-  --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-card: rgba(255, 255, 255, 0.1);
+  --border-color: #332E28;
+  --bg-main: #131110;
+  --bg-card: #272320;
+  --bg-card-inner: #1A1815;
+  --bg-card-subtle: #1E1C18;
+  --bg-input: rgba(237, 232, 224, 0.08);
+  --text-primary: #F0E8DC;
+  --text-secondary: #7A6E62;
+  --text-muted: #5A5248;
+  --border-subtle: #332E28;
+  --border-card: #332E28;
+  --accent: #C47A5A;
+  --accent-hover: #D4896A;
+  --accent-light: #C47A5A1A;
+  --accent-soft: #6D6258;
+  --accent-soft-light: #6D62581A;
+  --city-a: #5B8DB8;
+  --city-b: #7A9E7E;
   --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 4px 14px rgba(0, 0, 0, 0.35);
   --card-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
   --card-shadow-hover: 0 8px 28px rgba(0, 0, 0, 0.55), 0 4px 10px rgba(0, 0, 0, 0.35);
-  --progress-bg: #2D3748;
+  --progress-bg: #332E28;
   --positive: #68D391;
   --caution: #FCD34D;
   --warning: #FB923C;

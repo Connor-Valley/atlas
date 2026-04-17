@@ -677,6 +677,7 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+/* TODO(color-tokens): This file still contains hardcoded colors outside shared CSS variables. Keep them unchanged during the token refactor. */
 :deep(.site-header) {
   margin-bottom: 0;
   padding-bottom: 8px;
@@ -769,13 +770,11 @@ onBeforeUnmount(() => {
 }
 
 .profile-card {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--bg-card) 92%, transparent), var(--bg-card)),
-    radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 12%, transparent), transparent 42%);
-  border: 1px solid var(--border-card);
+  background: color-mix(in srgb, var(--bg-card) 98%, var(--bg-main) 2%);
+  border: 1px solid color-mix(in srgb, var(--border-card) 94%, var(--accent) 6%);
   border-radius: 22px;
   padding: 24px;
-  box-shadow: var(--card-shadow);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
 }
 
 .profile-card--hero {
@@ -846,9 +845,9 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 96%, var(--accent) 4%);
   border-radius: 14px;
-  background: color-mix(in srgb, var(--bg-card-subtle) 84%, transparent);
+  background: color-mix(in srgb, var(--bg-main) 80%, var(--bg-card) 20%);
   padding: 10px 16px;
   color: var(--text-secondary);
   font: inherit;
@@ -922,12 +921,10 @@ onBeforeUnmount(() => {
   z-index: 12;
   width: min(340px, calc(100vw - 32px));
   padding: 10px;
-  border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border-card));
+  border: 1px solid color-mix(in srgb, var(--accent) 8%, var(--border-card));
   border-radius: 18px;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--bg-card) 96%, transparent), var(--bg-card)),
-    radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 10%, transparent), transparent 45%);
-  box-shadow: var(--card-shadow-md);
+  background: color-mix(in srgb, var(--bg-card) 97%, var(--bg-main) 3%);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.24);
   display: grid;
   gap: 8px;
 }
@@ -940,10 +937,10 @@ onBeforeUnmount(() => {
 }
 
 .profile-stat {
-  border: 1px solid var(--border-subtle);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 97%, var(--accent) 3%);
   border-radius: 16px;
   padding: 18px;
-  background: color-mix(in srgb, var(--bg-card-subtle) 82%, transparent);
+  background: color-mix(in srgb, var(--bg-main) 78%, var(--bg-card) 22%);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -1006,9 +1003,9 @@ onBeforeUnmount(() => {
 .profile-action,
 .profile-list__item {
   width: 100%;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 97%, var(--accent) 3%);
   border-radius: 16px;
-  background: color-mix(in srgb, var(--bg-card-subtle) 84%, transparent);
+  background: color-mix(in srgb, var(--bg-main) 78%, var(--bg-card) 22%);
   padding: 16px 18px;
   display: flex;
   align-items: center;
@@ -1060,7 +1057,7 @@ onBeforeUnmount(() => {
 
 .profile-action--danger .profile-action__icon {
   background: rgba(248, 113, 113, 0.12);
-  color: #f87171;
+  color: var(--danger);
 }
 
 .profile-list {
@@ -1123,9 +1120,9 @@ onBeforeUnmount(() => {
 
 .profile-settings__action {
   width: 100%;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 97%, var(--accent) 3%);
   border-radius: 16px;
-  background: color-mix(in srgb, var(--bg-card-subtle) 84%, transparent);
+  background: color-mix(in srgb, var(--bg-main) 78%, var(--bg-card) 22%);
   padding: 14px 16px;
   display: flex;
   align-items: center;
@@ -1181,11 +1178,11 @@ onBeforeUnmount(() => {
 }
 
 .profile-settings__message--error {
-  color: #f87171;
+  color: var(--danger);
 }
 
 .profile-settings__message--success {
-  color: #34d399;
+  color: var(--accent);
 }
 
 .profile-settings__reauth {

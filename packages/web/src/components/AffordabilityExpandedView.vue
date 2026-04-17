@@ -25,8 +25,9 @@ async function load() {
 
 watch(() => [props.city, props.state], load, { immediate: true });
 
+// TODO(color-tokens): This component still uses hardcoded chart colors outside shared CSS variables. Keep them unchanged during the token refactor.
 // Colors for rent burden bands: under30% → 30-35% → 35-40% → 40-50% → 50%+
-const BAND_COLORS = ["#10B981", "#F59E0B", "#F97316", "#E05B1A", "#EF4444"];
+const BAND_COLORS = ["var(--city-b)", "var(--city-a)", "var(--accent)", "var(--accent-hover)", "var(--danger)"];
 
 // ── Insight callouts ──────────────────────────────────────────────────────────
 
@@ -413,6 +414,7 @@ const loadingInsightCards = [1, 2, 3];
 </template>
 
 <style scoped>
+/* TODO(color-tokens): This file still contains hardcoded colors outside shared CSS variables. Keep them unchanged during the token refactor. */
 /* Tier badge */
 .aff-burden-tier {
   display: flex;

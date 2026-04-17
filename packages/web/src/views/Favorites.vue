@@ -317,6 +317,7 @@ function onMouseLeave(el: HTMLElement) {
 </template>
 
 <style scoped>
+/* TODO(color-tokens): This file still contains hardcoded colors outside shared CSS variables. Keep them unchanged during the token refactor. */
 :deep(.site-header) {
   margin-bottom: 0;
   padding-bottom: 8px;
@@ -414,7 +415,7 @@ function onMouseLeave(el: HTMLElement) {
 .trading-card__bg {
   position: absolute;
   inset: 0;
-  background-color: #0a7d72;
+  background-color: var(--accent);
   background-size: cover;
   background-position: center;
   transition: transform 0.3s ease;
@@ -425,11 +426,7 @@ function onMouseLeave(el: HTMLElement) {
 }
 
 .trading-card__bg--loading {
-  background-image: linear-gradient(
-    140deg,
-    rgba(10, 125, 114, 0.94) 0%,
-    rgba(20, 184, 166, 0.88) 100%
-  );
+  background-image: linear-gradient(140deg, var(--accent-hover) 0%, var(--accent) 100%);
 }
 
 /* Gradient overlays */
@@ -457,16 +454,16 @@ function onMouseLeave(el: HTMLElement) {
     radial-gradient(
       circle at var(--shine-x, 50%) var(--shine-y, 50%),
       rgba(255, 255, 255, 0.28) 0%,
-      rgba(120, 240, 210, 0.18) 20%,
-      rgba(100, 160, 255, 0.14) 40%,
-      rgba(200, 100, 255, 0.08) 60%,
+      color-mix(in srgb, var(--accent-hover) 18%, transparent) 20%,
+      color-mix(in srgb, var(--accent) 14%, transparent) 40%,
+      color-mix(in srgb, var(--text-primary) 8%, transparent) 60%,
       transparent 75%
     ),
     linear-gradient(
       115deg,
       transparent 30%,
-      rgba(120, 240, 210, 0.07) 45%,
-      rgba(100, 160, 255, 0.07) 55%,
+      color-mix(in srgb, var(--accent-hover) 7%, transparent) 45%,
+      color-mix(in srgb, var(--accent) 7%, transparent) 55%,
       transparent 70%
     );
   pointer-events: none;
@@ -507,7 +504,7 @@ function onMouseLeave(el: HTMLElement) {
 }
 
 .trading-card__remove:hover {
-  color: #f87171;
+  color: var(--danger);
 }
 
 .trading-card__trash-lid {
@@ -678,11 +675,7 @@ function onMouseLeave(el: HTMLElement) {
   }
 
   .trading-card__bg--loading {
-    background-image: linear-gradient(
-      140deg,
-      rgba(10, 125, 114, 0.7) 0%,
-      rgba(20, 184, 166, 0.5) 100%
-    );
+    background-image: linear-gradient(140deg, color-mix(in srgb, var(--accent-hover) 70%, transparent) 0%, color-mix(in srgb, var(--accent) 50%, transparent) 100%);
   }
 
   .trading-card__shine {

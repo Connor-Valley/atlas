@@ -1,6 +1,7 @@
 /* =====================
    SCORE PILLS
 ===================== */
+/* TODO(color-tokens): This stylesheet still contains hardcoded colors outside shared CSS variables. Keep them unchanged during the token refactor. */
 .score-pills {
   display: flex;
   align-items: center;
@@ -38,8 +39,8 @@
   align-items: center;
   align-self: stretch;
   gap: 8px;
-  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border-card));
-  background: color-mix(in srgb, var(--accent) 10%, var(--bg-card));
+  border: 1px solid color-mix(in srgb, var(--accent-soft) 32%, var(--border-card));
+  background: color-mix(in srgb, var(--accent-soft) 12%, var(--bg-card));
   color: var(--text-primary);
   border-radius: 999px;
   padding: 8px 16px;
@@ -65,13 +66,13 @@
 
 .score-pills__compare-btn:hover {
   transform: translateY(-1px);
-  background: color-mix(in srgb, var(--accent) 8%, var(--bg-card));
-  border-color: color-mix(in srgb, var(--accent) 55%, var(--border-card));
+  background: color-mix(in srgb, var(--accent-soft) 14%, var(--bg-card));
+  border-color: color-mix(in srgb, var(--accent-soft) 44%, var(--border-card));
 }
 
 .score-pills__compare-btn--active {
-  background: color-mix(in srgb, var(--accent) 8%, var(--bg-card));
-  border-color: color-mix(in srgb, var(--accent) 55%, var(--border-card));
+  background: color-mix(in srgb, var(--accent-soft) 14%, var(--bg-card));
+  border-color: color-mix(in srgb, var(--accent-soft) 44%, var(--border-card));
 }
 
 .score-pills__compare-icon {
@@ -86,7 +87,7 @@
   width: min(240px, calc(100vw - 28px));
   padding: 8px;
   border-radius: 16px;
-  border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border-card));
+  border: 1px solid color-mix(in srgb, var(--accent-soft) 20%, var(--border-card));
   background: linear-gradient(180deg, color-mix(in srgb, var(--bg-card) 92%, white 8%), var(--bg-card));
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
   z-index: 20;
@@ -110,16 +111,16 @@
 }
 
 .score-pills__share-item:hover {
-  background: color-mix(in srgb, var(--accent) 10%, var(--bg-card));
+  background: color-mix(in srgb, var(--accent-soft) 10%, var(--bg-card));
   transform: translateX(1px);
 }
 
 .score-pills__share-item--primary {
-  background: color-mix(in srgb, var(--accent) 12%, var(--bg-card));
+  background: color-mix(in srgb, var(--accent-soft) 12%, var(--bg-card));
 }
 
 .score-pills__share-item--primary:hover {
-  background: color-mix(in srgb, var(--accent) 18%, var(--bg-card));
+  background: color-mix(in srgb, var(--accent-soft) 18%, var(--bg-card));
 }
 
 .score-pills__share-item-icon {

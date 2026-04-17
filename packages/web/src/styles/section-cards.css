@@ -1,13 +1,23 @@
 /* =====================
    SECTION CARDS (detail pages — Housing.vue)
 ===================== */
+/* TODO(color-tokens): This stylesheet still contains hardcoded colors outside shared CSS variables. Keep them unchanged during the token refactor. */
 .section {
   background: var(--bg-card);
   border: 1px solid var(--border-card);
   border-radius: 16px;
   margin-bottom: 20px;
   overflow: hidden;
-  box-shadow: var(--card-shadow);
+  box-shadow:
+    var(--card-shadow),
+    0 0 20px color-mix(in srgb, var(--accent-soft) 8%, transparent);
+}
+
+html.dark .section {
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.04),
+    var(--card-shadow),
+    0 0 22px color-mix(in srgb, var(--accent-soft) 10%, transparent);
 }
 
 .section-header-container {
@@ -27,7 +37,7 @@
   font-size: 0.7rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--text-secondary);
+  color: color-mix(in srgb, var(--text-primary) 64%, var(--text-secondary) 36%);
   background: transparent;
   border: none;
   cursor: default;
@@ -38,7 +48,7 @@
 .section-header:hover,
 .section-header:focus {
   background: transparent;
-  color: var(--text-secondary);
+  color: color-mix(in srgb, var(--text-primary) 64%, var(--text-secondary) 36%);
 }
 
 .section-header[aria-disabled="false"] {
@@ -51,7 +61,7 @@
 }
 
 .section-header svg {
-  color: var(--text-muted);
+  color: color-mix(in srgb, var(--text-primary) 54%, var(--text-secondary) 46%);
 }
 
 .section-header-container:has(.section-header-action) .section-header {
@@ -65,7 +75,7 @@
 .section-action {
   font-size: 0.78rem;
   font-weight: 500;
-  color: var(--text-secondary);
+  color: color-mix(in srgb, var(--text-primary) 64%, var(--text-secondary) 36%);
   background: none;
   border: none;
   cursor: pointer;
@@ -96,8 +106,8 @@
 }
 
 .stat {
-  background: var(--bg-card-subtle);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: var(--bg-card-inner);
+  border: 1px solid color-mix(in srgb, var(--border-card) 70%, transparent);
   border-radius: 12px;
   padding: 14px 16px;
   overflow: hidden;
@@ -158,7 +168,7 @@
 }
 
 .structure-chart__segment-label {
-  color: #fff;
+  color: var(--text-primary);
   font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -197,12 +207,12 @@
   font-weight: 700;
 }
 
-.structure-segment--1 { background: linear-gradient(90deg, #0f766e 0%, #14b8a6 100%); }
-.structure-segment--2 { background: linear-gradient(90deg, #0f8f86 0%, #1ccfc2 100%); }
-.structure-segment--3 { background: linear-gradient(90deg, #1199a0 0%, #35d7d0 100%); }
-.structure-segment--4 { background: linear-gradient(90deg, #0e728a 0%, #26b8d6 100%); }
-.structure-segment--5 { background: linear-gradient(90deg, #0c8c7a 0%, #2ed3ae 100%); }
-.structure-segment--6 { background: linear-gradient(90deg, #167c6b 0%, #3ac8a2 100%); }
+.structure-segment--1 { background: linear-gradient(90deg, var(--accent-hover) 0%, var(--accent) 100%); }
+.structure-segment--2 { background: linear-gradient(90deg, var(--accent) 0%, var(--accent) 100%); }
+.structure-segment--3 { background: linear-gradient(90deg, var(--accent) 0%, var(--accent) 100%); }
+.structure-segment--4 { background: linear-gradient(90deg, var(--accent) 0%, var(--accent) 100%); }
+.structure-segment--5 { background: linear-gradient(90deg, var(--accent) 0%, var(--accent) 100%); }
+.structure-segment--6 { background: linear-gradient(90deg, var(--accent) 0%, var(--accent) 100%); }
 
 /* =====================
    CITY EXPANDED VIEW
@@ -325,8 +335,8 @@
 }
 
 .city-exp__community-chip--active {
-  background: rgba(20, 184, 166, 0.14);
-  border-color: rgba(20, 184, 166, 0.32);
+  background: var(--accent-light);
+  border-color: var(--border-color);
   color: var(--accent);
 }
 

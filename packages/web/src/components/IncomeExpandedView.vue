@@ -98,13 +98,14 @@ const povertyRate = computed(() => {
 
 // ── Income distribution donut ──────────────────────────────────────────────────
 
+// TODO(color-tokens): This component still uses hardcoded chart colors outside shared CSS variables. Keep them unchanged during the token refactor.
 const INCOME_DIST_COLORS = [
-  '#14B8A6',
-  '#0891b2',
-  '#6366f1',
-  '#8b5cf6',
-  '#f59e0b',
-  '#94a3b8',
+  'var(--accent)',
+  'var(--accent-hover)',
+  'var(--caution)',
+  'var(--city-b)',
+  'var(--city-a)',
+  'var(--text-secondary)',
 ];
 
 const DONUT_R = 45;

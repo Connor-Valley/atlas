@@ -1,13 +1,14 @@
 /* =====================
    HERO LANDING (before search)
 ===================== */
+/* TODO(color-tokens): This stylesheet still contains hardcoded colors outside shared CSS variables. Keep them unchanged during the token refactor. */
 .hero-landing {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 48px 24px;
-  background: linear-gradient(160deg, #e6f8f6 0%, #F4F2ED 65%);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--accent-light) 55%, var(--bg-card-subtle)) 0%, var(--bg-main) 65%);
   position: relative;
   overflow: hidden;
 }
@@ -52,7 +53,7 @@ body.body--scroll-locked {
 .hero-dots {
   position: absolute;
   inset: -60px;
-  background-image: radial-gradient(circle, rgba(20, 184, 166, 0.22) 1.5px, transparent 1.5px);
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--accent) 2.5%, transparent) 1.5px, transparent 1.5px);
   background-size: 30px 30px;
   pointer-events: none;
   z-index: 0;
@@ -369,8 +370,8 @@ body.body--scroll-locked {
   display: grid;
   place-items: center;
   background:
-    linear-gradient(135deg, rgba(20, 184, 166, 0.18) 0%, rgba(20, 184, 166, 0.08) 100%);
-  border: 1px solid rgba(20, 184, 166, 0.22);
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 18%, transparent) 0%, color-mix(in srgb, var(--accent) 8%, transparent) 100%);
+  border: 1px solid var(--border-color);
 }
 
 .progress-state-card__icon {
@@ -412,7 +413,7 @@ body.body--scroll-locked {
 
 .housing-exp__snapshot-icon {
   font-size: 1rem;
-  color: var(--accent);
+  color: var(--text-secondary);
 }
 
 .housing-exp__snapshot-title {
@@ -437,7 +438,7 @@ body.body--scroll-locked {
   gap: 6px;
   padding: 12px 14px;
   border-radius: 8px;
-  background: var(--bg-card-subtle);
+  background: #1E1A16;
   border: 1px solid var(--border-subtle);
 }
 
@@ -453,12 +454,12 @@ body.body--scroll-locked {
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: color-mix(in srgb, var(--text-primary) 58%, var(--text-secondary) 42%);
 }
 
 .snap-metric__icon {
   font-size: 0.78rem;
-  color: var(--accent);
+  color: color-mix(in srgb, var(--text-primary) 58%, var(--text-secondary) 42%);
   flex-shrink: 0;
 }
 
@@ -513,16 +514,16 @@ body.body--scroll-locked {
 }
 
 .insight-card--positive {
-  border-color: rgba(16, 185, 129, 0.25);
-  background: rgba(16, 185, 129, 0.06);
+  border-color: var(--border-color);
+  background: var(--accent-light);
 }
 .insight-card--warning {
   border-color: color-mix(in srgb, var(--danger) 20%, transparent);
   background: color-mix(in srgb, var(--danger) 5%, transparent);
 }
 .insight-card--neutral {
-  border-color: rgba(20, 184, 166, 0.2);
-  background: rgba(20, 184, 166, 0.05);
+  border-color: var(--border-color);
+  background: var(--accent-light);
 }
 
 .insight-card__icon {
@@ -697,8 +698,8 @@ body.body--scroll-locked {
 }
 
 .industry-modal__close:hover {
-  color: var(--accent);
-  border-color: rgba(20, 184, 166, 0.4);
+  color: var(--text-primary);
+  border-color: var(--border-color);
 }
 
 .industry-modal-enter-active,
@@ -755,7 +756,7 @@ body.body--scroll-locked {
 
 .bar-list__fill {
   height: 100%;
-  background: var(--accent);
+  background: var(--text-primary);
   border-radius: 4px;
   opacity: 0.8;
   transition: width 0.35s ease;
@@ -785,7 +786,7 @@ body.body--scroll-locked {
 .dist-chart__bar {
   flex: 1;
   min-width: 14px;
-  background: var(--accent);
+  background: var(--text-primary);
   border-radius: 3px 3px 0 0;
   opacity: 0.75;
 }
@@ -1218,8 +1219,8 @@ body.body--scroll-locked {
   align-items: center;
   gap: 5px;
   padding: 7px 13px;
-  background: rgba(20, 184, 166, 0.07);
-  border: 1px solid rgba(20, 184, 166, 0.22);
+  background: var(--accent-light);
+  border: 1px solid var(--border-color);
   border-radius: 100px;
   pointer-events: none;
   z-index: 0;
@@ -1235,14 +1236,14 @@ body.body--scroll-locked {
 
 .hero-chip__divider {
   font-size: 0.7rem;
-  color: var(--accent);
+  color: var(--text-secondary);
   opacity: 0.6;
 }
 
 .hero-chip__stat {
   font-size: 0.72rem;
   font-weight: 500;
-  color: var(--accent);
+  color: var(--text-secondary);
 }
 
 @keyframes float-chip {
@@ -1278,7 +1279,7 @@ body.body--scroll-locked {
 }
 
 .hero-tagline__word--selected {
-  background: rgba(20, 184, 166, 0.38);
+  background: color-mix(in srgb, var(--accent) 38%, transparent);
   color: rgba(255, 255, 255, 0.92);
 }
 

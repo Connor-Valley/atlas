@@ -1,6 +1,7 @@
 /* =====================
    HEADER NAV (detail pages)
 ===================== */
+/* TODO(color-tokens): This stylesheet still contains hardcoded colors outside shared CSS variables. Keep them unchanged during the token refactor. */
 .header-nav {
   margin-bottom: 28px;
 }
@@ -42,8 +43,8 @@
 
 .compare-view {
   min-height: 100vh;
-  --compare-city-a: #0ea5a4;
-  --compare-city-b: #3b82f6;
+  --compare-city-a: var(--city-a);
+  --compare-city-b: var(--city-b);
   overflow-x: clip;
 }
 
@@ -141,7 +142,7 @@
   border-radius: 8px;
   border: none;
   background: var(--logo-gradient);
-  color: #fff;
+  color: var(--text-primary);
   cursor: pointer;
   transition: filter 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
   font-size: 0.8rem;
@@ -149,7 +150,7 @@
   letter-spacing: 0.03em;
   white-space: nowrap;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(20, 184, 166, 0.35);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 35%, transparent);
   overflow: visible;
 }
 
@@ -172,7 +173,7 @@
 
 .compare-view__save-btn:hover {
   filter: brightness(0.9);
-  box-shadow: 0 4px 14px rgba(20, 184, 166, 0.45);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 45%, transparent);
 }
 
 .compare-view__share-btn:active,
@@ -400,7 +401,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .compare-ticker__item::after {
@@ -525,7 +526,7 @@
 
 .compare-mobile-summary__thumb-fallback {
   background:
-    linear-gradient(140deg, rgba(10, 125, 114, 0.7) 0%, rgba(20, 184, 166, 0.34) 100%);
+    linear-gradient(140deg, color-mix(in srgb, var(--accent-hover) 70%, transparent) 0%, color-mix(in srgb, var(--accent) 34%, transparent) 100%);
 }
 
 .compare-mobile-summary__badge {
@@ -686,7 +687,7 @@
   border: 1px solid color-mix(in srgb, white 12%, transparent);
   border-radius: 14px;
   background: rgba(15, 23, 42, 0.68);
-  color: #fff;
+  color: var(--text-primary);
   cursor: pointer;
 }
 
@@ -702,7 +703,7 @@
   padding: 8px 14px;
   border-radius: 999px;
   background: rgba(15, 23, 42, 0.72);
-  color: #fff;
+  color: var(--text-primary);
   font-size: 0.86rem;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -747,7 +748,7 @@
 }
 
 .compare-mobile-sheet__panel {
-  --compare-mobile-sheet-surface: #2a2d38;
+  --compare-mobile-sheet-surface: var(--bg-card);
   position: absolute;
   left: 0;
   right: 0;
@@ -1099,14 +1100,14 @@
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: color-mix(in srgb, var(--text-primary) 58%, var(--text-secondary) 42%);
   margin-bottom: 6px;
 }
 
 .compare-key-diff__sentence {
   margin: 0;
   font-size: 0.9rem;
-  color: var(--text-secondary);
+  color: color-mix(in srgb, var(--text-primary) 68%, var(--text-secondary) 32%);
   line-height: 1.5;
 }
 
@@ -1117,8 +1118,8 @@
 
 .compare-key-diff__highlight--a { color: var(--compare-city-a); }
 .compare-key-diff__highlight--b { color: var(--compare-city-b); }
-.compare-key-diff__highlight--tie { color: var(--text-secondary); }
-.compare-key-diff__highlight--difference { color: #d97706; }
+.compare-key-diff__highlight--tie { color: color-mix(in srgb, var(--text-primary) 72%, var(--text-secondary) 28%); }
+.compare-key-diff__highlight--difference { color: var(--caution); }
 
 .compare-sections {
   display: grid;

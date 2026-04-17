@@ -1,12 +1,13 @@
 /* =====================
    HERO SECTION (city overview)
 ===================== */
+/* TODO(color-tokens): This stylesheet still contains hardcoded colors outside shared CSS variables. Keep them unchanged during the token refactor. */
 .hero-section {
   margin-bottom: 20px;
 }
 
 .city-hero-card {
-  background-color: #0a7d72;
+  background-color: var(--accent-soft);
   background-size: cover;
   background-position: center;
   border-radius: 20px;
@@ -16,14 +17,13 @@
   flex-direction: column;
   gap: 20px;
   min-height: 232px;
-  box-shadow: 0 8px 32px rgba(14, 165, 148, 0.3), 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 32px color-mix(in srgb, var(--accent-soft) 24%, transparent), 0 2px 8px rgba(0, 0, 0, 0.15);
   position: relative;
   overflow: clip;
 }
 
 .city-hero-card--loading {
-  background-image:
-    linear-gradient(140deg, rgba(10, 125, 114, 0.94) 0%, rgba(20, 184, 166, 0.88) 100%);
+  background-image: linear-gradient(140deg, color-mix(in srgb, var(--accent-soft) 88%, var(--accent-hover) 12%) 0%, var(--accent-soft) 100%);
 }
 
 .city-hero-card::before {
@@ -32,9 +32,9 @@
   inset: 0;
   background: linear-gradient(
     140deg,
-    rgba(10, 125, 114, 0.62) 0%,
-    rgba(20, 184, 166, 0.50) 50%,
-    rgba(45, 212, 191, 0.38) 100%
+    color-mix(in srgb, var(--accent-soft) 46%, transparent) 0%,
+    color-mix(in srgb, var(--accent-soft) 34%, transparent) 50%,
+    color-mix(in srgb, var(--accent-soft-light) 100%, transparent) 100%
   );
   pointer-events: none;
   z-index: 0;
@@ -105,7 +105,7 @@
 .city-hero-card__place-info .mdi {
   font-size: 0.9rem;
   opacity: 1;
-  color: #fff;
+  color: var(--text-primary);
   transition: opacity 0.15s;
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
 }
@@ -206,7 +206,7 @@
   font-size: 1rem;
   font-weight: 700;
   letter-spacing: -0.01em;
-  color: #ffffff;
+  color: var(--text-primary);
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
   white-space: nowrap;
   overflow: hidden;
@@ -262,12 +262,12 @@
 .city-hero-card__fav--active {
   background: rgba(255, 213, 0, 0.25);
   border-color: rgba(255, 213, 0, 0.5);
-  color: #ffd500;
+  color: var(--caution);
 }
 
 .city-hero-card__fav--active:hover {
   background: rgba(255, 213, 0, 0.35);
-  color: #ffd500;
+  color: var(--caution);
 }
 
 .city-hero-card__details-btn {
@@ -358,7 +358,7 @@
   }
 
   .city-hero-card__stat--population-mobile .city-hero-card__stat-value {
-    color: #ffffff;
+    color: var(--text-primary);
     text-shadow: none;
     max-width: none;
   }

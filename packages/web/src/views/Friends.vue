@@ -401,6 +401,7 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+/* TODO(color-tokens): This file still contains hardcoded colors outside shared CSS variables. Keep them unchanged during the token refactor. */
 .friends-page {
   min-height: 100vh;
   padding: 0 0 60px;
@@ -504,7 +505,7 @@ onUnmounted(() => {
 }
 
 .friends-toolbar__search-input:focus {
-  border-color: rgba(20, 184, 166, 0.5);
+  border-color: var(--accent);
 }
 
 .friends-toolbar__actions {
@@ -542,7 +543,7 @@ onUnmounted(() => {
   height: 18px;
   border-radius: 9px;
   background: var(--accent);
-  color: #fff;
+  color: var(--text-primary);
   font-size: 0.72rem;
   font-weight: 800;
   display: grid;
@@ -557,7 +558,7 @@ onUnmounted(() => {
   border: none;
   border-radius: 14px;
   background: var(--accent);
-  color: #fff;
+  color: var(--text-primary);
   font: inherit;
   font-size: 0.88rem;
   font-weight: 700;
@@ -620,7 +621,7 @@ onUnmounted(() => {
   height: 50px;
   border-radius: 16px;
   background: var(--logo-gradient);
-  color: #fff;
+  color: var(--text-primary);
   font-size: 1.25rem;
   font-weight: 800;
   display: grid;
@@ -685,12 +686,12 @@ onUnmounted(() => {
 }
 
 .flist__action-btn--danger {
-  border-color: rgba(248, 113, 113, 0.25);
-  color: #f87171;
+  border-color: color-mix(in srgb, var(--danger) 25%, transparent);
+  color: var(--danger);
 }
 
 .flist__action-btn--danger:hover {
-  border-color: #f87171;
+  border-color: var(--danger);
 }
 
 /* ── Empty states ─────────────────────────────────────────── */
@@ -737,8 +738,8 @@ onUnmounted(() => {
   font-weight: 600;
 }
 
-.friends-modal__msg--error   { color: #f87171; }
-.friends-modal__msg--success { color: #34d399; }
+.friends-modal__msg--error   { color: var(--danger); }
+.friends-modal__msg--success { color: var(--accent); }
 
 /* ── Search users modal ───────────────────────────────────── */
 .search-modal {
@@ -828,7 +829,7 @@ onUnmounted(() => {
   height: 40px;
   border-radius: 50%;
   background: var(--logo-gradient);
-  color: #fff;
+  color: var(--text-primary);
   font-size: 1rem;
   font-weight: 800;
   display: grid;
@@ -901,18 +902,18 @@ onUnmounted(() => {
 }
 
 .slist__action-btn--add {
-  border-color: rgba(52, 211, 153, 0.3);
-  color: #34d399;
+  border-color: var(--border-color);
+  color: var(--accent);
 }
 
 .slist__action-btn--add:hover:not(:disabled) {
-  border-color: #34d399;
-  color: #34d399;
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .slist__action-btn--accept {
-  border-color: rgba(52, 211, 153, 0.3);
-  color: #34d399;
+  border-color: var(--border-color);
+  color: var(--accent);
 }
 
 .slist__status {
@@ -927,8 +928,8 @@ onUnmounted(() => {
 }
 
 .slist__status--friend {
-  color: #34d399;
-  background: rgba(52, 211, 153, 0.1);
+  color: var(--accent);
+  background: var(--accent-light);
 }
 
 .slist__status--pending {
@@ -989,7 +990,7 @@ onUnmounted(() => {
   height: 38px;
   border-radius: 10px;
   background: var(--logo-gradient);
-  color: #fff;
+  color: var(--text-primary);
   font-size: 0.95rem;
   font-weight: 800;
   display: grid;
@@ -1038,12 +1039,12 @@ onUnmounted(() => {
 }
 
 .freq-btn:hover { transform: translateY(-1px); }
-.freq-btn--accept  { border-color: rgba(52,211,153,.4); color: #34d399; }
-.freq-btn--accept:hover  { border-color: #34d399; }
+.freq-btn--accept  { border-color: var(--border-color); color: var(--accent); }
+.freq-btn--accept:hover  { border-color: var(--accent); }
 .freq-btn--decline,
-.freq-btn--cancel  { border-color: rgba(248,113,113,.3); color: #f87171; }
+.freq-btn--cancel  { border-color: color-mix(in srgb, var(--danger) 30%, transparent); color: var(--danger); }
 .freq-btn--decline:hover,
-.freq-btn--cancel:hover  { border-color: #f87171; }
+.freq-btn--cancel:hover  { border-color: var(--danger); }
 
 .freqs-empty {
   display: flex;
