@@ -1,10 +1,10 @@
 :root {
   /* === Backgrounds === */
-  --bg-main: #F5F0E8;
-  --bg-card: #EDE6D8;
-  --bg-card-inner: #D8CEBC;
-  --bg-card-subtle: #EDE6D8;
-  --bg-input: rgba(237, 232, 224, 0.08);
+  --bg-main: #EEE7DB;
+  --bg-card: #E4DACA;
+  --bg-card-inner: #D2C4AE;
+  --bg-card-subtle: #E8DFD0;
+  --bg-input: rgba(228, 218, 202, 0.72);
 
   /* === Text === */
   --text-primary: #2C2218;
@@ -12,14 +12,14 @@
   --text-muted: #A89880;
 
   /* === Borders === */
-  --border-color: #CFC5B0;
-  --border-subtle: #CFC5B0;
-  --border-card: #CFC5B0;
+  --border-color: #C9BCA3;
+  --border-subtle: #C9BCA3;
+  --border-card: #C9BCA3;
 
   /* === Accent (sandy clay) === */
-  --accent: #A0522D;
-  --accent-hover: #B5622F;
-  --accent-light: #A0522D1A;
+  --accent: #C47A5A;
+  --accent-hover: #D4896A;
+  --accent-light: #C47A5A1A;
   --accent-soft: #B4A292;
   --accent-soft-light: #B4A2921A;
   --city-a: #5B8DB8;
@@ -31,7 +31,7 @@
   --card-shadow-hover: 0 8px 28px rgba(0, 0, 0, 0.13), 0 4px 10px rgba(0, 0, 0, 0.07);
 
   /* === Progress bar === */
-  --progress-bg: #CFC5B0;
+  --progress-bg: #C4B69E;
 
   /* === Status === */
   --positive: #10B981;

@@ -630,6 +630,10 @@ onUnmounted(() => {
   box-shadow: 0 8px 20px color-mix(in srgb, var(--accent) 20%, transparent);
 }
 
+html:not(.dark) .flist__avatar {
+  color: var(--bg-main);
+}
+
 .flist__info {
   display: flex;
   flex-direction: column;
@@ -827,7 +831,7 @@ onUnmounted(() => {
 .slist__avatar {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: 12px;
   background: var(--logo-gradient);
   color: var(--text-primary);
   font-size: 1rem;
@@ -835,6 +839,10 @@ onUnmounted(() => {
   display: grid;
   place-items: center;
   flex-shrink: 0;
+}
+
+html:not(.dark) .slist__avatar {
+  color: var(--bg-main);
 }
 
 .slist__info {
@@ -996,6 +1004,10 @@ onUnmounted(() => {
   display: grid;
   place-items: center;
   flex-shrink: 0;
+}
+
+html:not(.dark) .freq-item__avatar {
+  color: var(--bg-main);
 }
 
 .freq-item__info {

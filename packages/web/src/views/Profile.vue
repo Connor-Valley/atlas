@@ -770,7 +770,7 @@ onBeforeUnmount(() => {
 }
 
 .profile-card {
-  background: color-mix(in srgb, var(--bg-card) 98%, var(--bg-main) 2%);
+  background: var(--bg-card-inner);
   border: 1px solid color-mix(in srgb, var(--border-card) 94%, var(--accent) 6%);
   border-radius: 22px;
   padding: 24px;
@@ -790,7 +790,7 @@ onBeforeUnmount(() => {
 .profile-card__avatar {
   width: 76px;
   height: 76px;
-  border-radius: 50%;
+  border-radius: 22px;
   display: grid;
   place-items: center;
   background: var(--logo-gradient);
@@ -798,6 +798,10 @@ onBeforeUnmount(() => {
   font-size: 1.8rem;
   font-weight: 800;
   box-shadow: 0 18px 35px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+html:not(.dark) .profile-card__avatar {
+  color: var(--bg-main);
 }
 
 .profile-card__identity-copy {
@@ -847,7 +851,7 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 96%, var(--accent) 4%);
   border-radius: 14px;
-  background: color-mix(in srgb, var(--bg-main) 80%, var(--bg-card) 20%);
+  background: color-mix(in srgb, var(--bg-card) 78%, var(--bg-card-inner) 22%);
   padding: 10px 16px;
   color: var(--text-secondary);
   font: inherit;
@@ -940,7 +944,7 @@ onBeforeUnmount(() => {
   border: 1px solid color-mix(in srgb, var(--border-subtle) 97%, var(--accent) 3%);
   border-radius: 16px;
   padding: 18px;
-  background: color-mix(in srgb, var(--bg-main) 78%, var(--bg-card) 22%);
+  background: color-mix(in srgb, var(--bg-card) 78%, var(--bg-card-inner) 22%);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -1005,7 +1009,7 @@ onBeforeUnmount(() => {
   width: 100%;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 97%, var(--accent) 3%);
   border-radius: 16px;
-  background: color-mix(in srgb, var(--bg-main) 78%, var(--bg-card) 22%);
+  background: color-mix(in srgb, var(--bg-card) 78%, var(--bg-card-inner) 22%);
   padding: 16px 18px;
   display: flex;
   align-items: center;
@@ -1122,7 +1126,7 @@ onBeforeUnmount(() => {
   width: 100%;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 97%, var(--accent) 3%);
   border-radius: 16px;
-  background: color-mix(in srgb, var(--bg-main) 78%, var(--bg-card) 22%);
+  background: color-mix(in srgb, var(--bg-card) 78%, var(--bg-card-inner) 22%);
   padding: 14px 16px;
   display: flex;
   align-items: center;
@@ -1500,7 +1504,7 @@ onBeforeUnmount(() => {
   .profile-card__avatar {
     width: 64px;
     height: 64px;
-    border-radius: 50%;
+    border-radius: 18px;
     font-size: 1.4rem;
   }
 

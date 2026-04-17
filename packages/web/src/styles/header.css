@@ -181,7 +181,7 @@
 .user-menu__avatar {
   width: 30px;
   height: 30px;
-  border-radius: 50%;
+  border-radius: 10px;
   background: var(--text-muted);
   color: var(--text-primary);
   font-size: 0.8rem;
@@ -190,6 +190,10 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+
+html:not(.dark) .user-menu__avatar {
+  color: var(--bg-main);
 }
 
 .user-menu__chevron {
@@ -267,7 +271,7 @@
 .user-menu__header-avatar {
   width: 34px;
   height: 34px;
-  border-radius: 50%;
+  border-radius: 12px;
   background: var(--text-muted);
   color: var(--text-primary);
   font-size: 0.85rem;
@@ -276,6 +280,10 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+
+html:not(.dark) .user-menu__header-avatar {
+  color: var(--bg-main);
 }
 
 .user-menu__header-info {

@@ -407,6 +407,14 @@ watch(activeMobileFace, () => {
   overflow: hidden;
 }
 
+html:not(.dark) .compare-section {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--bg-card) 14%, var(--bg-card-inner) 86%) 0%,
+    var(--bg-card-inner) 100%
+  );
+}
+
 .compare-section__mobile {
   display: none;
 }

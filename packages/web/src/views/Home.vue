@@ -12,13 +12,13 @@ import AffordabilitySection from "../components/AffordabilitySection.vue";
 import AffordabilityExpandedView from "../components/AffordabilityExpandedView.vue";
 import AuthModal from "../components/AuthModal.vue";
 import SiteHeader from "../components/SiteHeader.vue";
+import ThemeToggle from "../components/ThemeToggle.vue";
 import { useAuth } from "../composables/useAuth";
 import { prefetchDetailedHousing } from "../api/housing";
 import { prefetchDetailedCityProfile } from "../api/cityProfile";
 import { prefetchDetailedQualityOfLife } from "../api/qualityOfLife";
 import { prefetchIncome } from "../api/income";
 import { prefetchAffordability } from "../api/affordability";
-import { useTheme } from "../composables/useTheme";
 
 type ExpandableSection = "city" | "economic" | "housing" | "affordability";
 
@@ -29,7 +29,6 @@ const props = defineProps<{
 }>();
 
 const router = useRouter();
-const { apply: applyTheme } = useTheme();
 const { user, displayName, signOut } = useAuth();
 const showAuthModal  = ref(false);
 const authModalMode  = ref<'login' | 'register'>('register');
@@ -325,12 +324,6 @@ onMounted(() => {
 
   typeTagline();
 });
-
-watch(showLanding, (isLandingVisible) => {
-  if (isLandingVisible) {
-    applyTheme(true);
-  }
-}, { immediate: true });
 
 watch(() => props.section, async (newSection, oldSection) => {
   if (programmaticNavigation) {
@@ -1068,6 +1061,8 @@ async function closeExpandedSection() {
   >
     <!-- Dot grid (drifting layer) -->
     <div ref="heroDots" class="hero-dots"></div>
+
+    <ThemeToggle />
 
     <div v-if="user" class="hero-landing__account">
       <div ref="userMenuRef" class="user-menu hero-auth__user-menu" @mouseenter="openUserMenuHover" @mouseleave="closeUserMenuHover">

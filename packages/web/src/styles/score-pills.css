@@ -53,6 +53,10 @@
   white-space: nowrap;
 }
 
+html:not(.dark) .score-pills__compare-btn {
+  background: var(--bg-card-inner);
+}
+
 .score-pills__share-wrap {
   position: relative;
   display: inline-flex;
@@ -144,6 +148,15 @@
   padding: 8px 16px;
   box-shadow: var(--card-shadow);
   white-space: nowrap;
+}
+
+html:not(.dark) .score-pill {
+  background: var(--bg-card-inner);
+}
+
+html:not(.dark) .score-pill--top {
+  background: var(--accent);
+  border-color: var(--accent);
 }
 
 .score-pill__icon {

@@ -200,7 +200,9 @@
    DARK MODE OVERRIDES (hardcoded colors)
 ===================== */
 html.dark .hero-landing {
-  background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 14%, var(--bg-card-subtle)) 0%, var(--bg-main) 65%);
+  background:
+    radial-gradient(circle at 88% 84%, color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent 26%),
+    linear-gradient(160deg, color-mix(in srgb, var(--accent) 14%, var(--bg-card-subtle)) 0%, var(--bg-main) 65%);
 }
 
 html.dark .hero-dots {
@@ -208,8 +210,22 @@ html.dark .hero-dots {
 }
 
 html.dark .hero-chip {
-  background: var(--accent-light);
-  border-color: var(--border-color);
+  background: color-mix(in srgb, var(--bg-card) 86%, var(--accent-light) 14%);
+  border-color: color-mix(in srgb, var(--accent) 20%, var(--border-color));
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.24),
+    0 1px 0 rgba(255, 255, 255, 0.03) inset;
+  opacity: 0.8;
+}
+
+html.dark .hero-chip__label,
+html.dark .hero-chip__stat {
+  color: color-mix(in srgb, var(--text-secondary) 72%, var(--text-primary) 28%);
+}
+
+html.dark .hero-chip__divider {
+  color: color-mix(in srgb, var(--text-secondary) 72%, var(--text-primary) 28%);
+  opacity: 0.72;
 }
 
 html.dark .section-header-container {

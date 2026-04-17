@@ -422,8 +422,22 @@
   z-index: 1;
 }
 
+html:not(.dark) .compare-ticker__overlay {
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--compare-city-a) 32%, transparent) 42%,
+    color-mix(in srgb, var(--compare-city-b) 28%, transparent) 74%
+  );
+  opacity: 0.44;
+}
+
 .compare-ticker--placeholder .compare-ticker__overlay {
   background: var(--accent);
+}
+
+html:not(.dark) .compare-ticker--placeholder .compare-ticker__overlay {
+  background: color-mix(in srgb, var(--accent) 34%, transparent);
+  opacity: 0.4;
 }
 
 @keyframes compare-ticker-scroll {
@@ -1120,6 +1134,34 @@
 .compare-key-diff__highlight--b { color: var(--compare-city-b); }
 .compare-key-diff__highlight--tie { color: color-mix(in srgb, var(--text-primary) 72%, var(--text-secondary) 28%); }
 .compare-key-diff__highlight--difference { color: var(--caution); }
+
+html:not(.dark) .compare-empty,
+html:not(.dark) .compare-error {
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 12%, transparent), transparent 28%),
+    var(--bg-card-inner);
+}
+
+html:not(.dark) .compare-loading__card {
+  background: linear-gradient(
+    120deg,
+    color-mix(in srgb, var(--bg-card) 30%, var(--bg-card-inner) 70%) 0%,
+    color-mix(in srgb, var(--bg-card) 48%, var(--bg-card-inner) 52%) 50%,
+    color-mix(in srgb, var(--bg-card) 30%, var(--bg-card-inner) 70%) 100%
+  );
+}
+
+html:not(.dark) .compare-city-info__card {
+  background: var(--bg-card-inner);
+}
+
+html:not(.dark) .compare-key-diff {
+  background: var(--bg-card-inner);
+}
+
+html:not(.dark) .compare-mobile-summary__card {
+  background: color-mix(in srgb, var(--bg-card-inner) 88%, var(--bg-main) 12%);
+}
 
 .compare-sections {
   display: grid;

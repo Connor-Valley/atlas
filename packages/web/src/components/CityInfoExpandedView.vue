@@ -257,9 +257,11 @@ const educationNarrativeHtml = computed(() => {
 const DONUT_R = 45;
 const DONUT_C = 2 * Math.PI * DONUT_R;
 const DONUT_GAP = 2;
-const AGE_COLORS = ['var(--accent)', 'var(--accent-hover)', 'var(--caution)', 'var(--city-b)', 'var(--city-a)'];
+const CHART_BROWN_DEEP = '#6B3420';
+const CHART_TERRACOTTA = '#D89238';
+const AGE_COLORS = [CHART_BROWN_DEEP, CHART_TERRACOTTA, 'var(--caution)', 'var(--city-b)', 'var(--city-a)'];
 const POLITICS_COLORS = ['var(--danger)', 'var(--city-a)', 'var(--caution)'];
-const RACE_COLORS = ['var(--accent)', 'var(--accent-hover)', 'var(--caution)', 'var(--city-b)', 'var(--city-a)', 'var(--text-secondary)', 'var(--warning)', 'var(--text-muted)'];
+const RACE_COLORS = [CHART_BROWN_DEEP, CHART_TERRACOTTA, 'var(--caution)', 'var(--city-b)', 'var(--city-a)', 'var(--text-secondary)', 'var(--warning)', 'var(--text-muted)'];
 const ORIGIN_COLORS = ['var(--city-b)', 'var(--city-a)'];
 
 function buildDonutSegments(

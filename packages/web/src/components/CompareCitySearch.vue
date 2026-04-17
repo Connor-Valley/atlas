@@ -361,6 +361,26 @@ watch(() => localState.value, () => {
   background: linear-gradient(180deg, color-mix(in srgb, var(--compare-city-b) 10%, transparent) 0%, var(--bg-card) 100%);
 }
 
+html:not(.dark) .compare-search-card {
+  background: var(--bg-card-inner);
+}
+
+html:not(.dark) .compare-search-card--a {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--compare-city-a) 10%, var(--bg-card-inner)) 0%,
+    var(--bg-card-inner) 100%
+  );
+}
+
+html:not(.dark) .compare-search-card--b {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--compare-city-b) 10%, var(--bg-card-inner)) 0%,
+    var(--bg-card-inner) 100%
+  );
+}
+
 .compare-search-card__header {
   display: flex;
   justify-content: space-between;
