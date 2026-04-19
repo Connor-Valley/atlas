@@ -35,8 +35,8 @@ import { useAuth } from "../composables/useAuth";
 import { useComparisons } from "../composables/useComparisons";
 
 const props = defineProps<{
-  stateA: string;
-  cityA: string;
+  stateA?: string;
+  cityA?: string;
   stateB?: string;
   cityB?: string;
 }>();
@@ -76,6 +76,7 @@ const comparison = ref<{ a: ComparedCity; b: ComparedCity } | null>(null);
 const activeTab = ref<"cartographer" | "matchup" | "dossier">("cartographer");
 let requestToken = 0;
 
+const hasCityA = computed(() => Boolean(props.stateA && props.cityA));
 const hasCityB = computed(() => Boolean(props.stateB && props.cityB));
 const compareReady = computed(() => Boolean(props.stateA && props.cityA && props.stateB && props.cityB));
 const mobileDraftHasTwoCities = computed(() =>
@@ -87,6 +88,7 @@ const mobileDraftDirty = computed(() =>
   (mobileDraft.value.stateB || "") !== (props.stateB ?? "") ||
   (mobileDraft.value.cityB || "") !== (props.cityB ?? ""),
 );
+const pendingCityB = ref<{ city: string; state: string } | null>(null);
 const summaryCards = computed(() => {
   if (!comparison.value) return [];
   return buildSummaryCards(comparison.value.a, comparison.value.b);
@@ -225,7 +227,7 @@ async function loadComparison() {
 
   try {
     const [a, b] = await Promise.all([
-      loadComparedCity("a", props.stateA, props.cityA),
+      loadComparedCity("a", props.stateA!, props.cityA!),
       loadComparedCity("b", props.stateB!, props.cityB!),
     ]);
 
@@ -287,7 +289,7 @@ watch(user, () => {
 });
 
 const isSaved = computed(() => {
-  if (!props.stateB || !props.cityB) return false;
+  if (!props.stateA || !props.cityA || !props.stateB || !props.cityB) return false;
   return isComparisonSaved(props.cityA, props.stateA, props.cityB, props.stateB);
 });
 
@@ -342,6 +344,10 @@ async function toggleSave() {
 }
 
 function goBack() {
+  if (!props.stateA || !props.cityA) {
+    router.push({ name: "home" });
+    return;
+  }
   router.push({
     name: "city",
     params: {
@@ -372,11 +378,13 @@ function updateCityA(payload: { city: string; state: string }) {
     closeMobileEditor();
     return;
   }
+  const pending = pendingCityB.value;
+  pendingCityB.value = null;
   updateRoute({
     stateA: payload.state,
     cityA: payload.city,
-    stateB: props.stateB,
-    cityB: props.cityB,
+    stateB: pending?.state ?? props.stateB,
+    cityB: pending?.city ?? props.cityB,
   });
 }
 
@@ -388,6 +396,10 @@ function updateCityB(payload: { city: string; state: string }) {
       cityB: payload.city,
     };
     closeMobileEditor();
+    return;
+  }
+  if (!props.stateA || !props.cityA) {
+    pendingCityB.value = payload;
     return;
   }
   updateRoute({
@@ -816,9 +828,11 @@ onBeforeUnmount(() => {
           <span class="ed-section-label__dot">·</span>
           <span>Comparative Survey</span>
         </div>
-        <h2 class="ed-heading compare-intro__title">Choose the second city to begin.</h2>
+        <h2 class="ed-heading compare-intro__title">{{ hasCityA ? 'Choose the second city to begin.' : 'Choose two cities to compare.' }}</h2>
         <p class="compare-intro__lede">
-          City A is ready. Add City B above to unlock the cartographer map read, the matchup spread, and the dossier verdict.
+          {{ hasCityA
+            ? 'City A is ready. Add City B above to unlock the cartographer map read, the matchup spread, and the dossier verdict.'
+            : 'Search for City A and City B above to unlock the cartographer map read, the matchup spread, and the dossier verdict.' }}
         </p>
       </div>
 

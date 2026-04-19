@@ -135,9 +135,64 @@ const buyVsRentInsight = computed(() => {
   };
 });
 
+const STATE_NAMES: Record<string, string> = {
+  AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
+  CO: "Colorado", CT: "Connecticut", DE: "Delaware", DC: "Washington D.C.",
+  FL: "Florida", GA: "Georgia", HI: "Hawaii", ID: "Idaho", IL: "Illinois",
+  IN: "Indiana", IA: "Iowa", KS: "Kansas", KY: "Kentucky", LA: "Louisiana",
+  ME: "Maine", MD: "Maryland", MA: "Massachusetts", MI: "Michigan", MN: "Minnesota",
+  MS: "Mississippi", MO: "Missouri", MT: "Montana", NE: "Nebraska", NV: "Nevada",
+  NH: "New Hampshire", NJ: "New Jersey", NM: "New Mexico", NY: "New York",
+  NC: "North Carolina", ND: "North Dakota", OH: "Ohio", OK: "Oklahoma", OR: "Oregon",
+  PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina", SD: "South Dakota",
+  TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont", VA: "Virginia",
+  WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
+};
+
 const insights = computed(() =>
   [burdenInsight.value, buyVsRentInsight.value, gapInsight.value].filter(Boolean),
 );
+
+// ── EV tooltips ───────────────────────────────────────────────────────────────
+
+const evTooltip = ref<string | null>(null);
+const evTooltipPos = ref({ top: 0, right: 0 });
+
+function showEvTooltip(key: string, event: MouseEvent) {
+  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+  evTooltipPos.value = {
+    top: rect.top - 8,
+    right: window.innerWidth - rect.right - 8,
+  };
+  evTooltip.value = key;
+}
+
+const EV_TOOLTIPS: Record<string, { title: string; body: string }> = {
+  gasVsAvg: {
+    title: "State Gas vs National Average",
+    body: "How much more or less drivers pay for gas in this state. Driven by state taxes and regional supply. National avg: ~$3.31/gal.",
+  },
+  incomeVsAvg: {
+    title: "Local Income vs National Average",
+    body: "How this city's median household income compares to the national median (~$77k). Higher income helps offset elevated local costs.",
+  },
+  adjustedBurden: {
+    title: "Adjusted Fuel Burden",
+    body: "Gas cost vs. the national average, adjusted for local income. Negative means gas is relatively affordable here; positive means it's a net cost pressure.",
+  },
+  electricity: {
+    title: "EV Charging Cost",
+    body: "What you pay to charge at home. Hydro/nuclear states (WA, ID) are cheapest; island and high-demand states (HI, CA) are priciest. National avg: ~14.9¢/kWh.",
+  },
+  chargers: {
+    title: "Charging Infrastructure",
+    body: "Public chargers per 100k residents. Matters most if you can't charge at home. National avg: ~70.",
+  },
+  adoption: {
+    title: "EV Adoption Rate",
+    body: "Share of registered vehicles that are electric. Higher means more service shops and better resale value. National avg: ~1.8%; CA leads at ~6.8%.",
+  },
+};
 
 // ── Status helpers ────────────────────────────────────────────────────────────
 
@@ -299,6 +354,30 @@ const loadingInsightCards = [1, 2, 3];
           </div>
         </div>
       </section>
+      <section class="data-card housing-exp__panel housing-exp__panel--compact">
+        <div class="housing-exp__panel-head">
+          <span class="data-card__icon mdi mdi-gas-station-outline"></span>
+          <span class="housing-exp__panel-title">Gas Costs</span>
+        </div>
+        <div class="housing-exp__panel-metrics">
+          <div v-for="i in 3" :key="i" class="metric skeleton-block">
+            <span class="metric__label skeleton-line skeleton-line--label"></span>
+            <span class="metric__value skeleton-line skeleton-line--value-sm"></span>
+          </div>
+        </div>
+      </section>
+      <section class="data-card housing-exp__panel housing-exp__panel--compact">
+        <div class="housing-exp__panel-head">
+          <span class="data-card__icon mdi mdi-lightning-bolt-outline"></span>
+          <span class="housing-exp__panel-title">EV & Electric</span>
+        </div>
+        <div class="housing-exp__panel-metrics">
+          <div v-for="i in 3" :key="i" class="metric skeleton-block">
+            <span class="metric__label skeleton-line skeleton-line--label"></span>
+            <span class="metric__value skeleton-line skeleton-line--value-sm"></span>
+          </div>
+        </div>
+      </section>
     </div>
 
     <!-- Data grid -->
@@ -409,8 +488,120 @@ const loadingInsightCards = [1, 2, 3];
         <p class="muted housing-exp__note">30% rent threshold · 28% mortgage DTI · 20% down · 10% annual savings rate</p>
       </section>
 
+      <!-- Gas Costs -->
+      <section v-if="data.gasVsNationalPct != null" class="data-card housing-exp__panel housing-exp__panel--compact">
+        <div class="housing-exp__panel-head">
+          <span class="data-card__icon mdi mdi-gas-station-outline"></span>
+          <span class="housing-exp__panel-title">Gas Costs</span>
+        </div>
+        <div class="housing-exp__panel-metrics">
+          <div class="metric">
+            <span class="metric__label">
+              State Gas vs National Average
+              <span class="ev-info" @mouseenter="showEvTooltip('gasVsAvg', $event)" @mouseleave="evTooltip = null">
+                <span class="mdi mdi-information-outline ev-info__icon"></span>
+              </span>
+            </span>
+            <span
+              class="metric__value"
+              :class="data.gasVsNationalPct > 3 ? 'status-warning' : data.gasVsNationalPct < -3 ? 'positive' : ''"
+            >{{ data.gasVsNationalPct > 0 ? '+' : '' }}{{ data.gasVsNationalPct.toFixed(1) }}%</span>
+          </div>
+          <div v-if="data.incomeVsNationalPct != null" class="metric">
+            <span class="metric__label">
+              Local Income vs National Average
+              <span class="ev-info" @mouseenter="showEvTooltip('incomeVsAvg', $event)" @mouseleave="evTooltip = null">
+                <span class="mdi mdi-information-outline ev-info__icon"></span>
+              </span>
+            </span>
+            <span
+              class="metric__value"
+              :class="data.incomeVsNationalPct >= 0 ? 'positive' : 'status-warning'"
+            >{{ data.incomeVsNationalPct >= 0 ? '+' : '' }}{{ data.incomeVsNationalPct.toFixed(1) }}%</span>
+          </div>
+          <div v-if="data.adjustedFuelBurden != null" class="metric">
+            <span class="metric__label">
+              Adjusted Fuel Burden vs National Average
+              <span class="ev-info" @mouseenter="showEvTooltip('adjustedBurden', $event)" @mouseleave="evTooltip = null">
+                <span class="mdi mdi-information-outline ev-info__icon"></span>
+              </span>
+            </span>
+            <span
+              class="metric__value"
+              :class="data.adjustedFuelBurden > 3 ? 'status-warning' : data.adjustedFuelBurden < -3 ? 'positive' : ''"
+            >{{ data.adjustedFuelBurden > 0 ? '+' : '' }}{{ data.adjustedFuelBurden.toFixed(1) }}%</span>
+          </div>
+        </div>
+        <p class="muted housing-exp__note">State-level averages. Source: EIA, 2024.</p>
+      </section>
+
+      <!-- EV & Electric -->
+      <section v-if="data.electricityVsNationalPct != null" class="data-card housing-exp__panel housing-exp__panel--compact">
+        <div class="housing-exp__panel-head">
+          <span class="data-card__icon mdi mdi-lightning-bolt-outline"></span>
+          <span class="housing-exp__panel-title">EV & Electric</span>
+        </div>
+        <div class="housing-exp__panel-metrics">
+          <div class="metric">
+            <span class="metric__label">
+              EV Charging Cost vs National Average
+              <span class="ev-info" @mouseenter="showEvTooltip('electricity', $event)" @mouseleave="evTooltip = null">
+                <span class="mdi mdi-information-outline ev-info__icon"></span>
+              </span>
+            </span>
+            <span
+              class="metric__value"
+              :class="data.electricityVsNationalPct > 3 ? 'status-warning' : data.electricityVsNationalPct < -3 ? 'positive' : ''"
+            >{{ data.electricityVsNationalPct > 0 ? '+' : '' }}{{ data.electricityVsNationalPct.toFixed(1) }}%</span>
+          </div>
+          <div v-if="data.evChargersPerCapita != null" class="metric">
+            <span class="metric__label">
+              EV Chargers per 100k Residents
+              <span class="ev-info" @mouseenter="showEvTooltip('chargers', $event)" @mouseleave="evTooltip = null">
+                <span class="mdi mdi-information-outline ev-info__icon"></span>
+              </span>
+            </span>
+            <span
+              class="metric__value"
+              :class="data.evChargersPerCapita >= 70 ? 'positive' : 'status-warning'"
+            >{{ data.evChargersPerCapita }}</span>
+          </div>
+          <div v-if="data.evAdoptionPct != null" class="metric">
+            <span class="metric__label">
+              EV Adoption Rate
+              <span class="ev-info" @mouseenter="showEvTooltip('adoption', $event)" @mouseleave="evTooltip = null">
+                <span class="mdi mdi-information-outline ev-info__icon"></span>
+              </span>
+            </span>
+            <span
+              class="metric__value"
+              :class="data.evAdoptionPct >= 1.8 ? 'positive' : ''"
+            >{{ data.evAdoptionPct.toFixed(1) }}%</span>
+          </div>
+        </div>
+        <p class="muted housing-exp__note">State-level averages. Sources: EIA, AFDC, DOE.</p>
+      </section>
+
     </div>
   </div>
+
+  <Teleport to="body">
+    <Transition name="ev-tip">
+      <div
+        v-if="evTooltip"
+        class="ev-tip"
+        :style="{
+          position: 'fixed',
+          top: evTooltipPos.top + 'px',
+          right: evTooltipPos.right + 'px',
+          transform: 'translateY(-100%)',
+        }"
+      >
+        <strong class="ev-tip__title">{{ EV_TOOLTIPS[evTooltip].title }}</strong>
+        <p class="ev-tip__body">{{ EV_TOOLTIPS[evTooltip].body }}</p>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -481,6 +672,80 @@ const loadingInsightCards = [1, 2, 3];
   color: var(--text-primary);
   font-weight: 600;
   min-width: 3.2ch;
+}
+
+/* Allow metric labels to wrap in the gas/EV cards */
+.housing-exp__panel .metric__label {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  line-height: 1.3;
+}
+
+/* EV metric info icons + tooltips */
+.ev-info {
+  position: relative;
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 4px;
+  line-height: 1;
+}
+
+.ev-info__icon {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  cursor: default;
+  opacity: 0.6;
+  transition: opacity 0.1s;
+}
+
+.ev-info:hover .ev-info__icon {
+  opacity: 1;
+}
+
+.ev-tip {
+  width: 230px;
+  background: rgba(10, 14, 23, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px 12px;
+  pointer-events: none;
+  z-index: 9999;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.ev-tip__title {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 5px;
+}
+
+.ev-tip__body {
+  font-size: 0.76rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+  white-space: normal;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.ev-tip-enter-active,
+.ev-tip-leave-active {
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+
+.ev-tip-enter-from,
+.ev-tip-leave-to {
+  opacity: 0;
+  transform: translateY(4px);
 }
 
 /* Loading skeletons */

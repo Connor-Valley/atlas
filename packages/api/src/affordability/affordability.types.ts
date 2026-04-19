@@ -43,4 +43,14 @@ export type DetailedCityAffordability = CityAffordability & {
 
     // Price trends
     fhfaYoyChange: number | null;
+
+    // Gas context (state-level)
+    gasVsNationalPct: number | null;       // e.g. 41.0 → gas is 41% above national avg
+    incomeVsNationalPct: number | null;    // e.g. 18.0 → city income is 18% above national median
+    adjustedFuelBurden: number | null;     // gasVsNationalPct - incomeVsNationalPct (positive = net burden)
+
+    // EV context (state-level)
+    electricityVsNationalPct: number | null; // e.g. 67.8 → electricity 67.8% above national avg
+    evChargersPerCapita: number | null;      // public chargers per 100k residents
+    evAdoptionPct: number | null;            // % of registered vehicles that are EVs
 };

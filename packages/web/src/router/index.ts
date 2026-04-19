@@ -53,6 +53,11 @@ const router = createRouter({
       props: true
     },
     {
+      path: '/compare',
+      name: 'compare-empty',
+      component: Compare
+    },
+    {
       path: '/compare/:stateA/:cityA/:stateB?/:cityB?',
       name: 'compare',
       component: Compare,

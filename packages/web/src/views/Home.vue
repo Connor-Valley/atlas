@@ -455,6 +455,10 @@ function resetSearch() {
   clearSearchState();
 }
 
+function goToCompare() {
+  router.push({ name: "compare-empty" });
+}
+
 function openCompareView() {
   if (!state.value || !city.value) return;
 
@@ -1148,7 +1152,13 @@ async function closeExpandedSection() {
         />
       </div>
       <div v-if="!user" class="hero-auth">
-        <button class="hero-auth__register" @click="openAuth('register')">Create a free account</button>
+        <div class="hero-auth__actions">
+          <button class="hero-auth__register" @click="openAuth('register')">Create a free account</button>
+          <button class="hero-auth__compare" @click="goToCompare">
+            <span class="mdi mdi-compare-horizontal"></span>
+            Compare Cities
+          </button>
+        </div>
         <span class="hero-auth__login">
           Already have an account?
           <button class="hero-auth__login-btn" @click="openAuth('login')">Sign in</button>
@@ -1156,6 +1166,10 @@ async function closeExpandedSection() {
       </div>
       <div v-else class="hero-auth hero-auth--welcome">
         <span class="hero-auth__welcome">Welcome back, {{ displayName() ?? 'there' }}!</span>
+        <button class="hero-auth__compare" @click="goToCompare">
+          <span class="mdi mdi-compare-horizontal"></span>
+          Compare Cities
+        </button>
       </div>
     </div>
   </div>
