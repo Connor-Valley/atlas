@@ -22,8 +22,8 @@ import { useAuth } from "../composables/useAuth";
 import { useComparisons } from "../composables/useComparisons";
 
 const props = defineProps<{
-  stateA: string;
-  cityA: string;
+  stateA?: string;
+  cityA?: string;
   stateB?: string;
   cityB?: string;
 }>();
@@ -62,6 +62,7 @@ fetchComparisons();
 const comparison = ref<{ a: ComparedCity; b: ComparedCity } | null>(null);
 let requestToken = 0;
 
+const hasCityA = computed(() => Boolean(props.stateA && props.cityA));
 const hasCityB = computed(() => Boolean(props.stateB && props.cityB));
 const compareReady = computed(() => Boolean(props.stateA && props.cityA && props.stateB && props.cityB));
 const mobileDraftHasTwoCities = computed(() =>
@@ -73,6 +74,7 @@ const mobileDraftDirty = computed(() =>
   (mobileDraft.value.stateB || "") !== (props.stateB ?? "") ||
   (mobileDraft.value.cityB || "") !== (props.cityB ?? ""),
 );
+const pendingCityB = ref<{ city: string; state: string } | null>(null);
 const summaryCards = computed(() => {
   if (!comparison.value) return [];
   return buildSummaryCards(comparison.value.a, comparison.value.b);
@@ -224,7 +226,7 @@ async function loadComparison() {
 
   try {
     const [a, b] = await Promise.all([
-      loadComparedCity("a", props.stateA, props.cityA),
+      loadComparedCity("a", props.stateA!, props.cityA!),
       loadComparedCity("b", props.stateB!, props.cityB!),
     ]);
 
@@ -286,7 +288,7 @@ watch(user, () => {
 });
 
 const isSaved = computed(() => {
-  if (!props.stateB || !props.cityB) return false;
+  if (!props.stateA || !props.cityA || !props.stateB || !props.cityB) return false;
   return isComparisonSaved(props.cityA, props.stateA, props.cityB, props.stateB);
 });
 
@@ -341,6 +343,10 @@ async function toggleSave() {
 }
 
 function goBack() {
+  if (!props.stateA || !props.cityA) {
+    router.push({ name: "home" });
+    return;
+  }
   router.push({
     name: "city",
     params: {
@@ -371,11 +377,13 @@ function updateCityA(payload: { city: string; state: string }) {
     closeMobileEditor();
     return;
   }
+  const pending = pendingCityB.value;
+  pendingCityB.value = null;
   updateRoute({
     stateA: payload.state,
     cityA: payload.city,
-    stateB: props.stateB,
-    cityB: props.cityB,
+    stateB: pending?.state ?? props.stateB,
+    cityB: pending?.city ?? props.cityB,
   });
 }
 
@@ -387,6 +395,10 @@ function updateCityB(payload: { city: string; state: string }) {
       cityB: payload.city,
     };
     closeMobileEditor();
+    return;
+  }
+  if (!props.stateA || !props.cityA) {
+    pendingCityB.value = payload;
     return;
   }
   updateRoute({
@@ -858,9 +870,11 @@ onBeforeUnmount(() => {
         <span class="mdi mdi-map-search compare-empty__icon"></span>
       </div>
       <div class="compare-empty__content">
-        <h2 class="compare-empty__title">Choose a second city to begin</h2>
+        <h2 class="compare-empty__title">{{ hasCityA ? 'Choose a second city to begin' : 'Choose two cities to compare' }}</h2>
         <p class="compare-empty__body">
-          Add City B to unlock the verdict cards, tradeoff insights, and side-by-side metric comparisons.
+          {{ hasCityA
+            ? 'Add City B to unlock the verdict cards, tradeoff insights, and side-by-side metric comparisons.'
+            : 'Search for City A and City B above to unlock verdict cards, tradeoff insights, and side-by-side metric comparisons.' }}
         </p>
       </div>
     </section>
