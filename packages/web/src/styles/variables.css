@@ -41,6 +41,12 @@
 
   /* === Logo === */
   --logo-gradient: linear-gradient(135deg, var(--accent) 0%, var(--accent) 60%, var(--accent) 100%);
+
+  /* === Editorial typography (compare page redesign) === */
+  --font-sans: 'Manrope', Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-display-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-display: var(--font-display-serif);
+  --font-mono: 'IBM Plex Mono', 'SF Mono', 'Fira Mono', monospace;
 }
 
 /* =====================

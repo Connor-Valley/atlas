@@ -23,6 +23,19 @@ const PHOTO_BLOCKLIST = [
   "location.",
   "_location",
   "topograph",
+  "cloud",
+  "sunset",
+  "sunrise",
+  "mountain",
+  "lake",
+  "river",
+  "ocean",
+  "sea",
+  "beach",
+  "forest",
+  "prairie",
+  "nature",
+  "landscape",
 ];
 
 const STATE_NAMES: Record<string, string> = {
@@ -103,10 +116,13 @@ export async function fetchCityPhoto(state: string, city: string): Promise<strin
   const stateLabel = stateName ?? "";
 
   return (
-    await tryWikipediaPhoto(`${title}_skyline`)
-    ?? await tryWikipediaPhoto(`Downtown_${title}`)
+    await tryWikipediaPhoto(`Downtown_${title}`)
+    ?? await tryWikipediaPhoto(`${title}_skyline`)
+    ?? await tryWikipediaPhoto(`${title}_downtown`)
     ?? (cityState ? await tryWikipediaPhoto(cityState) : null)
-    ?? await searchCommonsPhoto(`${cityLabel} ${stateLabel} skyline aerial`)
-    ?? await searchCommonsPhoto(`${stateLabel} nature aerial landscape`)
+    ?? await searchCommonsPhoto(`${cityLabel} ${stateLabel} downtown skyline`)
+    ?? await searchCommonsPhoto(`${cityLabel} ${stateLabel} skyline`)
+    ?? await searchCommonsPhoto(`${cityLabel} ${stateLabel} downtown`)
+    ?? await searchCommonsPhoto(`${cityLabel} skyline`)
   );
 }

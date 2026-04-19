@@ -45,7 +45,29 @@
   min-height: 100vh;
   --compare-city-a: var(--city-a);
   --compare-city-b: var(--city-b);
+}
+
+.compare-redesign-content {
   overflow-x: clip;
+  padding: 0 0 48px;
+}
+
+/* Remove top padding so the compare header sits flush at the top */
+.compare-view.container {
+  padding-top: 0;
+  --font-display: var(--font-sans);
+  --font-mono: var(--font-sans);
+}
+
+/* Hide ticker and old divider on desktop (replaced by editorial redesign) */
+@media (min-width: 641px) {
+  .compare-ticker {
+    display: none;
+  }
+
+  .compare-view__divider {
+    display: none;
+  }
 }
 
 .compare-view__topbar {
@@ -921,6 +943,24 @@ html:not(.dark) .compare-ticker--placeholder .compare-ticker__overlay {
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 14px;
   margin-bottom: 24px;
+}
+
+/* Desktop loading state — matches the editorial two-column layout */
+@media (min-width: 641px) {
+  .compare-loading {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding-top: 24px;
+  }
+
+  .compare-loading__card {
+    height: 320px;
+    border-radius: 8px;
+  }
+
+  .compare-loading__card:nth-child(n+3) {
+    display: none;
+  }
 }
 
 .compare-loading__card {

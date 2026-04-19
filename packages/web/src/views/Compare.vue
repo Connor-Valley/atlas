@@ -2,16 +2,29 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import CompareCitySearch from "../components/CompareCitySearch.vue";
-import CompareSection from "../components/CompareSection.vue";
 import SiteHeader from "../components/SiteHeader.vue";
 import AuthModal from "../components/AuthModal.vue";
-import { fetchAffordability } from "../api/affordability";
+import CompareHeader from "../components/compare/CompareHeader.vue";
+import CompareSearchHeader from "../components/compare/CompareSearchHeader.vue";
+import CartographerHero from "../components/compare/CartographerHero.vue";
+import CartographerCityCards from "../components/compare/CartographerCityCards.vue";
+import CartographerNumbers from "../components/compare/CartographerNumbers.vue";
+import CartographerPersonas from "../components/compare/CartographerPersonas.vue";
+import MatchupOverview from "../components/compare/MatchupOverview.vue";
+import MatchupTable from "../components/compare/MatchupTable.vue";
+import MatchupPersonas from "../components/compare/MatchupPersonas.vue";
+import DossierHero from "../components/compare/DossierHero.vue";
+import DossierVerdict from "../components/compare/DossierVerdict.vue";
+import DossierPersonas from "../components/compare/DossierPersonas.vue";
+import { fetchAffordability, fetchDetailedAffordability } from "../api/affordability";
 import { fetchCity } from "../api/cities";
 import { fetchHousing } from "../api/housing";
 import { fetchIncome } from "../api/income";
 import { fetchCityPhoto } from "../lib/cityPhotos";
+import { fetchQualityOfLife } from "../api/qualityOfLife";
+import { fetchCityProfile } from "../api/cityProfile";
+import { fetchDetailedFinancial } from "../api/financial";
 import {
-  buildSections,
   buildSummaryCards,
   calculateScores,
   cityLabel,
@@ -60,6 +73,7 @@ let mobileSheetDragLastY = 0;
 
 fetchComparisons();
 const comparison = ref<{ a: ComparedCity; b: ComparedCity } | null>(null);
+const activeTab = ref<"cartographer" | "matchup" | "dossier">("cartographer");
 let requestToken = 0;
 
 const hasCityB = computed(() => Boolean(props.stateB && props.cityB));
@@ -76,31 +90,6 @@ const mobileDraftDirty = computed(() =>
 const summaryCards = computed(() => {
   if (!comparison.value) return [];
   return buildSummaryCards(comparison.value.a, comparison.value.b);
-});
-const sections = computed(() => {
-  if (!comparison.value) return [];
-  return buildSections(comparison.value.a, comparison.value.b);
-});
-const cityInfoCards = computed(() => {
-  if (!comparison.value) return [];
-  return [
-    {
-      key: "a",
-      label: "City A",
-      name: comparison.value.a.cityInfo.name,
-      state: comparison.value.a.state.toUpperCase(),
-      population: comparison.value.a.cityInfo.population.toLocaleString(),
-      photoUrl: comparison.value.a.cityInfo.photoUrl,
-    },
-    {
-      key: "b",
-      label: "City B",
-      name: comparison.value.b.cityInfo.name,
-      state: comparison.value.b.state.toUpperCase(),
-      population: comparison.value.b.cityInfo.population.toLocaleString(),
-      photoUrl: comparison.value.b.cityInfo.photoUrl,
-    },
-  ];
 });
 const tickerItems = computed(() => {
   if (!hasCityB.value) {
@@ -196,6 +185,14 @@ async function loadComparedCity(key: "a" | "b", state: string, city: string): Pr
     fetchCityPhoto(state, city),
   ]);
 
+  // Supplementary data — failures here don't block the page
+  const [qualityOfLife, cityProfile, detailedAffordability, financial] = await Promise.all([
+    fetchQualityOfLife(state, city).catch(() => null),
+    fetchCityProfile(state, city).catch(() => null),
+    fetchDetailedAffordability(state, city).catch(() => null),
+    fetchDetailedFinancial(state, city).catch(() => null),
+  ]);
+
   return {
     key,
     city,
@@ -208,6 +205,10 @@ async function loadComparedCity(key: "a" | "b", state: string, city: string): Pr
     housing,
     affordability,
     scores: calculateScores(cityInfo, income, housing, affordability),
+    qualityOfLife,
+    cityProfile,
+    detailedAffordability,
+    financial,
   };
 }
 
@@ -394,6 +395,16 @@ function updateCityB(payload: { city: string; state: string }) {
     cityA: props.cityA,
     stateB: payload.state,
     cityB: payload.city,
+  });
+}
+
+function swapCities() {
+  if (!props.stateB || !props.cityB) return;
+  updateRoute({
+    stateA: props.stateB,
+    cityA: props.cityB,
+    stateB: props.stateA,
+    cityB: props.cityA,
   });
 }
 
@@ -616,88 +627,16 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="container compare-view">
-    <SiteHeader :show-theme-toggle="true" theme-toggle-placement="after-actions" :mobile-compact="true" @logo-click="resetToHome">
-      <template #leading>
-        <button class="breadcrumb compare-view__back" @click="goBack">
-          <span class="breadcrumb__arr breadcrumb__arr--1 mdi mdi-arrow-left"></span>
-          <span class="breadcrumb__text">Back</span>
-          <span class="breadcrumb__arr breadcrumb__arr--2 mdi mdi-arrow-left"></span>
-          <span class="breadcrumb__circle"></span>
-        </button>
-      </template>
+    <!-- Desktop: custom compare header with embedded tab switcher -->
+    <CompareHeader
+      v-if="!isMobileViewport"
+      v-model:active-tab="activeTab"
+      @logo-click="resetToHome"
+    />
+    <!-- Mobile: existing site header -->
+    <SiteHeader v-else :show-theme-toggle="true" theme-toggle-placement="after-actions" :mobile-compact="true" @logo-click="resetToHome">
       <template #title>
         <h1 class="compare-view__page-title">City Comparison</h1>
-      </template>
-      <template v-if="compareReady" #actions>
-        <div class="compare-view__actions">
-          <div ref="shareMenuRef" class="compare-view__share-wrap">
-            <button
-              class="compare-view__share-btn"
-              :class="{ 'compare-view__share-btn--active': shareMenuOpen }"
-              @click.stop="openShareOptions"
-            >
-              <span class="compare-view__share-btn-label">{{ shareCopied ? 'Copied' : 'Share' }}</span>
-              <span class="mdi" :class="shareCopied ? 'mdi-check' : 'mdi-share-variant-outline'"></span>
-            </button>
-
-            <div v-if="shareMenuOpen" class="compare-view__share-menu" @click.stop>
-              <button
-                v-if="supportsNativeShare"
-                class="compare-view__share-item compare-view__share-item--primary"
-                @click="shareNatively"
-              >
-                <span class="mdi mdi-cellphone-arrow-down compare-view__share-item-icon"></span>
-                Share via device
-              </button>
-              <button class="compare-view__share-item" @click="copyShareLink">
-                <span class="mdi mdi-content-copy compare-view__share-item-icon"></span>
-                Copy link
-              </button>
-              <button class="compare-view__share-item" @click="shareToMessages">
-                <span class="mdi mdi-message-text-outline compare-view__share-item-icon"></span>
-                Messages
-              </button>
-              <button class="compare-view__share-item" @click="shareToEmail">
-                <span class="mdi mdi-email-outline compare-view__share-item-icon"></span>
-                Email
-              </button>
-              <button class="compare-view__share-item" @click="shareToX">
-                <span class="mdi mdi-twitter compare-view__share-item-icon"></span>
-                X
-              </button>
-              <button class="compare-view__share-item" @click="shareToFacebook">
-                <span class="mdi mdi-facebook compare-view__share-item-icon"></span>
-                Facebook
-              </button>
-              <button class="compare-view__share-item" @click="shareToLinkedIn">
-                <span class="mdi mdi-linkedin compare-view__share-item-icon"></span>
-                LinkedIn
-              </button>
-            </div>
-          </div>
-
-          <span class="compare-view__save-wrap">
-            <button
-              class="compare-view__save-btn"
-              :class="{ 'compare-view__save-btn--saved': isSaved, 'compare-view__save-btn--animating': isSaving }"
-              :data-tooltip="isSaved ? 'Unsave comparison' : 'Save city comparison'"
-              @click="toggleSave"
-            >
-              <span class="compare-view__save-btn-label">{{ isSaved ? 'Saved' : 'Save' }}</span>
-              <span class="mdi" :class="isSaved ? 'mdi-bookmark' : 'mdi-bookmark-outline'"></span>
-            </button>
-            <Transition name="saved-link">
-              <button
-                v-if="showSavedLink"
-                class="compare-view__saved-link"
-                @click="router.push({ name: 'saved-comparisons' })"
-              >
-                View saved
-                <span class="mdi mdi-arrow-right"></span>
-              </button>
-            </Transition>
-          </span>
-        </div>
       </template>
     </SiteHeader>
 
@@ -758,7 +697,7 @@ onBeforeUnmount(() => {
       </button>
     </section>
 
-    <section class="compare-view__setup">
+    <section v-if="isMobileViewport" class="compare-view__setup">
       <CompareCitySearch
         label="Choose City"
         tone="a"
@@ -853,15 +792,74 @@ onBeforeUnmount(() => {
 
     <div class="compare-view__divider" aria-hidden="true"></div>
 
-    <section v-if="!hasCityB" class="compare-empty">
-      <div class="compare-empty__icon-wrap">
-        <span class="mdi mdi-map-search compare-empty__icon"></span>
+    <div v-if="!isMobileViewport" class="compare-search-header-row">
+      <div class="compare-search-header-row__left">
+        <button class="compare-search-header-row__back" @click="goBack">← Back to Atlas</button>
+        <span class="compare-search-header-row__sep">/</span>
+        <span class="compare-search-header-row__label">Comparative Survey</span>
       </div>
-      <div class="compare-empty__content">
-        <h2 class="compare-empty__title">Choose a second city to begin</h2>
-        <p class="compare-empty__body">
-          Add City B to unlock the verdict cards, tradeoff insights, and side-by-side metric comparisons.
+      <CompareSearchHeader
+        :state-a="stateA"
+        :city-a="cityA"
+        :state-b="stateB ?? ''"
+        :city-b="cityB ?? ''"
+        @update-a="updateCityA"
+        @update-b="updateCityB"
+        @swap="swapCities"
+      />
+    </div>
+
+    <section v-if="!hasCityB" class="compare-intro">
+      <div class="compare-intro__hero">
+        <div class="ed-section-label compare-intro__label">
+          <span class="ed-section-label__num">§ 00</span>
+          <span class="ed-section-label__dot">·</span>
+          <span>Comparative Survey</span>
+        </div>
+        <h2 class="ed-heading compare-intro__title">Choose the second city to begin.</h2>
+        <p class="compare-intro__lede">
+          City A is ready. Add City B above to unlock the cartographer map read, the matchup spread, and the dossier verdict.
         </p>
+      </div>
+
+      <div class="compare-intro__stage">
+        <article class="compare-intro__subject compare-intro__subject--a">
+          <div class="compare-intro__subject-label">Subject A</div>
+          <div class="compare-intro__subject-city">{{ slugToDisplay(cityA) }}</div>
+          <div class="compare-intro__subject-state">{{ stateA.toUpperCase() }}</div>
+        </article>
+
+        <div class="compare-intro__center">
+          <div class="compare-intro__center-kicker">Search City B</div>
+          <div class="compare-intro__center-vs">vs</div>
+          <p class="compare-intro__center-copy">Use the search bars above to set the other side of the comparison.</p>
+        </div>
+
+        <article class="compare-intro__subject compare-intro__subject--b">
+          <div class="compare-intro__subject-label">Subject B</div>
+          <div class="compare-intro__subject-placeholder">Awaiting counterpart</div>
+          <div class="compare-intro__subject-state compare-intro__subject-state--placeholder">Use the search rail above</div>
+        </article>
+      </div>
+
+      <div class="compare-intro__modes">
+        <article class="compare-intro__mode">
+          <div class="compare-intro__mode-label">Cartographer 01</div>
+          <h3 class="compare-intro__mode-title">Read the tradeoffs at a glance.</h3>
+          <p class="compare-intro__mode-copy">Headline wins, number lines, and the fastest sense of which city fits better.</p>
+        </article>
+
+        <article class="compare-intro__mode">
+          <div class="compare-intro__mode-label">Matchup 02</div>
+          <h3 class="compare-intro__mode-title">See where the two places diverge.</h3>
+          <p class="compare-intro__mode-copy">Radar shape, headline deltas, and a full metric ledger in one view.</p>
+        </article>
+
+        <article class="compare-intro__mode">
+          <div class="compare-intro__mode-label">Dossier 03</div>
+          <h3 class="compare-intro__mode-title">Get the editorial verdict.</h3>
+          <p class="compare-intro__mode-copy">Photo-led spread, narrative summary, and who is most at home in each city.</p>
+        </article>
       </div>
     </section>
 
@@ -878,58 +876,62 @@ onBeforeUnmount(() => {
     </section>
 
     <template v-else-if="comparison">
-      <section class="compare-key-diff">
-        <div class="compare-key-diff__header">
-          <span class="mdi mdi-lightbulb-on-outline compare-key-diff__icon"></span>
-          <h2 class="compare-key-diff__title">Key Differences</h2>
-        </div>
-        <div class="compare-key-diff__items">
-          <template v-for="(card, i) in summaryCards" :key="card.title">
-            <div v-if="i > 0" class="compare-key-diff__divider"></div>
-            <div class="compare-key-diff__item">
-              <div class="compare-key-diff__label">{{ card.label }}</div>
-              <p class="compare-key-diff__sentence">
-                {{ card.sentence.before }}<span class="compare-key-diff__highlight" :class="`compare-key-diff__highlight--${card.winner}`">{{ card.sentence.value }}</span>{{ card.sentence.after }}
-              </p>
-            </div>
-          </template>
-        </div>
-      </section>
-
-      <section class="compare-city-info">
-        <article
-          v-for="card in cityInfoCards"
-          :key="card.key"
-          class="compare-city-info__card"
-          :class="`compare-city-info__card--${card.key}`"
-        >
-          <div class="compare-city-info__thumb">
-            <img v-if="card.photoUrl" :src="card.photoUrl" class="compare-city-info__photo" alt="" />
-            <div v-else class="compare-city-info__photo-fallback"></div>
-            <span class="compare-city-info__badge" :class="`compare-city-info__badge--${card.key}`">{{ card.key.toUpperCase() }}</span>
+      <div class="compare-redesign-content">
+        <Transition name="compare-tab-fade" mode="out-in">
+          <!-- CARTOGRAPHER TAB -->
+          <div v-if="activeTab === 'cartographer'" key="cartographer">
+            <CartographerHero
+              :city-a="comparison.a"
+              :city-b="comparison.b"
+              :summary-cards="summaryCards"
+            />
+            <CartographerCityCards
+              :city-a="comparison.a"
+              :city-b="comparison.b"
+            />
+            <CartographerNumbers
+              :city-a="comparison.a"
+              :city-b="comparison.b"
+            />
+            <CartographerPersonas
+              :city-a="comparison.a"
+              :city-b="comparison.b"
+            />
           </div>
-          <div class="compare-city-info__body">
-            <div class="compare-city-info__name">{{ card.name }}</div>
-            <div class="compare-city-info__state">{{ card.state }}</div>
-            <div class="compare-city-info__stat">
-              <span class="compare-city-info__stat-label">Population</span>
-              <span class="compare-city-info__stat-value">{{ card.population }}</span>
-            </div>
-          </div>
-        </article>
-      </section>
 
-      <section class="compare-sections">
-        <CompareSection
-          v-for="section in sections"
-          :key="section.id"
-          :section="section"
-          :city-a="cityA"
-          :state-a="stateA"
-          :city-b="cityB!"
-          :state-b="stateB!"
-        />
-      </section>
+          <!-- MATCHUP TAB -->
+          <div v-else-if="activeTab === 'matchup'" key="matchup">
+            <MatchupOverview
+              :city-a="comparison.a"
+              :city-b="comparison.b"
+            />
+            <MatchupTable
+              :city-a="comparison.a"
+              :city-b="comparison.b"
+            />
+            <MatchupPersonas
+              :city-a="comparison.a"
+              :city-b="comparison.b"
+            />
+          </div>
+
+          <!-- DOSSIER TAB -->
+          <div v-else-if="activeTab === 'dossier'" key="dossier">
+            <DossierHero
+              :city-a="comparison.a"
+              :city-b="comparison.b"
+            />
+            <DossierVerdict
+              :city-a="comparison.a"
+              :city-b="comparison.b"
+            />
+            <DossierPersonas
+              :city-a="comparison.a"
+              :city-b="comparison.b"
+            />
+          </div>
+        </Transition>
+      </div>
     </template>
   </div>
 
