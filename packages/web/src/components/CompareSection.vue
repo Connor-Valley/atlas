@@ -387,12 +387,11 @@ watch(activeMobileFace, () => {
 </template>
 
 <style scoped>
-/* TODO(color-tokens): This file still contains hardcoded colors outside shared CSS variables. Keep them unchanged during the token refactor. */
 .compare-section {
-  --compare-success: var(--accent);
+  --compare-success: #22c55e;
   --compare-success-soft: color-mix(in srgb, var(--compare-success) 14%, var(--bg-card));
-  --compare-success-border: var(--border-color);
-  --compare-danger: var(--danger);
+  --compare-success-border: color-mix(in srgb, var(--compare-success) 34%, var(--border-card));
+  --compare-danger: #f87171;
   --compare-danger-soft: color-mix(in srgb, var(--compare-danger) 14%, var(--bg-card));
   --compare-danger-border: color-mix(in srgb, var(--compare-danger) 34%, var(--border-card));
 }
@@ -405,14 +404,6 @@ watch(activeMobileFace, () => {
   box-shadow: 0 18px 38px rgba(0, 0, 0, 0.16);
   min-width: 0;
   overflow: hidden;
-}
-
-html:not(.dark) .compare-section {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--bg-card) 14%, var(--bg-card-inner) 86%) 0%,
-    var(--bg-card-inner) 100%
-  );
 }
 
 .compare-section__mobile {
@@ -447,12 +438,11 @@ html:not(.dark) .compare-section {
 .compare-section__title {
   margin: 0 0 4px;
   font-size: 1.2rem;
-  color: var(--text-primary);
 }
 
 .compare-section__insight {
   margin: 0;
-  color: color-mix(in srgb, var(--text-primary) 66%, var(--text-secondary) 34%);
+  color: var(--text-secondary);
   font-size: 1rem;
   line-height: 1.45;
 }
@@ -468,13 +458,13 @@ html:not(.dark) .compare-section {
 }
 
 .compare-section__badge--a {
-  background: color-mix(in srgb, var(--compare-city-a) 10%, transparent);
+  background: color-mix(in srgb, var(--compare-city-a) 14%, var(--bg-card));
   color: var(--compare-city-a);
   border-color: color-mix(in srgb, var(--compare-city-a) 25%, var(--border-card));
 }
 
 .compare-section__badge--b {
-  background: color-mix(in srgb, var(--compare-city-b) 10%, transparent);
+  background: color-mix(in srgb, var(--compare-city-b) 14%, var(--bg-card));
   color: var(--compare-city-b);
   border-color: color-mix(in srgb, var(--compare-city-b) 25%, var(--border-card));
 }
@@ -485,8 +475,8 @@ html:not(.dark) .compare-section {
 }
 
 .compare-section__badge--difference {
-  background: color-mix(in srgb, var(--caution) 10%, var(--bg-card));
-  color: var(--caution);
+  background: color-mix(in srgb, #f59e0b 10%, var(--bg-card));
+  color: #b45309;
 }
 
 /* ── Hero ── */
@@ -512,7 +502,7 @@ html:not(.dark) .compare-section {
 
 .compare-section__hero-city-label,
 .compare-section__hero-kicker {
-  color: color-mix(in srgb, var(--text-primary) 62%, var(--text-secondary) 38%);
+  color: var(--text-secondary);
   font-size: 0.76rem;
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -543,13 +533,13 @@ html:not(.dark) .compare-section {
 }
 
 .compare-section__hero-pill--a {
-  background: color-mix(in srgb, var(--compare-city-a) 10%, transparent);
+  background: color-mix(in srgb, var(--compare-city-a) 16%, var(--bg-card));
   color: var(--compare-city-a);
   border-color: color-mix(in srgb, var(--compare-city-a) 32%, var(--border-card));
 }
 
 .compare-section__hero-pill--b {
-  background: color-mix(in srgb, var(--compare-city-b) 10%, transparent);
+  background: color-mix(in srgb, var(--compare-city-b) 16%, var(--bg-card));
   color: var(--compare-city-b);
   border-color: color-mix(in srgb, var(--compare-city-b) 32%, var(--border-card));
 }
@@ -561,9 +551,9 @@ html:not(.dark) .compare-section {
 }
 
 .compare-section__hero-pill--difference {
-  background: color-mix(in srgb, var(--caution) 13%, var(--bg-card));
-  color: var(--caution);
-  border-color: color-mix(in srgb, var(--caution) 28%, var(--border-card));
+  background: color-mix(in srgb, #f59e0b 13%, var(--bg-card));
+  color: #d97706;
+  border-color: color-mix(in srgb, #f59e0b 28%, var(--border-card));
 }
 
 .compare-section__hero-arrow {
@@ -619,7 +609,7 @@ html:not(.dark) .compare-section {
 .compare-section__metric-name {
   font-size: 0.72rem;
   font-weight: 600;
-  color: color-mix(in srgb, var(--text-primary) 58%, var(--text-secondary) 42%);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   white-space: nowrap;
@@ -667,7 +657,7 @@ html:not(.dark) .compare-section {
 }
 
 .compare-section__metric-val--dim {
-  color: color-mix(in srgb, var(--text-primary) 72%, var(--text-secondary) 28%);
+  color: var(--text-secondary);
 }
 
 /* ── Center: pill only ── */
@@ -690,13 +680,13 @@ html:not(.dark) .compare-section {
 }
 
 .compare-section__diff--a {
-  background: color-mix(in srgb, var(--compare-city-a) 10%, transparent);
+  background: color-mix(in srgb, var(--compare-city-a) 14%, var(--bg-card));
   color: var(--compare-city-a);
   border-color: color-mix(in srgb, var(--compare-city-a) 22%, var(--border-card));
 }
 
 .compare-section__diff--b {
-  background: color-mix(in srgb, var(--compare-city-b) 10%, transparent);
+  background: color-mix(in srgb, var(--compare-city-b) 14%, var(--bg-card));
   color: var(--compare-city-b);
   border-color: color-mix(in srgb, var(--compare-city-b) 22%, var(--border-card));
 }
@@ -713,9 +703,9 @@ html:not(.dark) .compare-section {
 }
 
 .compare-section__diff--context {
-  background: color-mix(in srgb, var(--caution) 13%, var(--bg-card));
-  color: var(--caution);
-  border-color: color-mix(in srgb, var(--caution) 28%, var(--border-card));
+  background: color-mix(in srgb, #f59e0b 13%, var(--bg-card));
+  color: #d97706;
+  border-color: color-mix(in srgb, #f59e0b 28%, var(--border-card));
   font-weight: 700;
 }
 

@@ -342,7 +342,6 @@ watch(() => localState.value, () => {
 </template>
 
 <style scoped>
-/* TODO(color-tokens): This file still contains hardcoded colors outside shared CSS variables. Keep them unchanged during the token refactor. */
 .compare-search-card {
   padding: 18px;
   border: 1px solid var(--border-card);
@@ -353,32 +352,12 @@ watch(() => localState.value, () => {
 
 .compare-search-card--a {
   border-color: color-mix(in srgb, var(--compare-city-a) 34%, var(--border-card));
-  background: linear-gradient(180deg, color-mix(in srgb, var(--compare-city-a) 10%, transparent) 0%, var(--bg-card) 100%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--compare-city-a) 10%, var(--bg-card)) 0%, var(--bg-card) 100%);
 }
 
 .compare-search-card--b {
   border-color: color-mix(in srgb, var(--compare-city-b) 34%, var(--border-card));
-  background: linear-gradient(180deg, color-mix(in srgb, var(--compare-city-b) 10%, transparent) 0%, var(--bg-card) 100%);
-}
-
-html:not(.dark) .compare-search-card {
-  background: var(--bg-card-inner);
-}
-
-html:not(.dark) .compare-search-card--a {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--compare-city-a) 10%, var(--bg-card-inner)) 0%,
-    var(--bg-card-inner) 100%
-  );
-}
-
-html:not(.dark) .compare-search-card--b {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--compare-city-b) 10%, var(--bg-card-inner)) 0%,
-    var(--bg-card-inner) 100%
-  );
+  background: linear-gradient(180deg, color-mix(in srgb, var(--compare-city-b) 10%, var(--bg-card)) 0%, var(--bg-card) 100%);
 }
 
 .compare-search-card__header {
@@ -419,12 +398,12 @@ html:not(.dark) .compare-search-card--b {
 
 .compare-search-card--a :deep(input) {
   border-color: color-mix(in srgb, var(--compare-city-a) 35%, var(--border-card));
-  background-color: color-mix(in srgb, var(--compare-city-a) 10%, transparent);
+  background-color: color-mix(in srgb, var(--compare-city-a) 7%, var(--bg-input));
 }
 
 .compare-search-card--b :deep(input) {
   border-color: color-mix(in srgb, var(--compare-city-b) 35%, var(--border-card));
-  background-color: color-mix(in srgb, var(--compare-city-b) 10%, transparent);
+  background-color: color-mix(in srgb, var(--compare-city-b) 7%, var(--bg-input));
 }
 
 .compare-search-card--a :deep(input:focus) {
@@ -445,12 +424,12 @@ html:not(.dark) .compare-search-card--b {
 
 .compare-search-card--b button {
   background: var(--compare-city-b);
-  color: var(--text-primary);
+  color: #062824;
 }
 
 .compare-search-card--b button:hover {
   background: color-mix(in srgb, var(--compare-city-b) 82%, black);
-  color: var(--text-primary);
+  color: #041c19;
 }
 
 .compare-search-card__btn-icon {
@@ -501,15 +480,15 @@ html:not(.dark) .compare-search-card--b {
 }
 
 .compare-search-card--a.compare-search-card--sheet :deep(.search-bar > button) {
-  background: color-mix(in srgb, var(--compare-city-a) 10%, transparent);
+  background: color-mix(in srgb, var(--compare-city-a) 18%, #2a2d38);
   border-color: color-mix(in srgb, var(--compare-city-a) 78%, white 8%);
-  color: var(--text-primary);
+  color: #eefcf9;
 }
 
 .compare-search-card--b.compare-search-card--sheet :deep(.search-bar > button) {
-  background: color-mix(in srgb, var(--compare-city-b) 10%, transparent);
+  background: color-mix(in srgb, var(--compare-city-b) 16%, #2a2d38);
   border-color: color-mix(in srgb, var(--compare-city-b) 72%, white 8%);
-  color: var(--text-primary);
+  color: #eff6ff;
 }
 
 .compare-search-card--sheet :deep(.search-bar > button:hover) {
