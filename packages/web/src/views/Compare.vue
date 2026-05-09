@@ -821,61 +821,28 @@ onBeforeUnmount(() => {
       />
     </div>
 
-    <section v-if="!hasCityB" class="compare-intro">
-      <div class="compare-intro__hero">
-        <div class="ed-section-label compare-intro__label">
-          <span class="ed-section-label__num">§ 00</span>
-          <span class="ed-section-label__dot">·</span>
-          <span>Comparative Survey</span>
+    <div v-if="!hasCityB" class="compare-pending">
+      <p class="compare-pending__tagline">One city short of a verdict.</p>
+      <div class="compare-pending__modes">
+        <div class="compare-pending__mode">
+          <span class="compare-pending__mode-num">01</span>
+          <span class="compare-pending__mode-name">Cartographer</span>
+          <span class="compare-pending__mode-desc">Map read</span>
         </div>
-        <h2 class="ed-heading compare-intro__title">{{ hasCityA ? 'Choose the second city to begin.' : 'Choose two cities to compare.' }}</h2>
-        <p class="compare-intro__lede">
-          {{ hasCityA
-            ? 'City A is ready. Add City B above to unlock the cartographer map read, the matchup spread, and the dossier verdict.'
-            : 'Search for City A and City B above to unlock the cartographer map read, the matchup spread, and the dossier verdict.' }}
-        </p>
-      </div>
-
-      <div class="compare-intro__stage">
-        <article class="compare-intro__subject compare-intro__subject--a">
-          <div class="compare-intro__subject-label">Subject A</div>
-          <div class="compare-intro__subject-city">{{ slugToDisplay(cityA) }}</div>
-          <div class="compare-intro__subject-state">{{ stateA.toUpperCase() }}</div>
-        </article>
-
-        <div class="compare-intro__center">
-          <div class="compare-intro__center-kicker">Search City B</div>
-          <div class="compare-intro__center-vs">vs</div>
-          <p class="compare-intro__center-copy">Use the search bars above to set the other side of the comparison.</p>
+        <div class="compare-pending__divider" aria-hidden="true"></div>
+        <div class="compare-pending__mode">
+          <span class="compare-pending__mode-num">02</span>
+          <span class="compare-pending__mode-name">Matchup</span>
+          <span class="compare-pending__mode-desc">Spread</span>
         </div>
-
-        <article class="compare-intro__subject compare-intro__subject--b">
-          <div class="compare-intro__subject-label">Subject B</div>
-          <div class="compare-intro__subject-placeholder">Awaiting counterpart</div>
-          <div class="compare-intro__subject-state compare-intro__subject-state--placeholder">Use the search rail above</div>
-        </article>
+        <div class="compare-pending__divider" aria-hidden="true"></div>
+        <div class="compare-pending__mode">
+          <span class="compare-pending__mode-num">03</span>
+          <span class="compare-pending__mode-name">Dossier</span>
+          <span class="compare-pending__mode-desc">Verdict</span>
+        </div>
       </div>
-
-      <div class="compare-intro__modes">
-        <article class="compare-intro__mode">
-          <div class="compare-intro__mode-label">Cartographer 01</div>
-          <h3 class="compare-intro__mode-title">Read the tradeoffs at a glance.</h3>
-          <p class="compare-intro__mode-copy">Headline wins, number lines, and the fastest sense of which city fits better.</p>
-        </article>
-
-        <article class="compare-intro__mode">
-          <div class="compare-intro__mode-label">Matchup 02</div>
-          <h3 class="compare-intro__mode-title">See where the two places diverge.</h3>
-          <p class="compare-intro__mode-copy">Radar shape, headline deltas, and a full metric ledger in one view.</p>
-        </article>
-
-        <article class="compare-intro__mode">
-          <div class="compare-intro__mode-label">Dossier 03</div>
-          <h3 class="compare-intro__mode-title">Get the editorial verdict.</h3>
-          <p class="compare-intro__mode-copy">Photo-led spread, narrative summary, and who is most at home in each city.</p>
-        </article>
-      </div>
-    </section>
+    </div>
 
     <section v-else-if="loading" class="compare-loading">
       <div v-for="card in 5" :key="card" class="compare-loading__card"></div>

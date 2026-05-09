@@ -185,8 +185,8 @@ html.dark .compare-hdr__favicon {
 
 .compare-intro__title {
   max-width: 760px;
-  font-size: clamp(1.95rem, 3.6vw, 3rem);
-  line-height: 1.03;
+  font-size: clamp(1.1rem, 1.5vw, 1.4rem);
+  line-height: 1.12;
 }
 
 .compare-intro__lede {
@@ -209,8 +209,8 @@ html.dark .compare-hdr__favicon {
 
 .compare-intro__subject,
 .compare-intro__center {
-  min-height: 320px;
-  padding: 26px 28px 24px;
+  min-height: 140px;
+  padding: 18px 20px 16px;
 }
 
 .compare-intro__subject {
@@ -241,8 +241,8 @@ html.dark .compare-hdr__favicon {
 .compare-intro__subject-city,
 .compare-intro__subject-placeholder {
   font-family: var(--font-display-serif);
-  font-size: clamp(2.3rem, 5vw, 4.1rem);
-  line-height: 0.94;
+  font-size: clamp(1.1rem, 2vw, 1.7rem);
+  line-height: 1.05;
   color: var(--text-primary);
 }
 
@@ -277,7 +277,7 @@ html.dark .compare-hdr__favicon {
 
 .compare-intro__center-vs {
   font-family: var(--font-display);
-  font-size: clamp(2.2rem, 4vw, 3.6rem);
+  font-size: clamp(1.1rem, 1.8vw, 1.6rem);
   line-height: 0.9;
   color: var(--accent);
 }
@@ -303,11 +303,11 @@ html.dark .compare-hdr__favicon {
 }
 
 .compare-intro__mode-title {
-  margin: 12px 0 10px;
+  margin: 8px 0 6px;
   font-family: var(--font-display-serif);
-  font-size: clamp(1.35rem, 2vw, 1.85rem);
+  font-size: clamp(0.9rem, 1.1vw, 1.1rem);
   font-weight: 400;
-  line-height: 1.02;
+  line-height: 1.15;
   color: var(--text-primary);
 }
 
@@ -317,6 +317,70 @@ html.dark .compare-hdr__favicon {
   font-size: 0.9375rem;
   line-height: 1.7;
   color: var(--text-secondary);
+}
+
+/* Pending state — shown when only one city is set */
+.compare-pending {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 36px;
+  padding: 72px 24px 80px;
+  text-align: center;
+  opacity: 0.35;
+  user-select: none;
+  pointer-events: none;
+}
+
+.compare-pending__tagline {
+  font-family: var(--font-display-serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(1.75rem, 2.8vw, 2.4rem);
+  line-height: 1.2;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.compare-pending__modes {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.compare-pending__mode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 0 36px;
+}
+
+.compare-pending__divider {
+  width: 1px;
+  height: 36px;
+  background: var(--border-color);
+  flex-shrink: 0;
+}
+
+.compare-pending__mode-num {
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+}
+
+.compare-pending__mode-name {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.compare-pending__mode-desc {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
 }
 
 /* Tab content transition */
@@ -1691,7 +1755,7 @@ html.dark .compare-hdr__favicon {
   }
 
   .compare-intro__title {
-    font-size: clamp(1.7rem, 4.8vw, 2.35rem);
+    font-size: clamp(1rem, 2.4vw, 1.3rem);
   }
 
   .compare-intro__stage {
@@ -1899,8 +1963,8 @@ html.dark .compare-hdr__favicon {
   }
 
   .compare-intro__title {
-    font-size: clamp(1.45rem, 8vw, 2rem);
-    line-height: 1.05;
+    font-size: clamp(0.95rem, 5vw, 1.2rem);
+    line-height: 1.12;
   }
 
   .compare-intro__lede {
@@ -1916,7 +1980,7 @@ html.dark .compare-hdr__favicon {
 
   .compare-intro__subject-city,
   .compare-intro__subject-placeholder {
-    font-size: clamp(1.85rem, 10vw, 2.6rem);
+    font-size: clamp(0.95rem, 5.5vw, 1.4rem);
   }
 
   .compare-intro__subject-state {
@@ -1928,7 +1992,7 @@ html.dark .compare-hdr__favicon {
   }
 
   .compare-intro__center-vs {
-    font-size: clamp(1.8rem, 10vw, 2.5rem);
+    font-size: clamp(1rem, 5.5vw, 1.5rem);
   }
 
   .compare-intro__center-copy {
@@ -1946,8 +2010,8 @@ html.dark .compare-hdr__favicon {
   }
 
   .compare-intro__mode-title {
-    margin: 10px 0 8px;
-    font-size: 1.32rem;
+    margin: 6px 0 5px;
+    font-size: 0.9rem;
   }
 
   .compare-intro__mode-copy {
