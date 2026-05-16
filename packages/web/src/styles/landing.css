@@ -127,6 +127,11 @@ html:not(.dark) .hero-dots {
   transition: opacity 0.28s ease, transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+html:not(.dark) .dashboard-panel {
+  background: var(--bg-card);
+  border-radius: 16px;
+}
+
 .dashboard-panel--hero {
   grid-column: 1 / -1;
   overflow: visible;
@@ -912,7 +917,7 @@ html:not(.dark) .snap-metric--secondary {
   transform: translate(-50%, -50%);
   width: 20px;
   height: 20px;
-  background-color: color-mix(in srgb, var(--accent) 75%, #0f172a);
+  background-color: var(--accent);
   border-radius: 50%;
   opacity: 0;
   transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
@@ -927,12 +932,12 @@ html:not(.dark) .snap-metric--secondary {
 
 .breadcrumb:hover {
   box-shadow: 0 0 0 10px transparent;
-  color: #0f172a;
+  color: white;
   border-radius: 10px;
 }
 
 .breadcrumb:hover .breadcrumb__arr {
-  color: #0f172a;
+  color: white;
 }
 
 .breadcrumb:hover .breadcrumb__arr--1 {

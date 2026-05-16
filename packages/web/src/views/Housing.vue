@@ -2,7 +2,8 @@
 import { computed, ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { fetchDetailedHousing } from "../api/housing";
-import { mdiChevronLeft, mdiOfficeBuildingOutline } from "@mdi/js";
+import { mdiOfficeBuildingOutline } from "@mdi/js";
+import DashboardHeader from "../components/DashboardHeader.vue";
 
 const props = defineProps<{
   state: string;
@@ -65,20 +66,7 @@ onMounted(() => {
 
 <template>
   <div class="container">
-    <div class="header-nav">
-      <div class="title-bar">
-        <div class="title-section">
-          <h1>Housing Details</h1>
-          <h2>{{ city.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') }}, {{ state.toUpperCase() }}</h2>
-        </div>
-        <button @click="goBack" class="breadcrumb">
-          <svg width="18" height="18" viewBox="0 0 24 24">
-            <path :d="mdiChevronLeft" fill="currentColor"/>
-          </svg>
-          <span>Overview</span>
-        </button>
-      </div>
-    </div>
+    <DashboardHeader :city="city" :state="state" @logo-click="goBack" />
 
     <div v-if="loading" class="hero">
       <p>Loading detailed housing data…</p>

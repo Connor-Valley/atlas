@@ -17,7 +17,7 @@
 }
 
 html:not(.dark) .data-card {
-  background: var(--bg-card-inner);
+  background: var(--bg-card);
 }
 
 html.dark .data-card {
@@ -242,7 +242,7 @@ html.dark .data-card {
 }
 
 html:not(.dark) .metric {
-  background: color-mix(in srgb, var(--bg-card) 78%, var(--bg-card-inner) 22%);
+  background: var(--bg-card-inner);
 }
 
 .metric:hover {

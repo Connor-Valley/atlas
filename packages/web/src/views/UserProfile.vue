@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import SiteHeader from '../components/SiteHeader.vue';
+import DashboardHeader from '../components/DashboardHeader.vue';
 import { useAuth } from '../composables/useAuth';
 import { useFriends } from '../composables/useFriends';
 import { useToast } from '../composables/useToast';
@@ -241,11 +241,9 @@ watch(() => user.value?.id, loadProfile);
 
 <template>
   <div class="profile-page">
-    <div class="container">
-      <SiteHeader
-        show-search
-        show-theme-toggle
-        @search="({ city, state }) => router.push({ name: 'city', params: { city, state } })"
+    <div class="container container--header-only">
+      <DashboardHeader
+        :page-label="targetProfile?.display_name || targetProfile?.username || 'Profile'"
         @logo-click="router.push({ name: 'home' })"
       />
     </div>
@@ -578,8 +576,8 @@ watch(() => user.value?.id, loadProfile);
 }
 
 .profile-page__heading {
-  padding: 4px 40px 16px;
-  max-width: 1300px;
+  padding: 4px 32px 16px;
+  max-width: 1440px;
   margin: 0 auto;
   width: 100%;
   display: flex;
@@ -628,16 +626,16 @@ watch(() => user.value?.id, loadProfile);
 
 /* ── Grid layout ─────────────────────────────────────────────── */
 .profile-layout {
-  max-width: 1300px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 0 40px;
+  padding: 0 32px;
   display: grid;
   grid-template-columns: 1.4fr 1fr;
   gap: 20px;
 }
 
 .profile-card {
-  background: var(--bg-card-inner);
+  background: var(--bg-card);
   border: 1px solid color-mix(in srgb, var(--border-card) 94%, var(--accent) 6%);
   border-radius: 22px;
   padding: 24px;

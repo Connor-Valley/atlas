@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import CompareCitySearch from "../components/CompareCitySearch.vue";
 import CompareSection from "../components/CompareSection.vue";
-import SiteHeader from "../components/SiteHeader.vue";
+import DashboardHeader from "../components/DashboardHeader.vue";
 import AuthModal from "../components/AuthModal.vue";
 import { fetchAffordability } from "../api/affordability";
 import { fetchCity } from "../api/cities";
@@ -628,90 +628,77 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="container compare-view">
-    <SiteHeader :show-theme-toggle="true" theme-toggle-placement="after-actions" :mobile-compact="true" @logo-click="resetToHome">
-      <template #leading>
-        <button class="breadcrumb compare-view__back" @click="goBack">
-          <span class="breadcrumb__arr breadcrumb__arr--1 mdi mdi-arrow-left"></span>
-          <span class="breadcrumb__text">Back</span>
-          <span class="breadcrumb__arr breadcrumb__arr--2 mdi mdi-arrow-left"></span>
-          <span class="breadcrumb__circle"></span>
+    <DashboardHeader page-label="City Comparison" @logo-click="resetToHome" />
+
+    <div v-if="compareReady" class="compare-view__actions-bar">
+      <div ref="shareMenuRef" class="compare-view__share-wrap">
+        <button
+          class="compare-view__share-btn"
+          :class="{ 'compare-view__share-btn--active': shareMenuOpen }"
+          @click.stop="openShareOptions"
+        >
+          <span class="compare-view__share-btn-label">{{ shareCopied ? 'Copied' : 'Share' }}</span>
+          <span class="mdi" :class="shareCopied ? 'mdi-check' : 'mdi-share-variant-outline'"></span>
         </button>
-      </template>
-      <template #title>
-        <h1 class="compare-view__page-title">City Comparison</h1>
-      </template>
-      <template v-if="compareReady" #actions>
-        <div class="compare-view__actions">
-          <div ref="shareMenuRef" class="compare-view__share-wrap">
-            <button
-              class="compare-view__share-btn"
-              :class="{ 'compare-view__share-btn--active': shareMenuOpen }"
-              @click.stop="openShareOptions"
-            >
-              <span class="compare-view__share-btn-label">{{ shareCopied ? 'Copied' : 'Share' }}</span>
-              <span class="mdi" :class="shareCopied ? 'mdi-check' : 'mdi-share-variant-outline'"></span>
-            </button>
 
-            <div v-if="shareMenuOpen" class="compare-view__share-menu" @click.stop>
-              <button
-                v-if="supportsNativeShare"
-                class="compare-view__share-item compare-view__share-item--primary"
-                @click="shareNatively"
-              >
-                <span class="mdi mdi-cellphone-arrow-down compare-view__share-item-icon"></span>
-                Share via device
-              </button>
-              <button class="compare-view__share-item" @click="copyShareLink">
-                <span class="mdi mdi-content-copy compare-view__share-item-icon"></span>
-                Copy link
-              </button>
-              <button class="compare-view__share-item" @click="shareToMessages">
-                <span class="mdi mdi-message-text-outline compare-view__share-item-icon"></span>
-                Messages
-              </button>
-              <button class="compare-view__share-item" @click="shareToEmail">
-                <span class="mdi mdi-email-outline compare-view__share-item-icon"></span>
-                Email
-              </button>
-              <button class="compare-view__share-item" @click="shareToX">
-                <span class="mdi mdi-twitter compare-view__share-item-icon"></span>
-                X
-              </button>
-              <button class="compare-view__share-item" @click="shareToFacebook">
-                <span class="mdi mdi-facebook compare-view__share-item-icon"></span>
-                Facebook
-              </button>
-              <button class="compare-view__share-item" @click="shareToLinkedIn">
-                <span class="mdi mdi-linkedin compare-view__share-item-icon"></span>
-                LinkedIn
-              </button>
-            </div>
-          </div>
-
-          <span class="compare-view__save-wrap">
-            <button
-              class="compare-view__save-btn"
-              :class="{ 'compare-view__save-btn--saved': isSaved, 'compare-view__save-btn--animating': isSaving }"
-              :data-tooltip="isSaved ? 'Unsave comparison' : 'Save city comparison'"
-              @click="toggleSave"
-            >
-              <span class="compare-view__save-btn-label">{{ isSaved ? 'Saved' : 'Save' }}</span>
-              <span class="mdi" :class="isSaved ? 'mdi-bookmark' : 'mdi-bookmark-outline'"></span>
-            </button>
-            <Transition name="saved-link">
-              <button
-                v-if="showSavedLink"
-                class="compare-view__saved-link"
-                @click="router.push({ name: 'saved-comparisons' })"
-              >
-                View saved
-                <span class="mdi mdi-arrow-right"></span>
-              </button>
-            </Transition>
-          </span>
+        <div v-if="shareMenuOpen" class="compare-view__share-menu" @click.stop>
+          <button
+            v-if="supportsNativeShare"
+            class="compare-view__share-item compare-view__share-item--primary"
+            @click="shareNatively"
+          >
+            <span class="mdi mdi-cellphone-arrow-down compare-view__share-item-icon"></span>
+            Share via device
+          </button>
+          <button class="compare-view__share-item" @click="copyShareLink">
+            <span class="mdi mdi-content-copy compare-view__share-item-icon"></span>
+            Copy link
+          </button>
+          <button class="compare-view__share-item" @click="shareToMessages">
+            <span class="mdi mdi-message-text-outline compare-view__share-item-icon"></span>
+            Messages
+          </button>
+          <button class="compare-view__share-item" @click="shareToEmail">
+            <span class="mdi mdi-email-outline compare-view__share-item-icon"></span>
+            Email
+          </button>
+          <button class="compare-view__share-item" @click="shareToX">
+            <span class="mdi mdi-twitter compare-view__share-item-icon"></span>
+            X
+          </button>
+          <button class="compare-view__share-item" @click="shareToFacebook">
+            <span class="mdi mdi-facebook compare-view__share-item-icon"></span>
+            Facebook
+          </button>
+          <button class="compare-view__share-item" @click="shareToLinkedIn">
+            <span class="mdi mdi-linkedin compare-view__share-item-icon"></span>
+            LinkedIn
+          </button>
         </div>
-      </template>
-    </SiteHeader>
+      </div>
+
+      <span class="compare-view__save-wrap">
+        <button
+          class="compare-view__save-btn"
+          :class="{ 'compare-view__save-btn--saved': isSaved, 'compare-view__save-btn--animating': isSaving }"
+          :data-tooltip="isSaved ? 'Unsave comparison' : 'Save city comparison'"
+          @click="toggleSave"
+        >
+          <span class="compare-view__save-btn-label">{{ isSaved ? 'Saved' : 'Save' }}</span>
+          <span class="mdi" :class="isSaved ? 'mdi-bookmark' : 'mdi-bookmark-outline'"></span>
+        </button>
+        <Transition name="saved-link">
+          <button
+            v-if="showSavedLink"
+            class="compare-view__saved-link"
+            @click="router.push({ name: 'saved-comparisons' })"
+          >
+            View saved
+            <span class="mdi mdi-arrow-right"></span>
+          </button>
+        </Transition>
+      </span>
+    </div>
 
     <section class="compare-ticker" :class="{ 'compare-ticker--placeholder': !hasCityB }" aria-label="Comparison ticker">
       <div class="compare-ticker__track">

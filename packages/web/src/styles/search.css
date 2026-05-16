@@ -15,7 +15,7 @@
 }
 
 html:not(.dark) .search-bar {
-  background: var(--bg-card-inner);
+  background: var(--bg-card);
 }
 
 .hero-content .search-bar {

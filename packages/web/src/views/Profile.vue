@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import SiteHeader from '../components/SiteHeader.vue';
+import DashboardHeader from '../components/DashboardHeader.vue';
 import { useAuth } from '../composables/useAuth';
 import { useFavorites } from '../composables/useFavorites';
 import { useComparisons } from '../composables/useComparisons';
@@ -279,13 +279,8 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="profile-page">
-    <div class="container">
-      <SiteHeader
-        show-search
-        show-theme-toggle
-        @search="({ city, state }) => router.push({ name: 'city', params: { city, state } })"
-        @logo-click="router.push({ name: 'home' })"
-      />
+    <div class="container container--header-only">
+      <DashboardHeader page-label="Profile" @logo-click="router.push({ name: 'home' })" />
     </div>
 
     <div class="profile-page__heading">
@@ -689,8 +684,8 @@ onBeforeUnmount(() => {
 }
 
 .profile-page__heading {
-  padding: 4px 40px 16px;
-  max-width: 1300px;
+  padding: 4px 32px 16px;
+  max-width: 1440px;
   margin: 0 auto;
   width: 100%;
   display: flex;
@@ -761,16 +756,16 @@ onBeforeUnmount(() => {
 }
 
 .profile-layout {
-  max-width: 1300px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 0 40px;
+  padding: 0 32px;
   display: grid;
   grid-template-columns: 1.4fr 1fr;
   gap: 20px;
 }
 
 .profile-card {
-  background: var(--bg-card-inner);
+  background: var(--bg-card);
   border: 1px solid color-mix(in srgb, var(--border-card) 94%, var(--accent) 6%);
   border-radius: 22px;
   padding: 24px;

@@ -14,7 +14,7 @@
 }
 
 html:not(.dark) .section {
-  background: var(--bg-card-inner);
+  background: var(--bg-card);
 }
 
 html.dark .section {
@@ -119,7 +119,7 @@ html.dark .section {
 }
 
 html:not(.dark) .stat {
-  background: color-mix(in srgb, var(--bg-card) 78%, var(--bg-card-inner) 22%);
+  background: var(--bg-card-inner);
 }
 
 .stat label {

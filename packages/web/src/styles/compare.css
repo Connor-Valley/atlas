@@ -67,6 +67,14 @@
   gap: 10px;
 }
 
+.compare-view__actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
 .compare-view__save-wrap {
   position: relative;
   display: inline-flex;

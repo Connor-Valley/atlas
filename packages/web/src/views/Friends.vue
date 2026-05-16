@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import SiteHeader from '../components/SiteHeader.vue';
+import DashboardHeader from '../components/DashboardHeader.vue';
 import { useAuth } from '../composables/useAuth';
 import { useFriends } from '../composables/useFriends';
 import { useToast } from '../composables/useToast';
@@ -138,13 +138,8 @@ onUnmounted(() => {
 
 <template>
   <div class="friends-page">
-    <div class="container">
-      <SiteHeader
-        show-search
-        show-theme-toggle
-        @search="({ city, state }) => router.push({ name: 'city', params: { city, state } })"
-        @logo-click="router.push({ name: 'home' })"
-      />
+    <div class="container container--header-only">
+      <DashboardHeader page-label="Friends" @logo-click="router.push({ name: 'home' })" />
     </div>
 
     <!-- Title bar -->
@@ -414,9 +409,9 @@ onUnmounted(() => {
 
 /* ── Heading bar ──────────────────────────────────────────── */
 .friends-page__heading {
-  padding: 4px 40px 20px;
+  padding: 4px 32px 20px;
   margin-top: 0;
-  max-width: 1300px;
+  max-width: 1440px;
   margin: 0 auto;
   display: flex;
   align-items: center;
@@ -468,9 +463,9 @@ onUnmounted(() => {
 
 /* ── Toolbar ──────────────────────────────────────────────── */
 .friends-toolbar {
-  max-width: 1300px;
+  max-width: 1440px;
   margin: 0 auto 24px;
-  padding: 0 40px;
+  padding: 0 32px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -574,9 +569,9 @@ onUnmounted(() => {
 
 /* ── Friends list ─────────────────────────────────────────── */
 .friends-content {
-  max-width: 1300px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 0 40px;
+  padding: 0 32px;
 }
 
 .flist {
@@ -778,8 +773,8 @@ html:not(.dark) .flist__avatar {
 }
 
 .search-modal__input {
-  padding-left: 40px !important;
-  padding-right: 40px !important;
+  padding-left: 32px !important;
+  padding-right: 32px !important;
   padding-top: 13px !important;
   padding-bottom: 13px !important;
   font-size: 1rem !important;

@@ -11,7 +11,7 @@ import IncomeExpandedView from "../components/IncomeExpandedView.vue";
 import AffordabilitySection from "../components/AffordabilitySection.vue";
 import AffordabilityExpandedView from "../components/AffordabilityExpandedView.vue";
 import AuthModal from "../components/AuthModal.vue";
-import SiteHeader from "../components/SiteHeader.vue";
+import DashboardHeader from "../components/DashboardHeader.vue";
 import ThemeToggle from "../components/ThemeToggle.vue";
 import { useAuth } from "../composables/useAuth";
 import { prefetchDetailedHousing } from "../api/housing";
@@ -619,7 +619,7 @@ function getPanelElement(section: ExpandableSection) {
 
 function getDashboardEnterElements() {
   return [
-    dashboardStage.value?.querySelector(".site-header") as HTMLElement | null,
+    dashboardStage.value?.querySelector(".dashboard-hdr") as HTMLElement | null,
     scorePills.value,
     dashboardShell.value,
     cityNotFoundPanel.value,
@@ -799,7 +799,7 @@ async function animateDashboardToLanding() {
   target.style.opacity = "0";
 
   const dashboardElements = [
-    dashboardStage.value?.querySelector(".site-header") as HTMLElement | null,
+    dashboardStage.value?.querySelector(".dashboard-hdr") as HTMLElement | null,
     scorePills.value,
     dashboardShell.value,
     cityNotFoundPanel.value,
@@ -1176,64 +1176,23 @@ async function closeExpandedSection() {
 
   <!-- After search: city data view -->
   <div v-if="showDashboard" ref="dashboardStage" class="container">
-    <SiteHeader
-      show-search
-      :show-theme-toggle="hasSearched && !transitioningToLanding"
-      :initial-city="city"
-      :initial-state="state"
-      @search="onSearch"
-      @logo-click="resetSearch"
-    >
-      <template v-if="sectionExpanded" #mobile-leading>
-        <button class="breadcrumb score-pills__back" @click="closeExpandedSection">
-          <span class="breadcrumb__arr breadcrumb__arr--1 mdi mdi-arrow-left"></span>
-          <span class="breadcrumb__text">Back</span>
-          <span class="breadcrumb__arr breadcrumb__arr--2 mdi mdi-arrow-left"></span>
-          <span class="breadcrumb__circle"></span>
-        </button>
-      </template>
-    </SiteHeader>
+    <DashboardHeader :city="city" :state="state" @logo-click="resetSearch" />
 
     <!-- Score pills bar -->
     <div v-if="!cityNotFound" ref="scorePills" class="score-pills" :class="{ 'score-pills--expanded': sectionExpanded }">
-      <template v-if="sectionExpanded">
-        <button class="breadcrumb score-pills__back" @click="closeExpandedSection">
-          <span class="breadcrumb__arr breadcrumb__arr--1 mdi mdi-arrow-left"></span>
-          <span class="breadcrumb__text">Back</span>
-          <span class="breadcrumb__arr breadcrumb__arr--2 mdi mdi-arrow-left"></span>
-          <span class="breadcrumb__circle"></span>
-        </button>
-      </template>
-      <div class="score-pills__pills" :class="{ 'score-pills__pills--right': sectionExpanded }">
-        <div
-          class="score-pill"
-          :class="{ 'score-pill--top': topCategory === 'economic' }"
-        >
-          <span class="score-pill__label">Income</span>
-          <span class="score-pill__value">{{ scores.economic !== null ? scores.economic : '—' }}</span>
-        </div>
-        <div
-          class="score-pill"
-          :class="{ 'score-pill--top': topCategory === 'housing' }"
-        >
-          <span class="score-pill__label">Housing</span>
-          <span class="score-pill__value">{{ scores.housing !== null ? scores.housing : '—' }}</span>
-        </div>
-        <div
-          class="score-pill"
-          :class="{ 'score-pill--top': topCategory === 'affordability' }"
-        >
-          <span class="score-pill__label">Affordability</span>
-          <span class="score-pill__value">{{ scores.affordability !== null ? scores.affordability : '—' }}</span>
-        </div>
-        <div
-          class="score-pill"
-          :class="{ 'score-pill--top': topCategory === 'people' }"
-        >
-          <span class="score-pill__label">People</span>
-          <span class="score-pill__value">{{ scores.people !== null ? scores.people : '—' }}</span>
-        </div>
-      </div>
+      <button v-if="sectionExpanded" class="breadcrumb score-pills__back" @click="closeExpandedSection">
+        <span class="breadcrumb__arr breadcrumb__arr--1 mdi mdi-arrow-left"></span>
+        <span class="breadcrumb__text">Back</span>
+        <span class="breadcrumb__arr breadcrumb__arr--2 mdi mdi-arrow-left"></span>
+        <span class="breadcrumb__circle"></span>
+      </button>
+      <CitySearch
+        v-if="!sectionExpanded"
+        class="score-pills__search"
+        :initial-city="city"
+        :initial-state="state"
+        @search="onSearch"
+      />
       <div v-if="!sectionExpanded" ref="cityShareMenuRef" class="score-pills__share-wrap">
         <button
           class="score-pills__compare-btn"

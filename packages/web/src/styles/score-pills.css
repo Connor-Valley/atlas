@@ -7,6 +7,7 @@
   align-items: center;
   justify-content: flex-start;
   gap: 10px;
+  margin-top: 28px;
   margin-bottom: 24px;
   flex-wrap: wrap;
 }
@@ -28,6 +29,13 @@
   margin-left: auto;
 }
 
+.score-pills .search-bar {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
+  padding: 6px;
+}
+
 .score-pills__pills {
   display: flex;
   gap: 10px;
@@ -37,13 +45,14 @@
 .score-pills__compare-btn {
   display: inline-flex;
   align-items: center;
-  align-self: stretch;
+  align-self: center;
   gap: 8px;
+  height: 38px;
   border: 1px solid color-mix(in srgb, var(--accent-soft) 32%, var(--border-card));
   background: color-mix(in srgb, var(--accent-soft) 12%, var(--bg-card));
   color: var(--text-primary);
-  border-radius: 999px;
-  padding: 8px 16px;
+  border-radius: 14px;
+  padding: 0 16px;
   font: inherit;
   font-size: 0.84rem;
   font-weight: 600;
@@ -54,18 +63,15 @@
 }
 
 html:not(.dark) .score-pills__compare-btn {
-  background: var(--bg-card-inner);
+  background: var(--bg-card);
 }
 
 .score-pills__share-wrap {
   position: relative;
   display: inline-flex;
+  align-items: center;
   margin-left: auto;
-  align-self: stretch;
-}
-
-.score-pills__share-wrap .score-pills__compare-btn {
-  height: 100%;
+  align-self: center;
 }
 
 .score-pills__compare-btn:hover {

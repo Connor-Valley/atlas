@@ -5,7 +5,7 @@ import { useFavorites } from '../composables/useFavorites';
 import { useAuth } from '../composables/useAuth';
 import { useFriends } from '../composables/useFriends';
 import { fetchCity } from '../api/cities';
-import SiteHeader from '../components/SiteHeader.vue';
+import DashboardHeader from '../components/DashboardHeader.vue';
 import { supabase } from '../lib/supabase';
 import { canViewerAccessProfileContent, getProfileVisibilityNotice, type ProfileVisibility } from '../lib/profilePrivacy';
 
@@ -217,13 +217,8 @@ function onMouseLeave(el: HTMLElement) {
 <template>
   <div class="fav-page">
 
-    <div class="container">
-      <SiteHeader
-        show-search
-        show-theme-toggle
-        @search="({ city, state }) => router.push({ name: 'city', params: { city, state } })"
-        @logo-click="router.push({ name: 'home' })"
-      />
+    <div class="container container--header-only">
+      <DashboardHeader page-label="Favorites" @logo-click="router.push({ name: 'home' })" />
     </div>
 
     <div class="fav-page__heading">
@@ -331,8 +326,8 @@ function onMouseLeave(el: HTMLElement) {
 
 /* ── Page heading ─────────────────────────────────────── */
 .fav-page__heading {
-  padding: 4px 40px 12px;
-  max-width: 1300px;
+  padding: 4px 32px 12px;
+  max-width: 1440px;
   margin: 0 auto;
   width: 100%;
   display: flex;
@@ -381,8 +376,8 @@ function onMouseLeave(el: HTMLElement) {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 28px;
-  padding: 0 40px;
-  max-width: 1300px;
+  padding: 0 32px;
+  max-width: 1440px;
   margin: 0 auto;
 }
 
