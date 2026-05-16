@@ -1,23 +1,29 @@
 :root {
   /* === Backgrounds === */
-  --bg-main: #F4F2ED;
-  --bg-card: #FFFFFF;
-  --bg-card-subtle: #F8F7F5;
-  --bg-input: rgba(0, 0, 0, 0.04);
+  --bg-main: #ebdfcf;
+  --bg-card: #e1d4be;
+  --bg-card-inner: #D2C4AE;
+  --bg-card-subtle: #e6d9cb;
+  --bg-input: rgba(220, 209, 192, 0.72);
 
   /* === Text === */
-  --text-primary: #1a1a1a;
-  --text-secondary: #6B7280;
-  --text-muted: #9CA3AF;
+  --text-primary: #2C2218;
+  --text-secondary: #8A7A6A;
+  --text-muted: #A89880;
 
   /* === Borders === */
-  --border-subtle: rgba(0, 0, 0, 0.07);
-  --border-card: rgba(0, 0, 0, 0.09);
+  --border-color: #C9BCA3;
+  --border-subtle: #C9BCA3;
+  --border-card: #C9BCA3;
 
-  /* === Accent (teal) === */
-  --accent: #14B8A6;
-  --accent-hover: #0d9488;
-  --accent-light: rgba(20, 184, 166, 0.08);
+  /* === Accent (sandy clay) === */
+  --accent: #C47A5A;
+  --accent-hover: #D4896A;
+  --accent-light: #C47A5A1A;
+  --accent-soft: #B4A292;
+  --accent-soft-light: #B4A2921A;
+  --city-a: #5B8DB8;
+  --city-b: #7A9E7E;
 
   /* === Shadows === */
   --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.07), 0 4px 14px rgba(0, 0, 0, 0.06);
@@ -25,7 +31,7 @@
   --card-shadow-hover: 0 8px 28px rgba(0, 0, 0, 0.13), 0 4px 10px rgba(0, 0, 0, 0.07);
 
   /* === Progress bar === */
-  --progress-bg: #E5E7EB;
+  --progress-bg: #C4B69E;
 
   /* === Status === */
   --positive: #10B981;
@@ -34,26 +40,41 @@
   --danger: #EF4444;
 
   /* === Logo === */
-  --logo-gradient: linear-gradient(135deg, #0d9488 0%, #14B8A6 60%, #2dd4bf 100%);
+  --logo-gradient: linear-gradient(135deg, var(--accent) 0%, var(--accent) 60%, var(--accent) 100%);
+
+  /* === Editorial typography (compare page redesign) === */
+  --font-sans: 'Manrope', Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-display-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-display: var(--font-display-serif);
+  --font-mono: 'IBM Plex Mono', 'SF Mono', 'Fira Mono', monospace;
 }
 
 /* =====================
    DARK MODE VARIABLES
 ===================== */
 html.dark {
-  --bg-main: #111318;
-  --bg-card: #1a1d27;
-  --bg-card-subtle: #14161e;
+  --border-color: #2a2a2a;
+  --bg-main: #0f0f0f;
+  --bg-card: #1a1a1a;
+  --bg-card-inner: #141414;
+  --bg-card-subtle: #181818;
   --bg-input: rgba(255, 255, 255, 0.06);
-  --text-primary: #F1F5F9;
-  --text-secondary: #94A3B8;
-  --text-muted: #64748B;
-  --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-card: rgba(255, 255, 255, 0.1);
-  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 4px 14px rgba(0, 0, 0, 0.35);
-  --card-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
-  --card-shadow-hover: 0 8px 28px rgba(0, 0, 0, 0.55), 0 4px 10px rgba(0, 0, 0, 0.35);
-  --progress-bg: #2D3748;
+  --text-primary: #F0E8DC;
+  --text-secondary: #7A6E62;
+  --text-muted: #5A5248;
+  --border-subtle: #232323;
+  --border-card: #2a2a2a;
+  --accent: #C47A5A;
+  --accent-hover: #D4896A;
+  --accent-light: #C47A5A1A;
+  --accent-soft: #6D6258;
+  --accent-soft-light: #6D62581A;
+  --city-a: #5B8DB8;
+  --city-b: #7A9E7E;
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 4px 14px rgba(0, 0, 0, 0.4);
+  --card-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.35);
+  --card-shadow-hover: 0 8px 28px rgba(0, 0, 0, 0.65), 0 4px 10px rgba(0, 0, 0, 0.4);
+  --progress-bg: #2a2a2a;
   --positive: #68D391;
   --caution: #FCD34D;
   --warning: #FB923C;

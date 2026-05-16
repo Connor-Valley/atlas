@@ -19,6 +19,42 @@ export type ComparedCity = {
   housing: any;
   affordability: any;
   scores: SummaryScoreSet;
+  // Extended data (may be null if fetch failed)
+  qualityOfLife: any | null;
+  cityProfile: any | null;
+  detailedAffordability: any | null;
+  financial: any | null;
+};
+
+export type DumbbellMetric = {
+  category: string;
+  label: string;
+  aFormatted: string;
+  bFormatted: string;
+  aValue: number | null;
+  bValue: number | null;
+  aNormalized: number; // 0-100 position on dumbbell
+  bNormalized: number;
+  winner: Winner;
+};
+
+export type VerdictProse = {
+  incomeLeader: string;
+  incomeDiff: string;
+  rentLeader: string;
+  rentDiff: string;
+  rtiA: string;
+  rtiB: string;
+  cityAName: string;
+  cityBName: string;
+  incomeWinner: Winner;
+  housingWinner: Winner;
+};
+
+export type VerdictColumn = {
+  title: string;
+  metrics: Array<{ label: string; aValue: string; bValue: string; winner: Winner }>;
+  insight: string;
 };
 
 export type CompareMetric = {
@@ -355,6 +391,185 @@ export function buildSections(cityA: ComparedCity, cityB: ComparedCity): Compare
       aSummary: formatPercent(cityA.affordability.rentToIncomeRatio),
       bSummary: formatPercent(cityB.affordability.rentToIncomeRatio),
       metrics: affordabilityMetrics,
+    },
+  ];
+}
+
+function normalizePair(aVal: number | null, bVal: number | null, direction: MetricDirection): { aN: number; bN: number } {
+  if (aVal == null || bVal == null) return { aN: 50, bN: 50 };
+  if (aVal === bVal) return { aN: 50, bN: 50 };
+
+  const maxVal = Math.max(Math.abs(aVal), Math.abs(bVal));
+  if (maxVal === 0) return { aN: 50, bN: 50 };
+
+  // Overall spread reflects how different the values are
+  const relativeDiff = Math.min(Math.abs(aVal - bVal) / maxVal, 1);
+  const maxHalfSpread = 8 + relativeDiff * 30; // 8–38
+
+  // City A always anchors LEFT of center, city B always RIGHT.
+  // Winner gets full maxHalfSpread from center; loser gets proportionally less
+  // so the winning city's dot is visibly further from the midpoint.
+  let aFrac: number;
+  let bFrac: number;
+
+  if (direction === 'higher') {
+    const winnerVal = Math.max(aVal, bVal);
+    aFrac = aVal / winnerVal;
+    bFrac = bVal / winnerVal;
+  } else {
+    // lower is better — smaller value is the winner
+    const winnerVal = Math.min(aVal, bVal);
+    aFrac = winnerVal / aVal;
+    bFrac = winnerVal / bVal;
+  }
+
+  return {
+    aN: 50 - aFrac * maxHalfSpread,
+    bN: 50 + bFrac * maxHalfSpread,
+  };
+}
+
+export function buildDumbbellMetrics(cityA: ComparedCity, cityB: ComparedCity): DumbbellMetric[] {
+  function metric(
+    category: string,
+    label: string,
+    aVal: number | null | undefined,
+    bVal: number | null | undefined,
+    direction: MetricDirection,
+    formatter: (v: number | null | undefined) => string,
+    tolerance = 0,
+  ): DumbbellMetric {
+    const aValue = aVal ?? null;
+    const bValue = bVal ?? null;
+    const winner = compareNumeric(aValue, bValue, direction, tolerance);
+    const { aN, bN } = normalizePair(aValue, bValue, direction);
+    return { category, label, aFormatted: formatter(aValue), bFormatted: formatter(bValue), aValue, bValue, aNormalized: aN, bNormalized: bN, winner };
+  }
+
+  const collegeGradShareA = getCollegeGradShare(cityA.cityProfile);
+  const collegeGradShareB = getCollegeGradShare(cityB.cityProfile);
+  const unemploymentA = cityA.qualityOfLife?.unemploymentRate?.value ?? null;
+  const unemploymentB = cityB.qualityOfLife?.unemploymentRate?.value ?? null;
+  const rentBurdenA = cityA.detailedAffordability?.rentBurdenPercent ?? null;
+  const rentBurdenB = cityB.detailedAffordability?.rentBurdenPercent ?? null;
+
+  return [
+    metric("Income", "Median HH Income", cityA.income.medianHouseholdIncome, cityB.income.medianHouseholdIncome, "higher", formatCurrency, 1500),
+    metric("Income", "Median Renter Income", cityA.income.medianRenterIncome, cityB.income.medianRenterIncome, "higher", formatCurrency, 1000),
+    metric("Income", "Poverty Rate", cityA.income.povertyRate, cityB.income.povertyRate, "lower", (v) => v == null ? "—" : `${v.toFixed(1)}%`, 0.3),
+    metric("Housing", "Median Rent", cityA.housing.housing.medianRent, cityB.housing.housing.medianRent, "lower", (v) => v == null ? "—" : `$${Math.round(v).toLocaleString()}/mo`, 40),
+    metric("Housing", "Median Home Value", cityA.housing.housing.medianHomeValue, cityB.housing.housing.medianHomeValue, "lower", formatCurrency, 5000),
+    metric("Housing", "Renter Share", cityA.housing.housing.renterShare, cityB.housing.housing.renterShare, "context", (v) => formatPercent(v), 0.01),
+    metric("Affordability", "Rent-to-Income", cityA.affordability.rentToIncomeRatio, cityB.affordability.rentToIncomeRatio, "lower", (v) => formatPercent(v), 0.005),
+    metric("Affordability", "Share Rent-Burdened", rentBurdenA, rentBurdenB, "lower", (v) => formatPercent(v), 0.01),
+    metric("Lifestyle", "Walk Score", null, null, "higher", () => "—"),
+    metric("Lifestyle", "Sunny Days / yr", null, null, "higher", () => "—"),
+    ...(unemploymentA != null || unemploymentB != null
+      ? [metric("Income", "Unemployment Rate", unemploymentA, unemploymentB, "lower", (v) => v == null ? "—" : `${(v * 100).toFixed(1)}%`, 0.002)]
+      : []),
+    ...(collegeGradShareA != null || collegeGradShareB != null
+      ? [metric("Income", "College Grads", collegeGradShareA, collegeGradShareB, "higher", (v) => formatPercent(v), 0.01)]
+      : []),
+  ];
+}
+
+function getCollegeGradShare(cityProfile: any): number | null {
+  if (!cityProfile?.educationalAttainment) return null;
+  const attainment = cityProfile.educationalAttainment as Array<{ label: string; share: number }>;
+  const bachelors = attainment.find(e => e.label === "Bachelor's degree")?.share ?? 0;
+  const graduate = attainment.find(e => e.label === "Graduate degree")?.share ?? 0;
+  return bachelors + graduate;
+}
+
+export function buildVerdictProse(cityA: ComparedCity, cityB: ComparedCity): VerdictProse {
+  const incomeWinner = compareNumeric(cityA.income.medianHouseholdIncome, cityB.income.medianHouseholdIncome, "higher", 1500);
+  const housingWinner = compareNumeric(cityA.housing.housing.medianRent, cityB.housing.housing.medianRent, "lower", 40);
+  const incomeDiff = Math.abs((cityA.income.medianHouseholdIncome ?? 0) - (cityB.income.medianHouseholdIncome ?? 0));
+  const rentDiff = Math.abs((cityA.housing.housing.medianRent ?? 0) - (cityB.housing.housing.medianRent ?? 0));
+
+  return {
+    cityAName: slugToDisplay(cityA.city),
+    cityBName: slugToDisplay(cityB.city),
+    incomeLeader: incomeWinner === "a" ? slugToDisplay(cityA.city) : incomeWinner === "b" ? slugToDisplay(cityB.city) : "Neither city",
+    incomeDiff: `$${Math.round(incomeDiff).toLocaleString()}`,
+    rentLeader: housingWinner === "a" ? slugToDisplay(cityA.city) : housingWinner === "b" ? slugToDisplay(cityB.city) : "Neither city",
+    rentDiff: `$${Math.round(rentDiff).toLocaleString()}/mo`,
+    rtiA: formatPercent(cityA.affordability.rentToIncomeRatio),
+    rtiB: formatPercent(cityB.affordability.rentToIncomeRatio),
+    incomeWinner,
+    housingWinner,
+  };
+}
+
+export function buildVerdictColumns(cityA: ComparedCity, cityB: ComparedCity): VerdictColumn[] {
+  function row(label: string, aText: string, bText: string, winner: Winner) {
+    return { label, aValue: aText, bValue: bText, winner };
+  }
+
+  const incomeWinner = compareNumeric(cityA.income.medianHouseholdIncome, cityB.income.medianHouseholdIncome, "higher", 1500);
+  const rentWinner = compareNumeric(cityA.housing.housing.medianRent, cityB.housing.housing.medianRent, "lower", 40);
+  const affordWinner = compareNumeric(cityA.affordability.rentToIncomeRatio, cityB.affordability.rentToIncomeRatio, "lower", 0.005);
+
+  const unemploymentA = cityA.qualityOfLife?.unemploymentRate?.value ?? null;
+  const unemploymentB = cityB.qualityOfLife?.unemploymentRate?.value ?? null;
+  const unemployWinner = compareNumeric(unemploymentA, unemploymentB, "lower", 0.002);
+
+  const rentBurdenA = cityA.detailedAffordability?.rentBurdenPercent ?? null;
+  const rentBurdenB = cityB.detailedAffordability?.rentBurdenPercent ?? null;
+  const rentBurdenWinner = compareNumeric(rentBurdenA, rentBurdenB, "lower", 0.01);
+
+  const groceriesA = cityA.financial?.essentialsCostBundle?.groceries ?? null;
+  const groceriesB = cityB.financial?.essentialsCostBundle?.groceries ?? null;
+  const groceriesWinner = compareNumeric(groceriesA, groceriesB, "lower", 20);
+
+  const transportA = cityA.financial?.essentialsCostBundle?.transportation ?? null;
+  const transportB = cityB.financial?.essentialsCostBundle?.transportation ?? null;
+  const transportWinner = compareNumeric(transportA, transportB, "lower", 20);
+
+  const fhfaA = cityA.detailedAffordability?.fhfaYoyChange ?? null;
+  const fhfaB = cityB.detailedAffordability?.fhfaYoyChange ?? null;
+  const fhfaWinner = compareNumeric(fhfaA, fhfaB, "lower", 0.005);
+
+  const incomeLeader = incomeWinner === "a" ? slugToDisplay(cityA.city) : incomeWinner === "b" ? slugToDisplay(cityB.city) : null;
+  const rentLeader = rentWinner === "a" ? slugToDisplay(cityA.city) : rentWinner === "b" ? slugToDisplay(cityB.city) : null;
+  const affordLeader = affordWinner === "a" ? slugToDisplay(cityA.city) : affordWinner === "b" ? slugToDisplay(cityB.city) : null;
+
+  return [
+    {
+      title: "Income",
+      metrics: [
+        row("Household Median", formatCurrency(cityA.income.medianHouseholdIncome), formatCurrency(cityB.income.medianHouseholdIncome), incomeWinner),
+        row("Renter Median", formatCurrency(cityA.income.medianRenterIncome), formatCurrency(cityB.income.medianRenterIncome), compareNumeric(cityA.income.medianRenterIncome, cityB.income.medianRenterIncome, "higher", 1000)),
+        row("Poverty", cityA.income.povertyRate != null ? `${cityA.income.povertyRate.toFixed(1)}%` : "—", cityB.income.povertyRate != null ? `${cityB.income.povertyRate.toFixed(1)}%` : "—", compareNumeric(cityA.income.povertyRate, cityB.income.povertyRate, "lower", 0.3)),
+        row("Jobless", unemploymentA != null ? `${(unemploymentA * 100).toFixed(1)}%` : "—", unemploymentB != null ? `${(unemploymentB * 100).toFixed(1)}%` : "—", unemployWinner),
+      ],
+      insight: incomeLeader
+        ? `${incomeLeader} carries a higher typical income.`
+        : "Income profiles are closely matched.",
+    },
+    {
+      title: "Housing",
+      metrics: [
+        row("Median Rent", cityA.housing.housing.medianRent != null ? `$${Math.round(cityA.housing.housing.medianRent).toLocaleString()}/mo` : "—", cityB.housing.housing.medianRent != null ? `$${Math.round(cityB.housing.housing.medianRent).toLocaleString()}/mo` : "—", rentWinner),
+        row("Home Value", formatCurrency(cityA.housing.housing.medianHomeValue), formatCurrency(cityB.housing.housing.medianHomeValue), compareNumeric(cityA.housing.housing.medianHomeValue, cityB.housing.housing.medianHomeValue, "context", 5000)),
+        row("Renter Share", formatPercent(cityA.housing.housing.renterShare), formatPercent(cityB.housing.housing.renterShare), "difference"),
+        row("Home Price YoY", fhfaA != null ? `${(fhfaA * 100).toFixed(1)}%` : "—", fhfaB != null ? `${(fhfaB * 100).toFixed(1)}%` : "—", fhfaWinner),
+      ],
+      insight: rentLeader
+        ? `Rents are roughly $${Math.round(Math.abs((cityA.housing.housing.medianRent ?? 0) - (cityB.housing.housing.medianRent ?? 0))).toLocaleString()} apart.`
+        : "Rents are effectively even between both cities.",
+    },
+    {
+      title: "Affordability",
+      metrics: [
+        row("Rent / Income", formatPercent(cityA.affordability.rentToIncomeRatio), formatPercent(cityB.affordability.rentToIncomeRatio), affordWinner),
+        row("Rent-Burdened", formatPercent(rentBurdenA), formatPercent(rentBurdenB), rentBurdenWinner),
+        row("Groceries", groceriesA != null ? `$${Math.round(groceriesA).toLocaleString()}/mo` : "—", groceriesB != null ? `$${Math.round(groceriesB).toLocaleString()}/mo` : "—", groceriesWinner),
+        row("Transport", transportA != null ? `$${Math.round(transportA).toLocaleString()}/mo` : "—", transportB != null ? `$${Math.round(transportB).toLocaleString()}/mo` : "—", transportWinner),
+      ],
+      insight: affordLeader
+        ? `${affordLeader} asks for a smaller share of renter income.`
+        : "Renter pressure is identical between both cities.",
     },
   ];
 }

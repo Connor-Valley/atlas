@@ -42,8 +42,8 @@
 
 .compare-view {
   min-height: 100vh;
-  --compare-city-a: #0ea5a4;
-  --compare-city-b: #3b82f6;
+  --compare-city-a: color-mix(in srgb, var(--city-a) 70%, var(--text-muted));
+  --compare-city-b: color-mix(in srgb, var(--city-b) 70%, var(--text-muted));
   overflow-x: clip;
 }
 
@@ -65,6 +65,14 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
+}
+
+.compare-view__actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 16px;
 }
 
 .compare-view__save-wrap {

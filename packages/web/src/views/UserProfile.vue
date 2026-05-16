@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import SiteHeader from '../components/SiteHeader.vue';
+import DashboardHeader from '../components/DashboardHeader.vue';
 import { useAuth } from '../composables/useAuth';
 import { useFriends } from '../composables/useFriends';
 import { useToast } from '../composables/useToast';
@@ -241,11 +241,9 @@ watch(() => user.value?.id, loadProfile);
 
 <template>
   <div class="profile-page">
-    <div class="container">
-      <SiteHeader
-        show-search
-        show-theme-toggle
-        @search="({ city, state }) => router.push({ name: 'city', params: { city, state } })"
+    <div class="container container--header-only">
+      <DashboardHeader
+        :page-label="targetProfile?.display_name || targetProfile?.username || 'Profile'"
         @logo-click="router.push({ name: 'home' })"
       />
     </div>
@@ -531,6 +529,7 @@ watch(() => user.value?.id, loadProfile);
 </template>
 
 <style scoped>
+/* TODO(color-tokens): This file still contains hardcoded colors outside shared CSS variables. Keep them unchanged during the token refactor. */
 :deep(.site-header) {
   margin-bottom: 0;
   padding-bottom: 8px;
@@ -568,7 +567,7 @@ watch(() => user.value?.id, loadProfile);
   margin: 0 0 14px;
   font-size: 0.84rem;
   font-weight: 600;
-  color: #f87171;
+  color: var(--danger);
 }
 
 .profile-page {
@@ -577,8 +576,8 @@ watch(() => user.value?.id, loadProfile);
 }
 
 .profile-page__heading {
-  padding: 4px 40px 16px;
-  max-width: 1300px;
+  padding: 4px 32px 16px;
+  max-width: 1440px;
   margin: 0 auto;
   width: 100%;
   display: flex;
@@ -627,22 +626,20 @@ watch(() => user.value?.id, loadProfile);
 
 /* ── Grid layout ─────────────────────────────────────────────── */
 .profile-layout {
-  max-width: 1300px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 0 40px;
+  padding: 0 32px;
   display: grid;
   grid-template-columns: 1.4fr 1fr;
   gap: 20px;
 }
 
 .profile-card {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--bg-card) 92%, transparent), var(--bg-card)),
-    radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 12%, transparent), transparent 42%);
-  border: 1px solid var(--border-card);
+  background: var(--bg-card);
+  border: 1px solid color-mix(in srgb, var(--border-card) 94%, var(--accent) 6%);
   border-radius: 22px;
   padding: 24px;
-  box-shadow: var(--card-shadow);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
 }
 
 .profile-card--hero {
@@ -696,7 +693,7 @@ watch(() => user.value?.id, loadProfile);
 .profile-card__avatar {
   width: 76px;
   height: 76px;
-  border-radius: 50%;
+  border-radius: 22px;
   display: grid;
   place-items: center;
   background: var(--logo-gradient);
@@ -704,6 +701,10 @@ watch(() => user.value?.id, loadProfile);
   font-size: 1.8rem;
   font-weight: 800;
   box-shadow: 0 18px 35px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+html:not(.dark) .profile-card__avatar {
+  color: var(--bg-main);
 }
 
 .profile-card__identity-copy {
@@ -768,9 +769,9 @@ watch(() => user.value?.id, loadProfile);
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 96%, var(--accent) 4%);
   border-radius: 14px;
-  background: color-mix(in srgb, var(--bg-card-subtle) 84%, transparent);
+  background: color-mix(in srgb, var(--bg-card) 78%, var(--bg-card-inner) 22%);
   padding: 10px 16px;
   color: var(--text-secondary);
   font-size: 0.92rem;
@@ -790,14 +791,14 @@ watch(() => user.value?.id, loadProfile);
 }
 
 .friendship-pill--friends {
-  background: rgba(52, 211, 153, 0.14);
-  color: #34d399;
-  border: 1px solid rgba(52, 211, 153, 0.28);
+  background: var(--accent-light);
+  color: var(--accent);
+  border: 1px solid var(--border-color);
 }
 
 .friendship-pill--pending {
   background: rgba(251, 146, 60, 0.14);
-  color: #fb923c;
+  color: var(--warning);
   border: 1px solid rgba(251, 146, 60, 0.28);
 }
 
@@ -808,10 +809,10 @@ watch(() => user.value?.id, loadProfile);
 }
 
 .profile-stat {
-  border: 1px solid var(--border-subtle);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 97%, var(--accent) 3%);
   border-radius: 16px;
   padding: 18px;
-  background: color-mix(in srgb, var(--bg-card-subtle) 82%, transparent);
+  background: color-mix(in srgb, var(--bg-card) 78%, var(--bg-card-inner) 22%);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -879,9 +880,9 @@ watch(() => user.value?.id, loadProfile);
 
 .profile-action {
   width: 100%;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 97%, var(--accent) 3%);
   border-radius: 16px;
-  background: color-mix(in srgb, var(--bg-card-subtle) 84%, transparent);
+  background: color-mix(in srgb, var(--bg-card) 78%, var(--bg-card-inner) 22%);
   padding: 16px 18px;
   display: flex;
   align-items: center;
@@ -936,9 +937,9 @@ watch(() => user.value?.id, loadProfile);
 
 .profile-list__item {
   width: 100%;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 97%, var(--accent) 3%);
   border-radius: 16px;
-  background: color-mix(in srgb, var(--bg-card-subtle) 84%, transparent);
+  background: color-mix(in srgb, var(--bg-card) 78%, var(--bg-card-inner) 22%);
   padding: 16px 18px;
   display: flex;
   align-items: center;
@@ -1022,9 +1023,9 @@ watch(() => user.value?.id, loadProfile);
 
 .profile-settings__action {
   width: 100%;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 97%, var(--accent) 3%);
   border-radius: 16px;
-  background: color-mix(in srgb, var(--bg-card-subtle) 84%, transparent);
+  background: color-mix(in srgb, var(--bg-card) 78%, var(--bg-card-inner) 22%);
   padding: 14px 16px;
   display: flex;
   align-items: center;
@@ -1080,13 +1081,13 @@ watch(() => user.value?.id, loadProfile);
 }
 
 .profile-settings__action--positive .profile-settings__action-icon {
-  background: rgba(52, 211, 153, 0.12);
-  color: #34d399;
+  background: var(--accent-light);
+  color: var(--accent);
 }
 
 .profile-settings__action--danger .profile-settings__action-icon {
   background: rgba(248, 113, 113, 0.12);
-  color: #f87171;
+  color: var(--danger);
 }
 
 /* ── Responsive ──────────────────────────────────────────────── */
@@ -1169,7 +1170,7 @@ watch(() => user.value?.id, loadProfile);
   .profile-card__avatar {
     width: 52px;
     height: 52px;
-    border-radius: 50%;
+    border-radius: 16px;
     font-size: 1.2rem;
     flex-shrink: 0;
   }

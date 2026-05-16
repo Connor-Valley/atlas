@@ -22,7 +22,7 @@ p:last-child {
    STATUS COLORS
 ===================== */
 .status-caution {
-  color: var(--caution);
+  color: var(--text-primary);
   font-weight: 600;
 }
 

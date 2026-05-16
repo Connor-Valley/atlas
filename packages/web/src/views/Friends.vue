@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import SiteHeader from '../components/SiteHeader.vue';
+import DashboardHeader from '../components/DashboardHeader.vue';
 import { useAuth } from '../composables/useAuth';
 import { useFriends } from '../composables/useFriends';
 import { useToast } from '../composables/useToast';
@@ -138,13 +138,8 @@ onUnmounted(() => {
 
 <template>
   <div class="friends-page">
-    <div class="container">
-      <SiteHeader
-        show-search
-        show-theme-toggle
-        @search="({ city, state }) => router.push({ name: 'city', params: { city, state } })"
-        @logo-click="router.push({ name: 'home' })"
-      />
+    <div class="container container--header-only">
+      <DashboardHeader page-label="Friends" @logo-click="router.push({ name: 'home' })" />
     </div>
 
     <!-- Title bar -->
@@ -401,6 +396,7 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+/* TODO(color-tokens): This file still contains hardcoded colors outside shared CSS variables. Keep them unchanged during the token refactor. */
 .friends-page {
   min-height: 100vh;
   padding: 0 0 60px;
@@ -413,9 +409,9 @@ onUnmounted(() => {
 
 /* ── Heading bar ──────────────────────────────────────────── */
 .friends-page__heading {
-  padding: 4px 40px 20px;
+  padding: 4px 32px 20px;
   margin-top: 0;
-  max-width: 1300px;
+  max-width: 1440px;
   margin: 0 auto;
   display: flex;
   align-items: center;
@@ -467,9 +463,9 @@ onUnmounted(() => {
 
 /* ── Toolbar ──────────────────────────────────────────────── */
 .friends-toolbar {
-  max-width: 1300px;
+  max-width: 1440px;
   margin: 0 auto 24px;
-  padding: 0 40px;
+  padding: 0 32px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -504,7 +500,7 @@ onUnmounted(() => {
 }
 
 .friends-toolbar__search-input:focus {
-  border-color: rgba(20, 184, 166, 0.5);
+  border-color: var(--accent);
 }
 
 .friends-toolbar__actions {
@@ -542,7 +538,7 @@ onUnmounted(() => {
   height: 18px;
   border-radius: 9px;
   background: var(--accent);
-  color: #fff;
+  color: var(--text-primary);
   font-size: 0.72rem;
   font-weight: 800;
   display: grid;
@@ -557,7 +553,7 @@ onUnmounted(() => {
   border: none;
   border-radius: 14px;
   background: var(--accent);
-  color: #fff;
+  color: var(--text-primary);
   font: inherit;
   font-size: 0.88rem;
   font-weight: 700;
@@ -573,9 +569,9 @@ onUnmounted(() => {
 
 /* ── Friends list ─────────────────────────────────────────── */
 .friends-content {
-  max-width: 1300px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 0 40px;
+  padding: 0 32px;
 }
 
 .flist {
@@ -620,13 +616,17 @@ onUnmounted(() => {
   height: 50px;
   border-radius: 16px;
   background: var(--logo-gradient);
-  color: #fff;
+  color: var(--text-primary);
   font-size: 1.25rem;
   font-weight: 800;
   display: grid;
   place-items: center;
   flex-shrink: 0;
   box-shadow: 0 8px 20px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+html:not(.dark) .flist__avatar {
+  color: var(--bg-main);
 }
 
 .flist__info {
@@ -685,12 +685,12 @@ onUnmounted(() => {
 }
 
 .flist__action-btn--danger {
-  border-color: rgba(248, 113, 113, 0.25);
-  color: #f87171;
+  border-color: color-mix(in srgb, var(--danger) 25%, transparent);
+  color: var(--danger);
 }
 
 .flist__action-btn--danger:hover {
-  border-color: #f87171;
+  border-color: var(--danger);
 }
 
 /* ── Empty states ─────────────────────────────────────────── */
@@ -737,8 +737,8 @@ onUnmounted(() => {
   font-weight: 600;
 }
 
-.friends-modal__msg--error   { color: #f87171; }
-.friends-modal__msg--success { color: #34d399; }
+.friends-modal__msg--error   { color: var(--danger); }
+.friends-modal__msg--success { color: var(--accent); }
 
 /* ── Search users modal ───────────────────────────────────── */
 .search-modal {
@@ -773,8 +773,8 @@ onUnmounted(() => {
 }
 
 .search-modal__input {
-  padding-left: 40px !important;
-  padding-right: 40px !important;
+  padding-left: 32px !important;
+  padding-right: 32px !important;
   padding-top: 13px !important;
   padding-bottom: 13px !important;
   font-size: 1rem !important;
@@ -826,14 +826,18 @@ onUnmounted(() => {
 .slist__avatar {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: 12px;
   background: var(--logo-gradient);
-  color: #fff;
+  color: var(--text-primary);
   font-size: 1rem;
   font-weight: 800;
   display: grid;
   place-items: center;
   flex-shrink: 0;
+}
+
+html:not(.dark) .slist__avatar {
+  color: var(--bg-main);
 }
 
 .slist__info {
@@ -901,18 +905,18 @@ onUnmounted(() => {
 }
 
 .slist__action-btn--add {
-  border-color: rgba(52, 211, 153, 0.3);
-  color: #34d399;
+  border-color: var(--border-color);
+  color: var(--accent);
 }
 
 .slist__action-btn--add:hover:not(:disabled) {
-  border-color: #34d399;
-  color: #34d399;
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .slist__action-btn--accept {
-  border-color: rgba(52, 211, 153, 0.3);
-  color: #34d399;
+  border-color: var(--border-color);
+  color: var(--accent);
 }
 
 .slist__status {
@@ -927,8 +931,8 @@ onUnmounted(() => {
 }
 
 .slist__status--friend {
-  color: #34d399;
-  background: rgba(52, 211, 153, 0.1);
+  color: var(--accent);
+  background: var(--accent-light);
 }
 
 .slist__status--pending {
@@ -989,12 +993,16 @@ onUnmounted(() => {
   height: 38px;
   border-radius: 10px;
   background: var(--logo-gradient);
-  color: #fff;
+  color: var(--text-primary);
   font-size: 0.95rem;
   font-weight: 800;
   display: grid;
   place-items: center;
   flex-shrink: 0;
+}
+
+html:not(.dark) .freq-item__avatar {
+  color: var(--bg-main);
 }
 
 .freq-item__info {
@@ -1038,12 +1046,12 @@ onUnmounted(() => {
 }
 
 .freq-btn:hover { transform: translateY(-1px); }
-.freq-btn--accept  { border-color: rgba(52,211,153,.4); color: #34d399; }
-.freq-btn--accept:hover  { border-color: #34d399; }
+.freq-btn--accept  { border-color: var(--border-color); color: var(--accent); }
+.freq-btn--accept:hover  { border-color: var(--accent); }
 .freq-btn--decline,
-.freq-btn--cancel  { border-color: rgba(248,113,113,.3); color: #f87171; }
+.freq-btn--cancel  { border-color: color-mix(in srgb, var(--danger) 30%, transparent); color: var(--danger); }
 .freq-btn--decline:hover,
-.freq-btn--cancel:hover  { border-color: #f87171; }
+.freq-btn--cancel:hover  { border-color: var(--danger); }
 
 .freqs-empty {
   display: flex;

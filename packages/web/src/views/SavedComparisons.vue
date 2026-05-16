@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
-import SiteHeader from '../components/SiteHeader.vue';
+import DashboardHeader from '../components/DashboardHeader.vue';
 import { useAuth } from '../composables/useAuth';
 import { useFriends } from '../composables/useFriends';
 import { useComparisons, type SavedComparison } from '../composables/useComparisons';
@@ -156,13 +156,8 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="cmp-page">
-    <div class="container">
-      <SiteHeader
-        show-search
-        show-theme-toggle
-        @search="({ city, state }) => router.push({ name: 'city', params: { city, state } })"
-        @logo-click="router.push({ name: 'home' })"
-      />
+    <div class="container container--header-only">
+      <DashboardHeader page-label="Saved Comparisons" @logo-click="router.push({ name: 'home' })" />
     </div>
 
     <div class="cmp-page__heading">
@@ -283,6 +278,7 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+/* TODO(color-tokens): This file still contains hardcoded colors outside shared CSS variables. Keep them unchanged during the token refactor. */
 :deep(.site-header) {
   margin-bottom: 0;
   padding-bottom: 8px;
@@ -318,8 +314,8 @@ onBeforeUnmount(() => {
 
 /* ── Heading ─────────────────────────────────────────── */
 .cmp-page__heading {
-  padding: 4px 40px 16px;
-  max-width: 1300px;
+  padding: 4px 32px 16px;
+  max-width: 1440px;
   margin: 0 auto;
   width: 100%;
   display: flex;
@@ -379,7 +375,7 @@ onBeforeUnmount(() => {
   grid-template-columns: repeat(2, 1fr);
   gap: 20px;
   padding: 0 80px;
-  max-width: 1300px;
+  max-width: 1440px;
   margin: 0 auto;
 }
 
@@ -400,7 +396,7 @@ onBeforeUnmount(() => {
   inset: 0;
   background: radial-gradient(
     400px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-    rgba(20, 184, 166, 0.1),
+    color-mix(in srgb, var(--accent) 10%, transparent),
     transparent 60%
   );
   opacity: 0;
@@ -411,7 +407,7 @@ onBeforeUnmount(() => {
 }
 
 .cmp-card:hover {
-  box-shadow: var(--card-shadow-hover), 0 0 0 1px rgba(20, 184, 166, 0.28), 0 0 28px rgba(20, 184, 166, 0.13);
+  box-shadow: var(--card-shadow-hover), 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent), 0 0 28px color-mix(in srgb, var(--accent) 13%, transparent);
   transform: translateY(-2px);
 }
 
@@ -432,7 +428,7 @@ onBeforeUnmount(() => {
   flex: 1;
   height: 160px;
   border-radius: 10px;
-  background-color: #0a7d72;
+  background-color: var(--accent);
   background-size: cover;
   background-position: center;
   overflow: hidden;
@@ -444,17 +440,17 @@ onBeforeUnmount(() => {
 }
 
 .cmp-card__thumb--b {
-  background-color: #1e3a5f;
+  background-color: var(--city-a);
 }
 
 .cmp-card__thumb--loading {
-  background-image: linear-gradient(135deg, #0a7d72 0%, #14b8a6 100%) !important;
+  background-image: linear-gradient(135deg, var(--accent-hover) 0%, var(--accent) 100%) !important;
   animation: cmp-shimmer 1.6s ease-in-out infinite alternate;
 }
 
 .cmp-card__thumb--loading-b,
 .cmp-card__thumb--b.cmp-card__thumb--loading {
-  background-image: linear-gradient(135deg, #1e3a5f 0%, #3b82f6 100%) !important;
+  background-image: linear-gradient(135deg, color-mix(in srgb, var(--city-a) 82%, black) 0%, var(--city-a) 100%) !important;
 }
 
 @keyframes cmp-shimmer {
@@ -468,7 +464,7 @@ onBeforeUnmount(() => {
   left: 8px;
   font-size: 0.6rem;
   font-weight: 800;
-  color: #fff;
+  color: var(--text-primary);
   background: rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(4px);
   border-radius: 4px;
@@ -554,7 +550,7 @@ onBeforeUnmount(() => {
 }
 
 .cmp-card__remove:hover {
-  color: #f87171;
+  color: var(--danger);
 }
 
 .cmp-card__trash-lid {
@@ -711,7 +707,7 @@ onBeforeUnmount(() => {
     border: 1px solid rgba(248, 113, 113, 0.28);
     border-radius: 12px;
     background: rgba(60, 18, 18, 0.94);
-    color: #fda4a4;
+    color: color-mix(in srgb, var(--danger) 60%, var(--text-primary));
     padding: 10px 12px;
     font-size: 0.76rem;
     font-weight: 700;

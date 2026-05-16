@@ -1,6 +1,7 @@
 /* =====================
    SITE HEADER (after search)
 ===================== */
+/* TODO(color-tokens): This stylesheet still contains hardcoded colors outside shared CSS variables. Keep them unchanged during the token refactor. */
 .site-header {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) max-content;
@@ -39,7 +40,7 @@
   border: none;
   border-radius: 8px;
   background: var(--accent);
-  color: #fff;
+  color: var(--text-primary);
   font-size: 0.88rem;
   font-weight: 600;
   cursor: pointer;
@@ -58,7 +59,7 @@
 .hero-auth__login-btn {
   background: none;
   border: none;
-  color: var(--accent);
+  color: var(--text-secondary);
   font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
@@ -69,6 +70,7 @@
 
 .hero-auth__login-btn:hover {
   background: none;
+  color: var(--accent);
 }
 
 .hero-auth__welcome {
@@ -199,15 +201,19 @@
 .user-menu__avatar {
   width: 30px;
   height: 30px;
-  border-radius: 50%;
-  background: #7d8694;
-  color: #f3f4f6;
+  border-radius: 10px;
+  background: var(--text-muted);
+  color: var(--text-primary);
   font-size: 0.8rem;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+
+html:not(.dark) .user-menu__avatar {
+  color: var(--bg-main);
 }
 
 .user-menu__chevron {
@@ -285,15 +291,19 @@
 .user-menu__header-avatar {
   width: 34px;
   height: 34px;
-  border-radius: 50%;
-  background: #7d8694;
-  color: #f3f4f6;
+  border-radius: 12px;
+  background: var(--text-muted);
+  color: var(--text-primary);
   font-size: 0.85rem;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+
+html:not(.dark) .user-menu__header-avatar {
+  color: var(--bg-main);
 }
 
 .user-menu__header-info {
@@ -350,12 +360,12 @@
 }
 
 .user-menu__item--danger {
-  color: #f87171;
+  color: var(--danger);
 }
 
 .user-menu__item--danger:hover {
   background: rgba(248, 113, 113, 0.1);
-  color: #f87171;
+  color: var(--danger);
 }
 
 .user-menu__item-icon {
@@ -499,7 +509,7 @@
 }
 
 .auth-modal__input:focus {
-  border-color: rgba(20, 184, 166, 0.5);
+  border-color: var(--accent);
 }
 
 .auth-modal__input:disabled {
@@ -508,7 +518,7 @@
 
 .auth-modal__error {
   font-size: 0.82rem;
-  color: #f87171;
+  color: var(--danger);
   margin: 0;
 }
 
@@ -620,7 +630,7 @@
   border: none;
   border-radius: 8px;
   background: var(--accent);
-  color: #fff;
+  color: var(--text-primary);
   font-size: 0.88rem;
   font-weight: 600;
   cursor: pointer;
@@ -670,7 +680,7 @@
 .auth-modal__switch-btn {
   background: none;
   border: none;
-  color: var(--accent);
+  color: var(--text-secondary);
   font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
@@ -681,6 +691,7 @@
 
 .auth-modal__switch-btn:hover {
   background: none;
+  color: var(--accent);
 }
 
 .site-header__search {

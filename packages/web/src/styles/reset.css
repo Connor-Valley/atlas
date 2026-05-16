@@ -1,6 +1,7 @@
 /* =====================
    CSS RESET
 ===================== */
+/* TODO(color-tokens): This stylesheet still contains hardcoded colors outside shared CSS variables. Keep them unchanged during the token refactor. */
 *, *::before, *::after {
   box-sizing: border-box;
 }
@@ -28,8 +29,8 @@ body {
   top: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%) translateY(-4px);
-  background: #1e2130;
-  color: #e2e8f0;
+  background: var(--bg-card);
+  color: var(--text-primary);
   font-size: 0.72rem;
   font-weight: 500;
   line-height: 1.3;

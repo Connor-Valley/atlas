@@ -29,6 +29,7 @@ const { toasts, dismiss } = useToast();
 </template>
 
 <style scoped>
+/* TODO(color-tokens): This file still contains hardcoded colors outside shared CSS variables. Keep them unchanged during the token refactor. */
 .toast-container {
   position: fixed;
   bottom: 28px;
@@ -58,15 +59,15 @@ const { toasts, dismiss } = useToast();
 }
 
 .toast--error {
-  background: color-mix(in srgb, #1a0a0a 90%, transparent);
-  border-color: rgba(248, 113, 113, 0.35);
-  color: #fca5a5;
+  background: color-mix(in srgb, var(--danger) 12%, var(--bg-card));
+  border-color: color-mix(in srgb, var(--danger) 35%, transparent);
+  color: var(--danger);
 }
 
 .toast--success {
-  background: color-mix(in srgb, #0a1a14 90%, transparent);
-  border-color: rgba(52, 211, 153, 0.35);
-  color: #6ee7b7;
+  background: color-mix(in srgb, var(--positive) 12%, var(--bg-card));
+  border-color: var(--border-color);
+  color: var(--accent);
 }
 
 .toast--info {

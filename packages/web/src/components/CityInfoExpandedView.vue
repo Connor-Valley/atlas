@@ -102,6 +102,7 @@ const mobileEconomyStats = computed(() => {
   return rows;
 });
 
+// TODO(color-tokens): This component still uses hardcoded palette values for charts, badges, and tooltips outside shared CSS variables. Keep them unchanged during the token refactor.
 const AIRLINE_COLORS: Record<string, { bg: string; text: string }> = {
   "Delta":     { bg: "#2B5EAD66", text: "#ffffff" },
   "United":    { bg: "#2B5EE066", text: "#ffffff" },
@@ -173,11 +174,11 @@ function hideTooltip() {
 const transitData = computed(() => qol.value?.transitInfo?.value ?? null);
 
 const MODE_COLORS: Record<string, { bg: string; text: string; label: string }> = {
-  'bus':           { bg: '#16a34a22', text: '#16a34a', label: 'Bus' },
+  'bus':           { bg: 'var(--accent-light)', text: 'var(--accent)', label: 'Bus' },
   'subway':        { bg: '#2563eb22', text: '#2563eb', label: 'Subway' },
-  'light-rail':    { bg: '#0891b222', text: '#0891b2', label: 'Light Rail' },
+  'light-rail':    { bg: 'var(--accent-light)', text: 'var(--accent-hover)', label: 'Light Rail' },
   'commuter-rail': { bg: '#71717a22', text: '#71717a', label: 'Commuter Rail' },
-  'ferry':         { bg: '#06b6d422', text: '#06b6d4', label: 'Ferry' },
+  'ferry':         { bg: 'var(--accent-light)', text: 'var(--accent)', label: 'Ferry' },
   'streetcar':     { bg: '#d9770622', text: '#d97706', label: 'Streetcar' },
   'cable-car':     { bg: '#dc262622', text: '#dc2626', label: 'Cable Car' },
 };
@@ -256,10 +257,12 @@ const educationNarrativeHtml = computed(() => {
 const DONUT_R = 45;
 const DONUT_C = 2 * Math.PI * DONUT_R;
 const DONUT_GAP = 2;
-const AGE_COLORS = ['#14B8A6', '#0891b2', '#6366f1', '#8b5cf6', '#f59e0b'];
-const POLITICS_COLORS = ['#dc2626', '#2563eb', '#a16207'];
-const RACE_COLORS = ['#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4', '#a855f7'];
-const ORIGIN_COLORS = ['#22c55e', '#3b82f6'];
+const CHART_BROWN_DEEP = '#6B3420';
+const CHART_TERRACOTTA = '#D89238';
+const AGE_COLORS = [CHART_BROWN_DEEP, CHART_TERRACOTTA, 'var(--caution)', 'var(--city-b)', 'var(--city-a)'];
+const POLITICS_COLORS = ['var(--danger)', 'var(--city-a)', 'var(--caution)'];
+const RACE_COLORS = [CHART_BROWN_DEEP, CHART_TERRACOTTA, 'var(--caution)', 'var(--city-b)', 'var(--city-a)', 'var(--text-secondary)', 'var(--warning)', 'var(--text-muted)'];
+const ORIGIN_COLORS = ['var(--city-b)', 'var(--city-a)'];
 
 function buildDonutSegments(
   entries: Array<{ label: string; share: number }>,
@@ -669,8 +672,8 @@ const commuteBars = computed(() => {
                     <svg viewBox="0 0 34 34" class="city-exp__arc-svg" aria-hidden="true">
                       <defs>
                         <linearGradient :id="`arc-g-${si}`" x1="0%" y1="100%" x2="100%" y2="0%">
-                          <stop offset="0%" stop-color="#5eead4"/>
-                          <stop offset="100%" stop-color="#0d9488"/>
+                          <stop offset="0%" stop-color="var(--accent-hover)"/>
+                          <stop offset="100%" stop-color="var(--accent)"/>
                         </linearGradient>
                       </defs>
                       <circle cx="17" cy="17" r="13" fill="none" stroke="var(--border-card)" stroke-width="3.5"/>

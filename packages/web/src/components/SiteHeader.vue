@@ -310,6 +310,10 @@ function handleLogoClick() {
     text-align: left;
   }
 
+  html:not(.dark) .site-header__search-pill {
+    background: var(--bg-card-inner);
+  }
+
   /* When expanded: pill stays in flow (keeps space) but is invisible */
   .site-header__search-pill--expanded {
     visibility: hidden;
