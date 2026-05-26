@@ -4,8 +4,13 @@ import { buildCensusGeoQuery } from "../common/census.js";
 import { BTS_ENPLANEMENTS_AS_OF, BTS_SOURCE_URL, FAA_AIRPORT_REFERENCE_AS_OF, FAA_AIRPORT_SOURCE_URL, findNearestAirport, getAirportBusyness } from "./airport-reference.js";
 import { getTransitInfo, NTD_AS_OF, NTD_SOURCE_URL } from "./transit-reference.js";
 import type { AirportInfo, QualityOfLifeDetails, QualityOfLifeSummary } from "./quality-of-life.types.js";
+import { getCached } from "../common/cache.js";
 
-export async function getQualityOfLifeSummary(city: City, year: number): Promise<QualityOfLifeSummary> {
+export function getQualityOfLifeSummary(city: City, year: number): Promise<QualityOfLifeSummary> {
+  return getCached(`qol:${year}:${city.state}:${city.slug}`, () => fetchQualityOfLifeSummary(city, year));
+}
+
+async function fetchQualityOfLifeSummary(city: City, year: number): Promise<QualityOfLifeSummary> {
   const labor = await fetchLaborMetrics(city, year);
   const airport = getAirport(city);
 
@@ -50,7 +55,11 @@ export async function getQualityOfLifeSummary(city: City, year: number): Promise
   };
 }
 
-export async function getQualityOfLifeDetails(city: City, year: number): Promise<QualityOfLifeDetails> {
+export function getQualityOfLifeDetails(city: City, year: number): Promise<QualityOfLifeDetails> {
+  return getCached(`qol-details:${year}:${city.state}:${city.slug}`, () => fetchQualityOfLifeDetails(city, year));
+}
+
+async function fetchQualityOfLifeDetails(city: City, year: number): Promise<QualityOfLifeDetails> {
   const summary = await getQualityOfLifeSummary(city, year);
 
   return {

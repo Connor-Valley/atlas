@@ -8,6 +8,7 @@
     "start": "node --import tsx src/index.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.101.1",
     "cors": "^2.8.6",
     "dotenv": "^17.2.3",
     "express": "^4.21.1"
