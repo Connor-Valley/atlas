@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import DashboardHeader from '../components/DashboardHeader.vue';
+import PreferencesSetup from '../components/PreferencesSetup.vue';
 import { useAuth } from '../composables/useAuth';
 import { useFavorites } from '../composables/useFavorites';
 import { useComparisons } from '../composables/useComparisons';
@@ -398,6 +399,17 @@ onBeforeUnmount(() => {
             <span class="profile-stat__value profile-stat__value--small">{{ memberSince ?? 'Recently' }}</span>
           </div>
         </div>
+      </section>
+
+      <section class="profile-card">
+        <div class="profile-card__header">
+          <div>
+            <p class="profile-card__eyebrow">Atlas Score</p>
+            <h2 class="profile-card__section-title">Your preferences</h2>
+            <span class="profile-card__mobile-title">Your Preferences</span>
+          </div>
+        </div>
+        <PreferencesSetup />
       </section>
 
       <section class="profile-card">

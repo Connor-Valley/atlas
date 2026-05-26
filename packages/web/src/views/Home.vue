@@ -14,6 +14,7 @@ import AuthModal from "../components/AuthModal.vue";
 import DashboardHeader from "../components/DashboardHeader.vue";
 import ThemeToggle from "../components/ThemeToggle.vue";
 import { useAuth } from "../composables/useAuth";
+import AtlasScoreCard from "../components/AtlasScoreCard.vue";
 import { prefetchDetailedHousing } from "../api/housing";
 import { prefetchDetailedCityProfile } from "../api/cityProfile";
 import { prefetchDetailedQualityOfLife } from "../api/qualityOfLife";
@@ -1304,6 +1305,10 @@ async function closeExpandedSection() {
             @close="closeExpandedSection"
           />
         </div>
+      </div>
+
+      <div style="grid-column: 1 / -1;">
+        <AtlasScoreCard :city="city" :state="state" />
       </div>
 
       <div
