@@ -1,4 +1,4 @@
-import { supabase } from "../lib/supabase.js";
+import { getSupabase } from "../lib/supabase.js";
 
 const TTL_MS = 60 * 24 * 60 * 60 * 1000; // 60 days — Census ACS updates annually
 const mem = new Map<string, { data: unknown; ts: number }>();
@@ -9,9 +9,10 @@ export async function getCached<T>(key: string, fetcher: () => Promise<T>): Prom
   if (hit && Date.now() - hit.ts < TTL_MS) return hit.data as T;
 
   // Layer 2: Supabase (survives restarts)
-  if (supabase) {
+  const sb = getSupabase();
+  if (sb) {
     try {
-      const { data: row } = await supabase
+      const { data: row } = await sb
         .from("api_cache")
         .select("data, cached_at")
         .eq("key", key)
@@ -30,8 +31,8 @@ export async function getCached<T>(key: string, fetcher: () => Promise<T>): Prom
   const fresh = await fetcher();
   mem.set(key, { data: fresh, ts: Date.now() });
 
-  if (supabase) {
-    supabase
+  if (sb) {
+    sb
       .from("api_cache")
       .upsert({ key, data: fresh as object, cached_at: new Date().toISOString() })
       .then(({ error }) => {
