@@ -147,7 +147,7 @@ html:not(.dark) .dashboard-panel {
 
 .dashboard-panel--housing {
   grid-column: 2;
-  grid-row: 2;
+  grid-row: 3;
   position: relative;
   z-index: 2;
 }
