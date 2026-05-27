@@ -1,7 +1,7 @@
 import type { City } from "../cities/cities.types.js";
 import { buildCensusGeoQuery } from "../common/census.js";
 import type { SourceAttribution } from "../common/source.types.js";
-import type { CityProfileDetails, CityProfileSummary, PercentageBreakdown } from "./city-profile.types.js";
+import type { CityProfileDetails, CityProfileSummary, PercentageBreakdown, UrbanCharacter } from "./city-profile.types.js";
 import { getPoliticalAffiliation } from "./politics-reference.js";
 import { getCached } from "../common/cache.js";
 
@@ -211,7 +211,12 @@ async function fetchCityProfileDetails(city: City, year: number): Promise<CityPr
       ["Worked from home", workFromHome],
       ["Other commute modes", commuteOther],
     ]),
-    densityPerSquareMile: null,
+    densityPerSquareMile: city.landAreaSqMiles && city.landAreaSqMiles > 0
+      ? Math.round(city.population / city.landAreaSqMiles)
+      : null,
+    urbanCharacter: city.landAreaSqMiles && city.landAreaSqMiles > 0
+      ? classifyUrbanCharacter(city.population / city.landAreaSqMiles)
+      : null,
   };
 }
 
@@ -268,4 +273,14 @@ function toNumber(value: string | undefined): number {
 function toNullableNumber(value: string | undefined): number | null {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function classifyUrbanCharacter(densityPerSqMile: number): UrbanCharacter {
+  if (densityPerSqMile >= 10_000) return 'Urban Core';
+  if (densityPerSqMile >= 5_000)  return 'Urban';
+  if (densityPerSqMile >= 2_000)  return 'City';
+  if (densityPerSqMile >= 800)    return 'Suburban City';
+  if (densityPerSqMile >= 250)    return 'Suburb';
+  if (densityPerSqMile >= 75)     return 'Small Town';
+  return 'Rural';
 }

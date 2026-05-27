@@ -331,8 +331,22 @@ async function fetchDetailedCityIncome(city: City, year: number): Promise<Detail
     earningsByEducation,
     povertyDepth,
     industryBreakdown,
+    industryDiversityIndex: computeDiversityIndex(industryBreakdown),
     affordabilityMetrics,
   };
+}
+
+function computeDiversityIndex(sectors: { share: number }[]): number | null {
+  if (!sectors.length) return null;
+  const totalShare = sectors.reduce((sum, s) => sum + s.share, 0);
+  if (totalShare <= 0) return null;
+  const n = sectors.length;
+  const hhi = sectors.reduce((sum, s) => {
+    const normalizedShare = s.share / totalShare;
+    return sum + normalizedShare * normalizedShare;
+  }, 0);
+  // Normalize so 0 = perfectly concentrated, 1 = perfectly diverse
+  return parseFloat(((1 - hhi) / (1 - 1 / n)).toFixed(4));
 }
 
 async function fetchCensusRow(url: string): Promise<string[]> {

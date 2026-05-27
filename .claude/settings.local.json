@@ -11,7 +11,14 @@
       "Bash(ps:*)",
       "Bash(git checkout:*)",
       "Bash(grep -n \"\\\\.data-card\" /Users/hannahchiu/Documents/atlas/packages/web/src/styles/*.css)",
-      "Bash(git merge:*)"
+      "Bash(git merge:*)",
+      "Bash(curl -s \"http://localhost:3000/income/co/denver/details\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('industryDiversityIndex:', d.get\\('industryDiversityIndex'\\)\\)\")",
+      "Bash(curl -s \"http://localhost:3000/climate/co/denver\")",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s \"http://localhost:3000/cities/co/denver\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({k: d.get\\(k\\) for k in ['lat','lon','landAreaSqMiles']}, indent=2\\)\\)\")",
+      "Bash(curl -s \"https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/28/query?where=GEOID%3D'0820000'&outFields=INTPTLAT,INTPTLON,ALAND&f=json\")"
     ]
   }
 }

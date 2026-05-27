@@ -86,6 +86,7 @@ export type DetailedCityIncome = {
     earningsByEducation: EarningsByEducation;
     povertyDepth: PovertyDepth;
     industryBreakdown: IndustrySector[];
+    industryDiversityIndex: number | null;
     affordabilityMetrics: IncomeAffordabilityMetrics;
 };
   

@@ -22,6 +22,15 @@ export type CityProfileSummary = {
   source: SourceAttribution;
 };
 
+export type UrbanCharacter =
+  | 'Urban Core'
+  | 'Urban'
+  | 'City'
+  | 'Suburban City'
+  | 'Suburb'
+  | 'Small Town'
+  | 'Rural';
+
 export type CityProfileDetails = CityProfileSummary & {
   ageDistribution: PercentageBreakdown[];
   politicalAffiliationDistribution: PercentageBreakdown[] | null;
@@ -34,4 +43,5 @@ export type CityProfileDetails = CityProfileSummary & {
   educationalAttainment: PercentageBreakdown[];
   commuteModes: PercentageBreakdown[];
   densityPerSquareMile: number | null;
+  urbanCharacter: UrbanCharacter | null;
 };

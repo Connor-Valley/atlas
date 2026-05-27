@@ -12,6 +12,8 @@ import shareRouter from "./share/share.route.js";
 import cityProfileRouter from "./city-profile/city-profile.route.js";
 import financialRouter from "./financial/financial.route.js";
 import qualityOfLifeRouter from "./quality-of-life/quality-of-life.route.js";
+import climateRouter from "./climate/climate.route.js";
+import adminRouter from "./admin/admin.route.js";
 import { initializeHpiCache } from "./housing/housing.service.js";
 
 // Load .env from repo root (monorepo) or cwd
@@ -41,6 +43,8 @@ app.use('/share', shareRouter);
 app.use('/city-profile', cityProfileRouter);
 app.use('/financial', financialRouter);
 app.use('/quality-of-life', qualityOfLifeRouter);
+app.use('/climate', climateRouter);
+app.use('/admin', adminRouter);
 
 // Initialize FHFA data cache at startup
 initializeHpiCache();
