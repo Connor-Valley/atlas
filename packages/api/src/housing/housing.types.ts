@@ -23,6 +23,7 @@ export type DetailedCityHousing = CityHousing & {
     medianYearBuilt: number;
     estimatedMortgage: number; // Estimated monthly mortgage payment (principal + interest)
     mortgageToIncomeRatio: number; // Monthly mortgage payment to monthly income ratio (0.2850 = 28.50%)
+    rentGrowthPct5yr: number | null;
     fhfaData?: FhfaData;
 };
 

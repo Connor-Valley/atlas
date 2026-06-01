@@ -87,5 +87,6 @@ export type DetailedCityIncome = {
     povertyDepth: PovertyDepth;
     industryBreakdown: IndustrySector[];
     affordabilityMetrics: IncomeAffordabilityMetrics;
+    employmentGrowthPct5yr: number | null;
 };
   

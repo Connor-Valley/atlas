@@ -41,7 +41,7 @@ async function fetchCity(
 
   // Fetch city centroid coordinates separately — INTPTLAT/INTPTLONG are geographic
   // variables that must be requested via the geography endpoint.
-  const { lat, lon } = await fetchCityCoordinates(place, year);
+  const { lat, lon, landAreaSqMiles } = await fetchCityCoordinates(place, year);
 
   const { county, countyFips } = place.geographyType === "county-subdivision"
     ? {
@@ -67,6 +67,7 @@ async function fetchCity(
     medianIncome: Number(medianIncome),
     lat: Number.isFinite(lat) ? lat : null,
     lon: Number.isFinite(lon) ? lon : null,
+    landAreaSqMiles,
   };
 }
 
@@ -119,7 +120,7 @@ async function getCountyFromPlace(
 async function fetchCityCoordinates(
   place: { geographyType: "place" | "county-subdivision"; stateFips: string; placeCode: string; countyFips: string },
   _year: number,
-): Promise<{ lat: number | null; lon: number | null }> {
+): Promise<{ lat: number | null; lon: number | null; landAreaSqMiles: number | null }> {
   try {
     // GEOID format:
     //   place:              stateFips(2) + placeCode(5)           = 7 digits
@@ -132,24 +133,30 @@ async function fetchCityCoordinates(
 
     const url =
       `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/${layer}/query` +
-      `?where=GEOID%3D'${geoid}'&outFields=INTPTLAT,INTPTLON&f=json`;
+      `?where=${encodeURIComponent(`GEOID = '${geoid}'`)}&outFields=INTPTLAT,INTPTLON,AREALAND&f=json`;
 
     const res = await fetch(url);
-    if (!res.ok) return { lat: null, lon: null };
+    if (!res.ok) return { lat: null, lon: null, landAreaSqMiles: null };
 
-    type TigerResponse = { features?: Array<{ attributes: { INTPTLAT: string; INTPTLON: string } }> };
+    type TigerResponse = { features?: Array<{ attributes: { INTPTLAT: string; INTPTLON: string; AREALAND: string } }> };
     const data = (await res.json()) as TigerResponse;
     const attrs = data.features?.[0]?.attributes;
-    if (!attrs) return { lat: null, lon: null };
+    if (!attrs) return { lat: null, lon: null, landAreaSqMiles: null };
 
     const lat = Number(attrs.INTPTLAT);
     const lon = Number(attrs.INTPTLON);
+    const alandSqMeters = Number(attrs.AREALAND);
+    const landAreaSqMiles = Number.isFinite(alandSqMeters) && alandSqMeters > 0
+      ? parseFloat((alandSqMeters / 2_589_988.11).toFixed(4))
+      : null;
+
     return {
       lat: Number.isFinite(lat) ? lat : null,
       lon: Number.isFinite(lon) ? lon : null,
+      landAreaSqMiles,
     };
   } catch {
-    return { lat: null, lon: null };
+    return { lat: null, lon: null, landAreaSqMiles: null };
   }
 }
 

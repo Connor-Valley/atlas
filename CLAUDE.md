@@ -2,6 +2,28 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Pending Frontend Work
+
+The following backend endpoints were built during the `api-expansion` branch but have **no frontend implementation yet**. Each needs a panel/section wired into the city expanded view or dashboard.
+
+| Endpoint | Data to show | Notes |
+|---|---|---|
+| `GET /climate/:state/:city` | Seasonal temps, sunny days, precipitation, snowfall, hot/freezing days, hazard risk scores | `hazardRisks` is nested; show top risks with rating labels |
+| `GET /air-quality/:state/:city` | Median AQI, good/unhealthy day %, AQI category | Null for counties without EPA monitoring stations |
+| `GET /lifestyle/:state/:city` | Restaurants/bars/arts per 10k residents | County-level CBP data |
+| `GET /education/:state/:city` | HS+, bachelor's+, graduate+ attainment % | ACS B15003, population 25+ |
+| `GET /political-lean/:state/:city` | Lean label, D%/R%, margin | 2020 county presidential results |
+| `GET /cost-of-living/:state/:city` | RPP index, vs-national %, category label | BEA data; MSA-level or state fallback |
+
+**Also wired into existing endpoints (need UI updates):**
+- `/housing/:state/:city/details` → now includes `rentGrowthPct5yr` (5yr rent growth %)
+- `/income/:state/:city/details` → now includes `employmentGrowthPct5yr` (5yr employment growth %) and `industryDiversityIndex`
+- `/city-profile/:state/:city` → now includes `densityPerSquareMile` and `urbanCharacter` classification
+
+**Atlas Algorithm scoring logic** is also still unbuilt — it depends on all of the above data being wired into the frontend first.
+
+---
+
 ## Commands
 
 ```bash

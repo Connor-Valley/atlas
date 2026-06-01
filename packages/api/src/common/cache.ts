@@ -3,6 +3,31 @@ import { getSupabase } from "../lib/supabase.js";
 const TTL_MS = 60 * 24 * 60 * 60 * 1000; // 60 days — Census ACS updates annually
 const mem = new Map<string, { data: unknown; ts: number }>();
 
+export async function clearCache(prefix?: string): Promise<{ memCleared: number; dbCleared: number | null }> {
+  let memCleared = 0;
+  if (prefix) {
+    for (const key of mem.keys()) {
+      if (key.startsWith(prefix)) { mem.delete(key); memCleared++; }
+    }
+  } else {
+    memCleared = mem.size;
+    mem.clear();
+  }
+
+  let dbCleared: number | null = null;
+  const sb = getSupabase();
+  if (sb) {
+    try {
+      const { error } = await (prefix
+        ? sb.from("api_cache").delete().like("key", `${prefix}%`)
+        : sb.from("api_cache").delete().neq("key", ""));
+      if (!error) dbCleared = 0; // count not available on delete, just signal success
+    } catch { /* Supabase unavailable */ }
+  }
+
+  return { memCleared, dbCleared };
+}
+
 export async function getCached<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
   // Layer 1: memory
   const hit = mem.get(key);
