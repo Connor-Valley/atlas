@@ -16,8 +16,11 @@ import climateRouter from "./climate/climate.route.js";
 import lifestyleRouter from "./lifestyle/lifestyle.route.js";
 import adminRouter from "./admin/admin.route.js";
 import airQualityRouter from "./air-quality/air-quality.route.js";
+import politicalLeanRouter from "./political-lean/political-lean.route.js";
+import educationRouter from "./education/education.route.js";
 import { initializeHpiCache } from "./housing/housing.service.js";
 import { initializeAqiCache } from "./air-quality/air-quality.service.js";
+import { initializePoliticalLeanCache } from "./political-lean/political-lean.service.js";
 
 // Load .env from repo root (monorepo) or cwd
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -50,10 +53,13 @@ app.use('/climate', climateRouter);
 app.use('/lifestyle', lifestyleRouter);
 app.use('/admin', adminRouter);
 app.use('/air-quality', airQualityRouter);
+app.use('/political-lean', politicalLeanRouter);
+app.use('/education', educationRouter);
 
 // Initialize FHFA data cache at startup
 initializeHpiCache();
 initializeAqiCache();
+initializePoliticalLeanCache();
 
 app.listen(port, () => {
   console.log(`API listening on http://localhost:${port}`);
