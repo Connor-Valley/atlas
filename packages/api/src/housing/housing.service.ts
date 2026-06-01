@@ -319,11 +319,22 @@ async function fetchDetailedCityHousing(city: City, year: number): Promise<Detai
   ];
 
   const url = buildCensusUrl(censusVariables, city, year);
-  const rawData = await fetchCensusData(url);
+  const rent2019Url = buildCensusUrl(["B25064_001E"], city, 2019);
+
+  const [rawData, rawData2019] = await Promise.all([
+    fetchCensusData(url),
+    fetchCensusData(rent2019Url),
+  ]);
 
   const parsedData = parseDetailedHousingData(rawData);
   const housingStructure = calculateHousingStructure(parsedData.structure);
   const ownershipMetrics = calculateOwnershipAffordability(parsedData.medianHomeValue, parsedData.medianHouseholdIncome);
+
+  const currentRent = parsedData.medianRent;
+  const rent2019 = parseNumeric(rawData2019[0]);
+  const rentGrowthPct5yr = rent2019 > 0 && currentRent > 0
+    ? parseFloat((((currentRent - rent2019) / rent2019) * 100).toFixed(1))
+    : null;
 
   // Fetch FHFA data (fast in-memory lookup)
   const fhfaData = getFhfaData(city);
@@ -341,6 +352,7 @@ async function fetchDetailedCityHousing(city: City, year: number): Promise<Detai
     medianYearBuilt: parsedData.medianYearBuilt,
     estimatedMortgage: ownershipMetrics.estimatedMortgage,
     mortgageToIncomeRatio: ownershipMetrics.mortgageToIncomeRatio,
+    rentGrowthPct5yr,
     fhfaData,
   };
 }

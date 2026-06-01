@@ -149,7 +149,9 @@ async function fetchDetailedCityIncome(city: City, year: number): Promise<Detail
   const geo = buildCensusGeoQuery(city);
   const key = process.env.CENSUS_API_KEY ? `&key=${process.env.CENSUS_API_KEY}` : '';
 
-  const [incomeRow, industryRow] = await Promise.all([
+  const emp2019Url = `https://api.census.gov/data/2019/acs/acs5?get=B23025_004E` + geo + key;
+
+  const [incomeRow, industryRow, emp2019Row] = await Promise.all([
     fetchCensusRow(
       `${baseUrl}?get=` + [
         // Headline income
@@ -197,6 +199,7 @@ async function fetchDetailedCityIncome(city: City, year: number): Promise<Detail
         'C24030_027E', 'C24030_028E', 'C24030_029E',
       ].join(',') + geo + key
     ),
+    fetchCensusRow(emp2019Url),
   ]);
 
   const n = (v: string | undefined) => {
@@ -283,6 +286,13 @@ async function fetchDetailedCityIncome(city: City, year: number): Promise<Detail
     over200k: n(d017),
   };
 
+  // ── Employment growth ──────────────────────────────────────────────────────
+  const emp2019 = n(emp2019Row[0]);
+  const empCurrent = n(totalEmployed);
+  const employmentGrowthPct5yr = emp2019 > 0 && empCurrent > 0
+    ? parseFloat((((empCurrent - emp2019) / emp2019) * 100).toFixed(1))
+    : null;
+
   // ── Affordability derived metrics ──────────────────────────────────────────
   const rent = n(medianRent);
   const homeValue = n(medianHomeValue);
@@ -331,22 +341,9 @@ async function fetchDetailedCityIncome(city: City, year: number): Promise<Detail
     earningsByEducation,
     povertyDepth,
     industryBreakdown,
-    industryDiversityIndex: computeDiversityIndex(industryBreakdown),
     affordabilityMetrics,
+    employmentGrowthPct5yr,
   };
-}
-
-function computeDiversityIndex(sectors: { share: number }[]): number | null {
-  if (!sectors.length) return null;
-  const totalShare = sectors.reduce((sum, s) => sum + s.share, 0);
-  if (totalShare <= 0) return null;
-  const n = sectors.length;
-  const hhi = sectors.reduce((sum, s) => {
-    const normalizedShare = s.share / totalShare;
-    return sum + normalizedShare * normalizedShare;
-  }, 0);
-  // Normalize so 0 = perfectly concentrated, 1 = perfectly diverse
-  return parseFloat(((1 - hhi) / (1 - 1 / n)).toFixed(4));
 }
 
 async function fetchCensusRow(url: string): Promise<string[]> {
