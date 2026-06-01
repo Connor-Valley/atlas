@@ -13,8 +13,11 @@ import cityProfileRouter from "./city-profile/city-profile.route.js";
 import financialRouter from "./financial/financial.route.js";
 import qualityOfLifeRouter from "./quality-of-life/quality-of-life.route.js";
 import climateRouter from "./climate/climate.route.js";
+import lifestyleRouter from "./lifestyle/lifestyle.route.js";
 import adminRouter from "./admin/admin.route.js";
+import airQualityRouter from "./air-quality/air-quality.route.js";
 import { initializeHpiCache } from "./housing/housing.service.js";
+import { initializeAqiCache } from "./air-quality/air-quality.service.js";
 
 // Load .env from repo root (monorepo) or cwd
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -44,10 +47,13 @@ app.use('/city-profile', cityProfileRouter);
 app.use('/financial', financialRouter);
 app.use('/quality-of-life', qualityOfLifeRouter);
 app.use('/climate', climateRouter);
+app.use('/lifestyle', lifestyleRouter);
 app.use('/admin', adminRouter);
+app.use('/air-quality', airQualityRouter);
 
 // Initialize FHFA data cache at startup
 initializeHpiCache();
+initializeAqiCache();
 
 app.listen(port, () => {
   console.log(`API listening on http://localhost:${port}`);
