@@ -31,11 +31,14 @@ const PERSONA_LABELS: Record<string, { label: string; description: string }> = {
 };
 
 const SCORE_DIMS = [
-  { key: 'weight_affordability' as const, label: 'Affordability' },
-  { key: 'weight_job_market'    as const, label: 'Job Market' },
-  { key: 'weight_opportunity'   as const, label: 'Opportunity' },
-  { key: 'weight_connectivity'  as const, label: 'Transportation' },
-  { key: 'weight_lifestyle'     as const, label: 'Quality of Life' },
+  { key: 'weight_affordability'      as const, label: 'Affordability' },
+  { key: 'weight_job_market'         as const, label: 'Job Market' },
+  { key: 'weight_climate'            as const, label: 'Climate' },
+  { key: 'weight_opportunity'        as const, label: 'Opportunity' },
+  { key: 'weight_lifestyle_vibrancy' as const, label: 'Lifestyle & Vibrancy' },
+  { key: 'weight_air_quality'        as const, label: 'Air Quality' },
+  { key: 'weight_safety'             as const, label: 'Safety' },
+  { key: 'weight_connectivity'       as const, label: 'Connectivity' },
 ];
 
 const currentPersona = computed(() =>
@@ -472,7 +475,7 @@ onBeforeUnmount(() => {
               </div>
             </div>
             <div v-else class="atlas-feature__bar-list">
-              <div v-for="i in 5" :key="i" class="atlas-feature__bar-row">
+              <div v-for="i in 8" :key="i" class="atlas-feature__bar-row">
                 <span class="atlas-feature__bar-name skeleton-line" style="width:80px;height:11px;border-radius:3px"></span>
                 <div class="atlas-feature__bar-track">
                   <div class="atlas-feature__bar-fill skeleton-line" :style="{ width: `${20 + i * 8}%` }"></div>

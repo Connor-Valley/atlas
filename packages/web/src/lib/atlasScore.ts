@@ -6,6 +6,7 @@ export type DimensionScores = {
   climate:           number | null;
   opportunity:       number | null;
   lifestyleVibrancy: number | null;
+  airQuality:        number | null;
   safety:            number | null;
   connectivity:      number | null;
 };
@@ -17,6 +18,7 @@ export type ScoreInputs = {
   profile:       any; // /city-profile/details
   qol:           any; // /quality-of-life/details
   climate:       any; // /climate
+  airQuality:    any; // /air-quality
   lifestyle:     any; // /lifestyle
   education:     any; // /education
   politicalLean: any; // /political-lean
@@ -58,11 +60,21 @@ function affordabilityScore(affordability: any, costOfLiving: any, housing: any)
 }
 
 function jobMarketScore(income: any, qol: any): number | null {
-  const incomeS     = score(income?.medianHouseholdIncome, 30_000, 150_000, 'higher');
-  const unempS      = score(qol?.unemploymentRate?.value, 0.02, 0.12, 'lower');
-  const growthS     = score(income?.employmentGrowthPct5yr, -5, 15, 'higher');
-  const diversityS  = score(income?.industryDiversityIndex, 0, 1, 'higher');
-  return avg(incomeS, unempS, growthS, diversityS);
+  const incomeS    = score(income?.medianHouseholdIncome, 30_000, 150_000, 'higher');
+  const unempS     = score(qol?.unemploymentRate?.value, 0.02, 0.12, 'lower');
+  const growthS    = score(income?.employmentGrowthPct5yr, -5, 15, 'higher');
+  const diversityS = score(income?.industryDiversityIndex, 0, 1, 'higher');
+  // income + unemployment drive the score; growth and diversity are supporting signals
+  const signals = [
+    { s: incomeS, w: 0.35 },
+    { s: unempS,  w: 0.35 },
+    { s: growthS, w: 0.20 },
+    { s: diversityS, w: 0.10 },
+  ];
+  const valid = signals.filter(({ s }) => s != null);
+  if (!valid.length) return null;
+  const totalW = valid.reduce((a, { w }) => a + w, 0);
+  return valid.reduce((a, { s, w }) => a + s! * w, 0) / totalW;
 }
 
 function climateScore(climate: any, climatePref: UserPreferences['climate_preference']): number | null {
@@ -106,7 +118,7 @@ function climateScore(climate: any, climatePref: UserPreferences['climate_prefer
 }
 
 
-function opportunityScore(education: any, profile: any, income: any): number | null {
+function opportunityScore(education: any, profile: any, income: any, qol: any): number | null {
   let bachelorS: number | null = null;
   let graduateS: number | null = null;
 
@@ -115,7 +127,7 @@ function opportunityScore(education: any, profile: any, income: any): number | n
     bachelorS = score(education.bachelorsPlusPct, 15, 75, 'higher');
     graduateS = score(education.graduatePlusPct, 5, 35, 'higher');
   } else {
-    // Fallback: derive from profile.educationalAttainment array (shares are 0–1)
+    // Safety net — /education should always resolve first; profile attainment shares are 0–1
     const att = profile?.educationalAttainment as Array<{ label: string; share: number }> | undefined;
     if (att) {
       const collegeRate =
@@ -126,7 +138,8 @@ function opportunityScore(education: any, profile: any, income: any): number | n
   }
 
   const povertyS = score(income?.povertyRate, 3, 30, 'lower');
-  return avg(bachelorS, graduateS, povertyS);
+  const laborS   = score(qol?.laborForceParticipationRate?.value, 0.55, 0.75, 'higher');
+  return avg(bachelorS, graduateS, povertyS, laborS);
 }
 
 function lifestyleVibrancyScore(lifestyle: any, profile: any): number | null {
@@ -136,6 +149,12 @@ function lifestyleVibrancyScore(lifestyle: any, profile: any): number | null {
   const commuteS    = score(profile?.meanCommuteMinutes, 10, 45, 'lower');
   const remoteS     = score(profile?.remoteWorkShare, 0.05, 0.40, 'higher');
   return avg(restaurantS, barsS, artsS, commuteS, remoteS);
+}
+
+function airQualityScore(airQuality: any): number | null {
+  const aqiS      = score(airQuality?.medianAqi, 20, 120, 'lower');
+  const goodDaysS = score(airQuality?.goodDaysPercent, 30, 90, 'higher');
+  return avg(aqiS, goodDaysS);
 }
 
 function safetyScore(): number | null {
@@ -162,16 +181,15 @@ const DEFAULT_PREFS: UserPreferences = {
   persona_id: 'balanced',
   weight_affordability: 20,
   weight_job_market: 20,
-  weight_opportunity: 20,
+  weight_opportunity: 15,
   weight_connectivity: 20,
-  weight_lifestyle: 20,
   weight_climate: 20,
-  weight_education: 15,
   weight_lifestyle_vibrancy: 15,
+  weight_air_quality: 10,
   weight_safety: 0,
   climate_preference: 'any',
   political_preference_enabled: false,
-  political_preference: 0,
+  political_preference: 0, // -100 (full Dem) to +100 (full Rep), matches cityMargin in politicalMatchScore
 };
 
 export function computeAtlasScore(inputs: ScoreInputs, prefs?: UserPreferences | null): AtlasScoreResult {
@@ -182,8 +200,9 @@ export function computeAtlasScore(inputs: ScoreInputs, prefs?: UserPreferences |
     affordability:     affordabilityScore(inputs.affordability, inputs.costOfLiving, inputs.housing),
     jobMarket:         jobMarketScore(inputs.income, inputs.qol),
     climate:           climateScore(inputs.climate, p.climate_preference),
-      opportunity:       opportunityScore(inputs.education, inputs.profile, inputs.income),
+    opportunity:       opportunityScore(inputs.education, inputs.profile, inputs.income, inputs.qol),
     lifestyleVibrancy: lifestyleVibrancyScore(inputs.lifestyle, inputs.profile),
+    airQuality:        airQualityScore(inputs.airQuality),
     safety:            safetyScore(),
     connectivity:      connectivityScore(inputs.profile, inputs.qol),
   };
@@ -192,8 +211,9 @@ export function computeAtlasScore(inputs: ScoreInputs, prefs?: UserPreferences |
     { score: breakdown.affordability,     weight: p.weight_affordability },
     { score: breakdown.jobMarket,         weight: p.weight_job_market },
     { score: breakdown.climate,           weight: p.weight_climate },
-    { score: breakdown.opportunity,        weight: p.weight_education },
+    { score: breakdown.opportunity,       weight: p.weight_opportunity },
     { score: breakdown.lifestyleVibrancy, weight: p.weight_lifestyle_vibrancy },
+    { score: breakdown.airQuality,        weight: p.weight_air_quality },
     { score: breakdown.safety,            weight: p.weight_safety },
     { score: breakdown.connectivity,      weight: p.weight_connectivity },
   ];

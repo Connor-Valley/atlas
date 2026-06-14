@@ -6,6 +6,7 @@ import { fetchDetailedIncome } from '../api/income';
 import { fetchAffordability } from '../api/affordability';
 import { fetchDetailedHousing } from '../api/housing';
 import { fetchClimate } from '../api/climate';
+import { fetchAirQuality } from '../api/airQuality';
 import { fetchLifestyle } from '../api/lifestyle';
 import { fetchEducation } from '../api/education';
 import { fetchPoliticalLean } from '../api/politicalLean';
@@ -27,6 +28,7 @@ const income         = ref<any>(null);
 const affordability  = ref<any>(null);
 const housing        = ref<any>(null);
 const climate        = ref<any>(null);
+const airQuality     = ref<any>(null);
 const lifestyle      = ref<any>(null);
 const education      = ref<any>(null);
 const politicalLean  = ref<any>(null);
@@ -42,6 +44,7 @@ async function load() {
   affordability.value = null;
   housing.value       = null;
   climate.value       = null;
+  airQuality.value    = null;
   lifestyle.value     = null;
   education.value     = null;
   politicalLean.value = null;
@@ -54,6 +57,7 @@ async function load() {
     fetchAffordability(props.state, props.city),
     fetchDetailedHousing(props.state, props.city),
     fetchClimate(props.state, props.city),
+    fetchAirQuality(props.state, props.city),
     fetchLifestyle(props.state, props.city),
     fetchEducation(props.state, props.city),
     fetchPoliticalLean(props.state, props.city),
@@ -68,6 +72,7 @@ async function load() {
     affordability.value,
     housing.value,
     climate.value,
+    airQuality.value,
     lifestyle.value,
     education.value,
     politicalLean.value,
@@ -89,6 +94,7 @@ const result = computed(() => {
     profile:        profile.value,
     qol:            qol.value,
     climate:        climate.value,
+    airQuality:     airQuality.value,
     lifestyle:      lifestyle.value,
     education:      education.value,
     politicalLean:  politicalLean.value,
@@ -104,6 +110,7 @@ const DIMS: Array<{ key: keyof DimensionScores; label: string; tooltip: string }
   { key: 'climate',           label: 'Climate',              tooltip: 'Weather desirability adjusted for your climate preference, plus natural hazard risk score.' },
   { key: 'opportunity',       label: 'Opportunity',          tooltip: "Bachelor's and graduate degree attainment rates, and poverty rate as a community health proxy." },
   { key: 'lifestyleVibrancy', label: 'Lifestyle & Vibrancy', tooltip: 'Restaurant, bar, and arts density per resident, plus commute times and remote work share.' },
+  { key: 'airQuality',        label: 'Air Quality',          tooltip: 'Median AQI and percentage of good air quality days per year based on EPA monitoring data.' },
   { key: 'safety',            label: 'Safety',               tooltip: 'Crime and safety metrics. Data coming soon.' },
   { key: 'connectivity',      label: 'Connectivity',         tooltip: 'Airport activity and proximity, and public transit usage share.' },
 ];

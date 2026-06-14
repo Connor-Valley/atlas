@@ -12,7 +12,7 @@ watch(() => user.value, () => fetchPreferences(), { immediate: true });
 
 type PersonaWeights = Pick<UserPreferences,
   'weight_affordability' | 'weight_job_market' | 'weight_climate' |
-  'weight_education' | 'weight_lifestyle_vibrancy' |
+  'weight_opportunity' | 'weight_lifestyle_vibrancy' | 'weight_air_quality' |
   'weight_safety' | 'weight_connectivity'
 >;
 
@@ -31,7 +31,7 @@ const PERSONAS: Persona[] = [
     label: 'Balanced',
     icon: 'mdi-scale-balance',
     description: 'Equal weight across all factors',
-    weights: { weight_affordability: 15, weight_job_market: 15, weight_climate: 15, weight_education: 15, weight_lifestyle_vibrancy: 15, weight_safety: 0, weight_connectivity: 15 },
+    weights: { weight_affordability: 15, weight_job_market: 15, weight_climate: 15, weight_opportunity: 15, weight_lifestyle_vibrancy: 15, weight_air_quality: 10, weight_safety: 0, weight_connectivity: 15 },
     climate_preference: 'any',
   },
   {
@@ -39,7 +39,7 @@ const PERSONAS: Persona[] = [
     label: 'Young Professional',
     icon: 'mdi-briefcase-outline',
     description: 'Career growth, city energy, strong connections',
-    weights: { weight_affordability: 15, weight_job_market: 30, weight_climate: 10, weight_education: 15, weight_lifestyle_vibrancy: 25, weight_safety: 0, weight_connectivity: 20 },
+    weights: { weight_affordability: 15, weight_job_market: 30, weight_climate: 10, weight_opportunity: 15, weight_lifestyle_vibrancy: 25, weight_air_quality: 5, weight_safety: 0, weight_connectivity: 20 },
     climate_preference: 'any',
   },
   {
@@ -47,7 +47,7 @@ const PERSONAS: Persona[] = [
     label: 'Remote Worker',
     icon: 'mdi-laptop',
     description: 'Affordable, livable, and great weather',
-    weights: { weight_affordability: 30, weight_job_market: 5, weight_climate: 25, weight_education: 10, weight_lifestyle_vibrancy: 20, weight_safety: 0, weight_connectivity: 10 },
+    weights: { weight_affordability: 30, weight_job_market: 5, weight_climate: 25, weight_opportunity: 10, weight_lifestyle_vibrancy: 20, weight_air_quality: 10, weight_safety: 0, weight_connectivity: 10 },
     climate_preference: 'warm',
   },
   {
@@ -55,7 +55,7 @@ const PERSONAS: Persona[] = [
     label: 'Growing Family',
     icon: 'mdi-home-heart',
     description: 'Good schools, safe neighborhoods, clean air',
-    weights: { weight_affordability: 20, weight_job_market: 15, weight_climate: 10, weight_education: 25, weight_lifestyle_vibrancy: 10, weight_safety: 25, weight_connectivity: 5 },
+    weights: { weight_affordability: 20, weight_job_market: 15, weight_climate: 10, weight_opportunity: 25, weight_lifestyle_vibrancy: 10, weight_air_quality: 20, weight_safety: 25, weight_connectivity: 5 },
     climate_preference: 'mild',
   },
   {
@@ -63,7 +63,7 @@ const PERSONAS: Persona[] = [
     label: 'Career Climber',
     icon: 'mdi-trending-up',
     description: 'High-earning markets with opportunity density',
-    weights: { weight_affordability: 10, weight_job_market: 35, weight_climate: 5, weight_education: 25, weight_lifestyle_vibrancy: 10, weight_safety: 0, weight_connectivity: 25 },
+    weights: { weight_affordability: 10, weight_job_market: 35, weight_climate: 5, weight_opportunity: 25, weight_lifestyle_vibrancy: 10, weight_air_quality: 5, weight_safety: 0, weight_connectivity: 25 },
     climate_preference: 'any',
   },
   {
@@ -71,7 +71,7 @@ const PERSONAS: Persona[] = [
     label: 'Retiree',
     icon: 'mdi-weather-sunny-alert',
     description: 'Warm climate, low cost of living, clean and safe',
-    weights: { weight_affordability: 25, weight_job_market: 0, weight_climate: 30, weight_education: 10, weight_lifestyle_vibrancy: 15, weight_safety: 20, weight_connectivity: 5 },
+    weights: { weight_affordability: 25, weight_job_market: 0, weight_climate: 30, weight_opportunity: 10, weight_lifestyle_vibrancy: 15, weight_air_quality: 15, weight_safety: 20, weight_connectivity: 5 },
     climate_preference: 'warm',
   },
   {
@@ -79,7 +79,7 @@ const PERSONAS: Persona[] = [
     label: 'Urban Enthusiast',
     icon: 'mdi-city-variant-outline',
     description: 'Walkable, vibrant, transit-rich city life',
-    weights: { weight_affordability: 10, weight_job_market: 20, weight_climate: 5, weight_education: 10, weight_lifestyle_vibrancy: 35, weight_safety: 5, weight_connectivity: 25 },
+    weights: { weight_affordability: 10, weight_job_market: 20, weight_climate: 5, weight_opportunity: 10, weight_lifestyle_vibrancy: 35, weight_air_quality: 5, weight_safety: 5, weight_connectivity: 25 },
     climate_preference: 'mild',
   },
   {
@@ -87,7 +87,7 @@ const PERSONAS: Persona[] = [
     label: 'Nature / Outdoors',
     icon: 'mdi-hiking',
     description: 'Clean air, mild weather, natural surroundings',
-    weights: { weight_affordability: 15, weight_job_market: 15, weight_climate: 35, weight_education: 10, weight_lifestyle_vibrancy: 10, weight_safety: 0, weight_connectivity: 5 },
+    weights: { weight_affordability: 15, weight_job_market: 15, weight_climate: 35, weight_opportunity: 10, weight_lifestyle_vibrancy: 10, weight_air_quality: 20, weight_safety: 0, weight_connectivity: 5 },
     climate_preference: 'mild',
   },
 ];
@@ -96,8 +96,9 @@ const DIMS: Array<{ key: keyof PersonaWeights; label: string; icon: string; comi
   { key: 'weight_affordability',      label: 'Affordability',        icon: 'mdi-home-city-outline' },
   { key: 'weight_job_market',         label: 'Job Market',           icon: 'mdi-briefcase-outline' },
   { key: 'weight_climate',            label: 'Climate',              icon: 'mdi-weather-sunny' },
-  { key: 'weight_education',          label: 'Opportunity',          icon: 'mdi-school-outline' },
+  { key: 'weight_opportunity',        label: 'Opportunity',          icon: 'mdi-school-outline' },
   { key: 'weight_lifestyle_vibrancy', label: 'Lifestyle & Vibrancy', icon: 'mdi-city-variant-outline' },
+  { key: 'weight_air_quality',        label: 'Air Quality',          icon: 'mdi-air-filter' },
   { key: 'weight_safety',             label: 'Safety',               icon: 'mdi-shield-check-outline', comingSoon: true },
   { key: 'weight_connectivity',       label: 'Connectivity',         icon: 'mdi-train-car' },
 ];
