@@ -2,11 +2,18 @@
 import { ref, computed, watch } from 'vue';
 import { fetchDetailedCityProfile } from '../api/cityProfile';
 import { fetchDetailedQualityOfLife } from '../api/qualityOfLife';
-import { fetchIncome } from '../api/income';
+import { fetchDetailedIncome } from '../api/income';
 import { fetchAffordability } from '../api/affordability';
+import { fetchDetailedHousing } from '../api/housing';
+import { fetchClimate } from '../api/climate';
+import { fetchAirQuality } from '../api/airQuality';
+import { fetchLifestyle } from '../api/lifestyle';
+import { fetchEducation } from '../api/education';
+import { fetchPoliticalLean } from '../api/politicalLean';
+import { fetchCostOfLiving } from '../api/costOfLiving';
 import { useAuth } from '../composables/useAuth';
 import { usePreferences } from '../composables/usePreferences';
-import { computeAtlasScore, scoreTier } from '../lib/atlasScore';
+import { computeAtlasScore, scoreTier, type DimensionScores } from '../lib/atlasScore';
 
 const props = defineProps<{ city: string; state: string }>();
 
@@ -15,11 +22,18 @@ const { preferences, loaded: prefsLoaded, fetchPreferences } = usePreferences();
 
 watch(() => user.value, () => fetchPreferences(), { immediate: true });
 
-const profile       = ref<any>(null);
-const qol           = ref<any>(null);
-const income        = ref<any>(null);
-const affordability = ref<any>(null);
-const loading       = ref(false);
+const profile        = ref<any>(null);
+const qol            = ref<any>(null);
+const income         = ref<any>(null);
+const affordability  = ref<any>(null);
+const housing        = ref<any>(null);
+const climate        = ref<any>(null);
+const airQuality     = ref<any>(null);
+const lifestyle      = ref<any>(null);
+const education      = ref<any>(null);
+const politicalLean  = ref<any>(null);
+const costOfLiving   = ref<any>(null);
+const loading        = ref(false);
 
 async function load() {
   if (!props.city || !props.state) return;
@@ -28,18 +42,44 @@ async function load() {
   qol.value           = null;
   income.value        = null;
   affordability.value = null;
-  try {
-    [profile.value, qol.value, income.value, affordability.value] = await Promise.all([
-      fetchDetailedCityProfile(props.state, props.city),
-      fetchDetailedQualityOfLife(props.state, props.city),
-      fetchIncome(props.state, props.city),
-      fetchAffordability(props.state, props.city),
-    ]);
-  } catch {
-    // score stays hidden on error
-  } finally {
-    loading.value = false;
-  }
+  housing.value       = null;
+  climate.value       = null;
+  airQuality.value    = null;
+  lifestyle.value     = null;
+  education.value     = null;
+  politicalLean.value = null;
+  costOfLiving.value  = null;
+
+  const results = await Promise.allSettled([
+    fetchDetailedCityProfile(props.state, props.city),
+    fetchDetailedQualityOfLife(props.state, props.city),
+    fetchDetailedIncome(props.state, props.city),
+    fetchAffordability(props.state, props.city),
+    fetchDetailedHousing(props.state, props.city),
+    fetchClimate(props.state, props.city),
+    fetchAirQuality(props.state, props.city),
+    fetchLifestyle(props.state, props.city),
+    fetchEducation(props.state, props.city),
+    fetchPoliticalLean(props.state, props.city),
+    fetchCostOfLiving(props.state, props.city),
+  ]);
+
+  const vals = results.map(r => r.status === 'fulfilled' ? r.value : null);
+  [
+    profile.value,
+    qol.value,
+    income.value,
+    affordability.value,
+    housing.value,
+    climate.value,
+    airQuality.value,
+    lifestyle.value,
+    education.value,
+    politicalLean.value,
+    costOfLiving.value,
+  ] = vals;
+
+  loading.value = false;
 }
 
 watch(() => [props.city, props.state], load, { immediate: true });
@@ -47,17 +87,32 @@ watch(() => [props.city, props.state], load, { immediate: true });
 const result = computed(() => {
   if (!income.value && !affordability.value && !profile.value && !qol.value) return null;
   const prefs = user.value && prefsLoaded.value ? preferences.value : null;
-  return computeAtlasScore(income.value, affordability.value, profile.value, qol.value, prefs);
+  return computeAtlasScore({
+    income:         income.value,
+    affordability:  affordability.value,
+    costOfLiving:   costOfLiving.value,
+    profile:        profile.value,
+    qol:            qol.value,
+    climate:        climate.value,
+    airQuality:     airQuality.value,
+    lifestyle:      lifestyle.value,
+    education:      education.value,
+    politicalLean:  politicalLean.value,
+    housing:        housing.value,
+  }, prefs);
 });
 
 const tier = computed(() => result.value ? scoreTier(result.value.score) : null);
 
-const DIMS = [
-  { key: 'affordability' as const, label: 'Affordability', tooltip: 'How far income stretches relative to local rent. Based on rent-to-income ratio.' },
-  { key: 'jobMarket'     as const, label: 'Job Market',    tooltip: 'Strength of the local economy. Based on median household income and unemployment rate.' },
-  { key: 'opportunity'   as const, label: 'Opportunity',   tooltip: 'Potential for growth and upward mobility. Based on college attainment, labor force participation, and poverty rate.' },
-  { key: 'connectivity'  as const, label: 'Transportation', tooltip: 'Access to transportation options. Based on airport activity, distance to major airport, and public transit share.' },
-  { key: 'lifestyle'     as const, label: 'Quality of Life', tooltip: 'Day-to-day quality of life. Based on average commute time and remote work share.' },
+const DIMS: Array<{ key: keyof DimensionScores; label: string; tooltip: string }> = [
+  { key: 'affordability',     label: 'Affordability',        tooltip: 'Housing costs, rent-to-income ratio, cost of living index, and rent growth trend.' },
+  { key: 'jobMarket',         label: 'Job Market',           tooltip: 'Median household income, unemployment rate, 5-year employment growth, and industry diversity.' },
+  { key: 'climate',           label: 'Climate',              tooltip: 'Weather desirability adjusted for your climate preference, plus natural hazard risk score.' },
+  { key: 'opportunity',       label: 'Opportunity',          tooltip: "Bachelor's and graduate degree attainment rates, and poverty rate as a community health proxy." },
+  { key: 'lifestyleVibrancy', label: 'Lifestyle & Vibrancy', tooltip: 'Restaurant, bar, and arts density per resident, plus commute times and remote work share.' },
+  { key: 'airQuality',        label: 'Air Quality',          tooltip: 'Median AQI and percentage of good air quality days per year based on EPA monitoring data.' },
+  { key: 'safety',            label: 'Safety',               tooltip: 'Crime and safety metrics. Data coming soon.' },
+  { key: 'connectivity',      label: 'Connectivity',         tooltip: 'Airport activity and proximity, and public transit usage share.' },
 ];
 
 function dimTier(value: number | null): 'good' | 'average' | 'below' | null {
@@ -74,6 +129,17 @@ function dimTierLabel(value: number | null): string {
   if (t === 'below')   return 'Weak';
   return '—';
 }
+
+const climatePrefLabel = computed(() => {
+  const pref = preferences.value?.climate_preference;
+  const map: Record<string, string> = {
+    warm: 'warm climate',
+    mild: 'mild climate',
+    four_seasons: 'four seasons',
+    cool: 'cool climate',
+  };
+  return pref && pref !== 'any' ? map[pref] : null;
+});
 
 const narrative = computed(() => {
   if (!result.value) return null;
@@ -127,6 +193,9 @@ const narrative = computed(() => {
           <span class="atlas-card__score-tier">{{ tier?.label }}</span>
         </div>
         <p v-if="narrative" class="atlas-card__narrative">{{ narrative }}</p>
+        <p v-if="result.isPersonalized && climatePrefLabel" class="atlas-card__climate-hint">
+          <span class="mdi mdi-weather-partly-cloudy"></span> Tuned for {{ climatePrefLabel }}
+        </p>
       </div>
 
       <div class="atlas-card__bars">
@@ -160,10 +229,10 @@ const narrative = computed(() => {
         <div class="skeleton-line" style="width:90px;height:12px;border-radius:4px"></div>
       </div>
       <div class="atlas-card__bars">
-        <div v-for="i in 5" :key="i" class="data-card__bar-row atlas-card__bar-row">
+        <div v-for="i in 8" :key="i" class="data-card__bar-row atlas-card__bar-row">
           <span class="atlas-card__dim-label skeleton-line" style="width:80px;height:12px;border-radius:3px"></span>
           <div class="data-card__bar data-card__bar--placeholder">
-            <div class="data-card__bar-fill data-card__bar-fill--placeholder" :style="{ width: `${35 + i * 10}%` }"></div>
+            <div class="data-card__bar-fill data-card__bar-fill--placeholder" :style="{ width: `${30 + i * 8}%` }"></div>
           </div>
           <span class="skeleton-line" style="width:48px;height:12px;border-radius:3px"></span>
         </div>
@@ -267,6 +336,15 @@ const narrative = computed(() => {
   max-width: 160px;
 }
 
+.atlas-card__climate-hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
 /* Right: bars */
 .atlas-card__bars {
   display: flex;
@@ -285,7 +363,7 @@ const narrative = computed(() => {
   font-weight: 500;
   color: var(--text-secondary);
   white-space: nowrap;
-  min-width: 110px;
+  min-width: 130px;
   display: flex;
   align-items: center;
   gap: 4px;

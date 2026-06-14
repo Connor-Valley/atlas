@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import PreferencesSetup from './PreferencesSetup.vue';
 
 defineEmits<{ (e: 'close'): void }>();
+
+const setupRef = ref<InstanceType<typeof PreferencesSetup> | null>(null);
 </script>
 
 <template>
@@ -14,11 +17,22 @@ defineEmits<{ (e: 'close'): void }>();
               <span class="mdi mdi-map-marker-star-outline prefs-modal-title__icon"></span>
               Atlas Score Preferences
             </span>
+            <div class="prefs-modal-actions">
+              <span class="prefs-modal-hint">Weights are relative — they don't need to sum to 100.</span>
+              <button class="prefs-modal-reset" @click="setupRef?.resetToPersonaDefaults()">
+                <span class="mdi mdi-refresh"></span> Reset
+              </button>
+              <button class="prefs-modal-save" :disabled="setupRef?.saving" @click="setupRef?.save()">
+                <span v-if="setupRef?.saving" class="mdi mdi-loading prefs-modal-spin"></span>
+                <span v-else-if="setupRef?.saved" class="mdi mdi-check"></span>
+                {{ setupRef?.saving ? 'Saving…' : setupRef?.saved ? 'Saved!' : 'Save preferences' }}
+              </button>
+            </div>
             <button class="prefs-modal-close" @click="$emit('close')">
               <span class="mdi mdi-close"></span>
             </button>
           </div>
-          <PreferencesSetup @saved="$emit('close')" />
+          <PreferencesSetup ref="setupRef" @saved="$emit('close')" />
         </div>
       </div>
     </Transition>
@@ -40,9 +54,9 @@ defineEmits<{ (e: 'close'): void }>();
 }
 
 .prefs-modal-panel {
-  width: min(1100px, calc(100vw - 48px));
-  max-height: 92vh;
-  overflow-y: auto;
+  width: min(960px, calc(100vw - 48px));
+  max-height: 78vh;
+  overflow: hidden;
   overflow-x: clip;
   background: var(--bg-card);
   border-radius: 20px;
@@ -55,9 +69,9 @@ defineEmits<{ (e: 'close'): void }>();
 .prefs-modal-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 20px 24px 0;
-  margin-bottom: 20px;
+  gap: 16px;
+  padding: 16px 24px;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 12%, var(--border-card));
   flex-shrink: 0;
 }
 
@@ -74,6 +88,70 @@ defineEmits<{ (e: 'close'): void }>();
   color: var(--accent);
   font-size: 1.15rem;
 }
+
+.prefs-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.prefs-modal-hint {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.prefs-modal-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border-card);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.prefs-modal-reset:hover {
+  color: var(--text-secondary);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border-card));
+}
+
+.prefs-modal-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 18px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+html:not(.dark) .prefs-modal-save {
+  color: var(--bg-main);
+}
+
+.prefs-modal-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.prefs-modal-spin { display: inline-block; animation: spin 0.8s linear infinite; }
 
 .prefs-modal-close {
   background: none;
