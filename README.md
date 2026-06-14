@@ -197,7 +197,7 @@ All city endpoints use the same format: state is the two-letter code (e.g. `ca`)
 |---|---|---|
 | GET | `/quality-of-life/:state/:city` | Labor market and airport summary |
 | GET | `/quality-of-life/:state/:city/details` | Detailed quality-of-life payload |
-| DELETE | `/admin/cache/:prefix?` | Clear in-memory + Supabase cache (all or by prefix) |
+| DELETE | `/admin/cache/:prefix?` | Clear in-memory + Redis cache (all or by prefix) |
 | GET | `/admin/cache/prefixes` | List available cache key prefixes |
 | GET | `/health` | Server health check |
 

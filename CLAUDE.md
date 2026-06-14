@@ -150,10 +150,14 @@ VITE_TURNSTILE_SITE_KEY=
 
 **API** (`.env` or `.env.development` at repo root):
 ```
-CENSUS_API_KEY=            # optional — requests still work without it, but rate-limited
-PORT=                      # defaults to 3000
-SUPABASE_URL=              # same value as VITE_SUPABASE_URL
-SUPABASE_SERVICE_ROLE_KEY= # service role key (never expose client-side)
+CENSUS_API_KEY=               # optional — requests still work without it, but rate-limited
+PORT=                         # defaults to 3000
+SUPABASE_URL=                 # same value as VITE_SUPABASE_URL
+SUPABASE_SERVICE_ROLE_KEY=    # service role key (never expose client-side)
+UPSTASH_REDIS_REST_URL=       # Upstash Redis REST URL
+UPSTASH_REDIS_REST_TOKEN=     # Upstash Redis REST token
 ```
 
-If `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` are absent the API still works — caching degrades to memory-only (lost on restart).
+If `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` are absent the API still works — auth and user data features degrade but core data endpoints are unaffected.
+
+API response caching uses **Upstash Redis** (15-day TTL). If `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` are absent, caching degrades to in-process memory only (lost on restart).
