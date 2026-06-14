@@ -17,7 +17,11 @@ function getRedis(): Redis | null {
   return _redis;
 }
 
-export async function getCached<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
+export async function getCached<T>(
+  key: string,
+  fetcher: () => Promise<T>,
+  opts?: { shouldCache?: (result: T) => boolean }
+): Promise<T> {
   // Layer 1: memory
   const hit = mem.get(key);
   if (hit && Date.now() - hit.ts < TTL_MS) return hit.data as T;
@@ -38,12 +42,15 @@ export async function getCached<T>(key: string, fetcher: () => Promise<T>): Prom
 
   // Layer 3: live fetch, then populate both layers
   const fresh = await fetcher();
-  mem.set(key, { data: fresh, ts: Date.now() });
+  const shouldCache = opts?.shouldCache ?? (() => true);
 
-  if (redis) {
-    redis.set(key, fresh, { ex: TTL_SECONDS }).catch((e: Error) =>
-      console.warn(`[cache] write failed for "${key}":`, e.message)
-    );
+  if (shouldCache(fresh)) {
+    mem.set(key, { data: fresh, ts: Date.now() });
+    if (redis) {
+      redis.set(key, fresh, { ex: TTL_SECONDS }).catch((e: Error) =>
+        console.warn(`[cache] write failed for "${key}":`, e.message)
+      );
+    }
   }
 
   return fresh;

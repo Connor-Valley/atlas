@@ -19,6 +19,7 @@ import airQualityRouter from "./air-quality/air-quality.route.js";
 import politicalLeanRouter from "./political-lean/political-lean.route.js";
 import educationRouter from "./education/education.route.js";
 import costOfLivingRouter from "./cost-of-living/cost-of-living.route.js";
+import cityPhotoRouter from "./city-photo/city-photo.route.js";
 import { initializeColCache } from "./cost-of-living/cost-of-living.service.js";
 import { initializeHpiCache } from "./housing/housing.service.js";
 import { initializeAqiCache } from "./air-quality/air-quality.service.js";
@@ -58,6 +59,7 @@ app.use('/air-quality', airQualityRouter);
 app.use('/political-lean', politicalLeanRouter);
 app.use('/education', educationRouter);
 app.use('/cost-of-living', costOfLivingRouter);
+app.use('/city-photo', cityPhotoRouter);
 
 // Initialize FHFA data cache at startup
 initializeHpiCache();

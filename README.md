@@ -30,7 +30,7 @@ Search any U.S. city and get an instant dashboard of what actually matters:
 
 **City Dashboard**
 - At-a-glance scoring across Income, Housing, Affordability, and People categories
-- Hero card with a real city photo pulled from Wikipedia
+- Hero card with a city photo sourced from Wikipedia/Wikimedia Commons (skyline, downtown, or regional vibe fallback)
 - Smooth animated transitions between overview and detail views
 
 **Housing Details**
@@ -112,7 +112,7 @@ Search any U.S. city and get an instant dashboard of what actually matters:
 - [EPA Air Quality System](https://aqs.epa.gov/aqsweb/airdata/download_files.html) — annual AQI summary by county (2023)
 - [MIT Election Lab](https://doi.org/10.7910/DVN/VOQCHQ) — county-level 2020 presidential results
 - [U.S. Department of Labor](https://www.dol.gov/agencies/whd/minimum-wage/state) — state minimum wage reference
-- [Wikipedia REST API](https://en.wikipedia.org/api/rest_v1/) + [Wikimedia Commons](https://commons.wikimedia.org) — city photography
+- [Wikipedia REST API](https://en.wikipedia.org/api/rest_v1/) + [Wikimedia Commons](https://commons.wikimedia.org) — city hero photography (server-side lookup, Redis-cached, with regional vibe fallbacks for small towns)
 
 ---
 
@@ -141,6 +141,7 @@ atlas/
 │           ├── education/      # Attainment rates
 │           ├── political-lean/ # 2020 county presidential results
 │           ├── cost-of-living/ # BEA Regional Price Parities
+│           ├── city-photo/     # City hero image lookup (Wikipedia + Wikimedia Commons, Redis-cached)
 │           ├── admin/          # Cache management
 │           └── states/
 │
@@ -190,6 +191,12 @@ All city endpoints use the same format: state is the two-letter code (e.g. `ca`)
 | GET | `/education/:state/:city` | Educational attainment rates (HS+, bachelor's+, graduate+) |
 | GET | `/political-lean/:state/:city` | 2020 county presidential results + lean label |
 | GET | `/cost-of-living/:state/:city` | BEA Regional Price Parities index vs. national average |
+
+**City Photos**
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/city-photo/:state/:city` | City hero image URL (Wikipedia/Commons lookup, Redis-cached, regional vibe fallback) |
 
 **Quality of Life & Admin**
 

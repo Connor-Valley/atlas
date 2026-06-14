@@ -37,6 +37,7 @@ const data = ref<any>(null);
 const loading = ref(false);
 const error = ref<string | null>(null);
 const photoUrl = ref<string | null>(null);
+let photoRequestId = 0;
 
 const peopleScore = computed(() => {
   if (!data.value) return null;
@@ -87,7 +88,10 @@ async function load() {
 }
 
 async function loadPhoto() {
-  photoUrl.value = await fetchCityPhoto(props.state, props.city);
+  const id = ++photoRequestId;
+  const url = await fetchCityPhoto(props.state, props.city);
+  if (id !== photoRequestId) return; // a newer request supersedes this one
+  photoUrl.value = url;
 }
 
 watch(

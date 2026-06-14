@@ -81,7 +81,7 @@ Route → View mapping:
 
 **Lib** (`src/lib/`):
 - `supabase.ts` — single Supabase client instance
-- `cityPhotos.ts` — Wikipedia/Wikimedia API for city hero images
+- `cityPhotos.ts` — thin wrapper that calls `GET /city-photo/:state/:city` on the API; all Wikipedia/Wikimedia logic lives server-side
 - `compare.ts` — comparison scoring utilities
 - `profilePrivacy.ts` — visibility level types/helpers
 
