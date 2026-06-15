@@ -218,7 +218,7 @@ const narrative = computed(() => {
             ></div>
           </div>
           <span class="atlas-card__dim-value" :class="`atlas-card__dim-value--${dimTier(result.breakdown[dim.key])}`">
-            {{ dimTierLabel(result.breakdown[dim.key]) }}
+            {{ result.breakdown[dim.key] != null ? Math.round(result.breakdown[dim.key]!) : '—' }}
           </span>
         </div>
       </div>
@@ -308,9 +308,9 @@ const narrative = computed(() => {
 }
 
 .atlas-card__score-number {
-  font-size: 3.2rem;
+  font-size: 4.5rem;
   font-weight: 800;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.05em;
   line-height: 1;
 }
 
@@ -319,7 +319,7 @@ const narrative = computed(() => {
 }
 
 .atlas-card__score-tier {
-  font-size: 0.72rem;
+  font-size: 0.85rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -356,21 +356,27 @@ const narrative = computed(() => {
 .atlas-card__bars {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
+  margin: 0 20px;
 }
 
 .atlas-card__bar-row {
   align-items: center;
-  margin-left: 0;
-  margin-right: 0;
+  margin: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-color) 40%, transparent);
 }
 
+.atlas-card__bar-row:last-child {
+  border-bottom: none;
+}
+
+
 .atlas-card__dim-label {
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   font-weight: 500;
   color: var(--text-secondary);
   white-space: nowrap;
-  min-width: 130px;
+  min-width: 140px;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -381,14 +387,12 @@ const narrative = computed(() => {
 .atlas-card__fill--average { background: var(--accent); }
 .atlas-card__fill--below   { background: var(--caution); }
 
-/* Tier label */
+/* Dim score number */
 .atlas-card__dim-value {
-  font-size: 0.68rem;
+  font-size: 0.92rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   white-space: nowrap;
-  min-width: 50px;
+  min-width: 28px;
   text-align: right;
   flex-shrink: 0;
 }

@@ -119,9 +119,9 @@ html.dark .data-card {
   background: repeating-linear-gradient(
     90deg,
     transparent 0%,
-    transparent calc(10% - 1.5px),
-    var(--bg-card) calc(10% - 1.5px),
-    var(--bg-card) 10%
+    transparent calc(25% - 1px),
+    var(--bg-card) calc(25% - 1px),
+    var(--bg-card) 25%
   );
   z-index: 1;
   pointer-events: none;
