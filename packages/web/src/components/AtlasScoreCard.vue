@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
+import CountUp from 'vue-countup-v3';
 import { fetchDetailedCityProfile } from '../api/cityProfile';
 import { fetchDetailedQualityOfLife } from '../api/qualityOfLife';
 import { fetchDetailedIncome } from '../api/income';
@@ -105,24 +106,23 @@ const result = computed(() => {
 const tier = computed(() => result.value ? scoreTier(result.value.score) : null);
 
 const DIMS: Array<{ key: keyof DimensionScores; label: string; tooltip: string }> = [
-  { key: 'affordability',     label: 'Affordability',        tooltip: 'Housing costs, rent-to-income ratio, cost of living index, and rent growth trend.' },
-  { key: 'jobMarket',         label: 'Job Market',           tooltip: 'Median household income, unemployment rate, 5-year employment growth, and industry diversity.' },
-  { key: 'climate',           label: 'Climate',              tooltip: 'Weather desirability adjusted for your climate preference, plus natural hazard risk score.' },
-  { key: 'opportunity',       label: 'Opportunity',          tooltip: "Bachelor's and graduate degree attainment rates, and poverty rate as a community health proxy." },
-  { key: 'lifestyleVibrancy', label: 'Lifestyle & Vibrancy', tooltip: 'Restaurant, bar, and arts density per resident, plus commute times and remote work share.' },
-  { key: 'airQuality',        label: 'Air Quality',          tooltip: 'Median AQI and percentage of good air quality days per year based on EPA monitoring data.' },
-  { key: 'safety',            label: 'Safety',               tooltip: 'Crime and safety metrics. Data coming soon.' },
-  { key: 'connectivity',      label: 'Connectivity',         tooltip: 'Airport activity and proximity, and public transit usage share.' },
+  { key: 'affordability',     label: 'Affordability',       tooltip: 'How far income stretches relative to local rent and cost of living.' },
+  { key: 'jobMarket',         label: 'Job Market',          tooltip: 'Strength of the local economy based on median income and unemployment.' },
+  { key: 'climate',           label: 'Climate',             tooltip: 'Year-round weather quality — sunny days, mild temps, and low hazard risk.' },
+  { key: 'opportunity',       label: 'Opportunity',         tooltip: 'Growth potential based on education attainment, labor force participation, and employment trends.' },
+  { key: 'lifestyleVibrancy', label: 'Lifestyle & Vibrancy', tooltip: 'Day-to-day quality of life including restaurants, arts, and walkability.' },
+  { key: 'airQuality',        label: 'Air Quality',         tooltip: 'Air cleanliness based on EPA AQI data — good days vs. unhealthy days.' },
+  { key: 'connectivity',      label: 'Connectivity',        tooltip: 'Access to transportation options including airports and public transit.' },
 ];
 
-function dimTier(value: number | null): 'good' | 'average' | 'below' | null {
+function dimTier(value: number | null | undefined): 'good' | 'average' | 'below' | null {
   if (value == null) return null;
   if (value >= 65) return 'good';
   if (value >= 45) return 'average';
   return 'below';
 }
 
-function dimTierLabel(value: number | null): string {
+function dimTierLabel(value: number | null | undefined): string {
   const t = dimTier(value);
   if (t === 'good')    return 'Good';
   if (t === 'average') return 'Average';
@@ -166,6 +166,7 @@ const narrative = computed(() => {
   }
   return `${worst.label} and ${scored[scored.length - 2].label.toLowerCase()} are significant weak spots holding this score back.`;
 });
+
 </script>
 
 <template>
@@ -185,11 +186,12 @@ const narrative = computed(() => {
       </p>
     </div>
 
-    <!-- Loaded state: two-column layout -->
+    <!-- Loaded state -->
     <div v-if="result" class="atlas-card__body">
+      <!-- Left: score number + tier + narrative -->
       <div class="atlas-card__left">
         <div class="atlas-card__score-wrap" :data-tier="tier?.tier">
-          <span class="atlas-card__score-number">{{ result.score }}</span>
+          <CountUp class="atlas-card__score-number" :end-val="result.score" :duration="1.2" />
           <span class="atlas-card__score-tier">{{ tier?.label }}</span>
         </div>
         <p v-if="narrative" class="atlas-card__narrative">{{ narrative }}</p>
@@ -198,6 +200,7 @@ const narrative = computed(() => {
         </p>
       </div>
 
+      <!-- Right: bars -->
       <div class="atlas-card__bars">
         <div v-for="dim in DIMS" :key="dim.key" class="data-card__bar-row atlas-card__bar-row">
           <span class="atlas-card__dim-label">
@@ -229,7 +232,7 @@ const narrative = computed(() => {
         <div class="skeleton-line" style="width:90px;height:12px;border-radius:4px"></div>
       </div>
       <div class="atlas-card__bars">
-        <div v-for="i in 8" :key="i" class="data-card__bar-row atlas-card__bar-row">
+        <div v-for="i in 7" :key="i" class="data-card__bar-row atlas-card__bar-row">
           <span class="atlas-card__dim-label skeleton-line" style="width:80px;height:12px;border-radius:3px"></span>
           <div class="data-card__bar data-card__bar--placeholder">
             <div class="data-card__bar-fill data-card__bar-fill--placeholder" :style="{ width: `${30 + i * 8}%` }"></div>
@@ -247,7 +250,7 @@ const narrative = computed(() => {
   overflow: visible;
 }
 
-/* Header row */
+/* Header */
 .atlas-card__header {
   padding-bottom: 0;
 }
@@ -311,6 +314,10 @@ const narrative = computed(() => {
   line-height: 1;
 }
 
+.atlas-card__score-number :deep(.countup-wrap) {
+  display: inline;
+}
+
 .atlas-card__score-tier {
   font-size: 0.72rem;
   font-weight: 700;
@@ -319,15 +326,15 @@ const narrative = computed(() => {
 }
 
 [data-tier="excellent"] .atlas-card__score-number,
-[data-tier="excellent"] .atlas-card__score-tier { color: #4caf7d; }
+[data-tier="excellent"] .atlas-card__score-tier { color: var(--positive); }
 [data-tier="good"]      .atlas-card__score-number,
-[data-tier="good"]      .atlas-card__score-tier { color: #7bb54c; }
+[data-tier="good"]      .atlas-card__score-tier { color: var(--positive); }
 [data-tier="average"]   .atlas-card__score-number,
 [data-tier="average"]   .atlas-card__score-tier { color: var(--accent); }
 [data-tier="below"]     .atlas-card__score-number,
-[data-tier="below"]     .atlas-card__score-tier { color: #d08c3a; }
+[data-tier="below"]     .atlas-card__score-tier { color: var(--caution); }
 [data-tier="poor"]      .atlas-card__score-number,
-[data-tier="poor"]      .atlas-card__score-tier { color: #c0544a; }
+[data-tier="poor"]      .atlas-card__score-tier { color: var(--danger); }
 
 .atlas-card__narrative {
   font-size: 0.78rem;
@@ -370,9 +377,9 @@ const narrative = computed(() => {
 }
 
 /* Bar fill colors */
-.atlas-card__fill--good    { background: #4caf7d; }
+.atlas-card__fill--good    { background: var(--positive); }
 .atlas-card__fill--average { background: var(--accent); }
-.atlas-card__fill--below   { background: #d08c3a; }
+.atlas-card__fill--below   { background: var(--caution); }
 
 /* Tier label */
 .atlas-card__dim-value {
@@ -386,9 +393,9 @@ const narrative = computed(() => {
   flex-shrink: 0;
 }
 
-.atlas-card__dim-value--good    { color: #4caf7d; }
+.atlas-card__dim-value--good    { color: var(--positive); }
 .atlas-card__dim-value--average { color: var(--accent); }
-.atlas-card__dim-value--below   { color: #d08c3a; }
+.atlas-card__dim-value--below   { color: var(--caution); }
 
 /* Tooltip */
 .atlas-card__info-wrap {

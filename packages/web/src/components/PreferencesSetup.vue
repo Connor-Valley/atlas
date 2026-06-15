@@ -99,7 +99,6 @@ const DIMS: Array<{ key: keyof PersonaWeights; label: string; icon: string; comi
   { key: 'weight_opportunity',        label: 'Opportunity',          icon: 'mdi-school-outline' },
   { key: 'weight_lifestyle_vibrancy', label: 'Lifestyle & Vibrancy', icon: 'mdi-city-variant-outline' },
   { key: 'weight_air_quality',        label: 'Air Quality',          icon: 'mdi-air-filter' },
-  { key: 'weight_safety',             label: 'Safety',               icon: 'mdi-shield-check-outline', comingSoon: true },
   { key: 'weight_connectivity',       label: 'Connectivity',         icon: 'mdi-train-car' },
 ];
 

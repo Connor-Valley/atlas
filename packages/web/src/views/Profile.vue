@@ -37,7 +37,6 @@ const SCORE_DIMS = [
   { key: 'weight_opportunity'        as const, label: 'Opportunity' },
   { key: 'weight_lifestyle_vibrancy' as const, label: 'Lifestyle & Vibrancy' },
   { key: 'weight_air_quality'        as const, label: 'Air Quality' },
-  { key: 'weight_safety'             as const, label: 'Safety' },
   { key: 'weight_connectivity'       as const, label: 'Connectivity' },
 ];
 
