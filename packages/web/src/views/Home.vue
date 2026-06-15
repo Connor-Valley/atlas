@@ -1307,7 +1307,7 @@ async function closeExpandedSection() {
         </div>
       </div>
 
-      <div style="grid-column: 1 / -1;">
+      <div v-if="!sectionExpanded" style="grid-column: 1 / -1;">
         <AtlasScoreCard :city="city" :state="state" />
       </div>
 
