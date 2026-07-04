@@ -173,6 +173,16 @@ html.dark .data-card {
   align-items: start;
 }
 
+.affordability-card__metrics {
+  align-items: stretch;
+}
+
+.affordability-card__metrics .metric {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 .data-card--wide {
   min-height: 252px;
 }

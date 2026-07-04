@@ -345,7 +345,10 @@
   }
 
   .data-card--wide .data-card__metrics.affordability-card__metrics .affordability-card__metric--rent,
-  .data-card--wide .data-card__metrics.affordability-card__metrics .affordability-card__metric--ratio {
+  .data-card--wide .data-card__metrics.affordability-card__metrics .affordability-card__metric--income,
+  .data-card--wide .data-card__metrics.affordability-card__metrics .affordability-card__metric--ratio,
+  .data-card--wide .data-card__metrics.affordability-card__metrics .affordability-card__metric--col-index,
+  .data-card--wide .data-card__metrics.affordability-card__metrics .affordability-card__metric--col-delta {
     grid-column: span 1;
     min-width: 0;
   }

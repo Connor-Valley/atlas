@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { fetchDetailedAffordability } from "../api/affordability";
+import { fetchCostOfLiving } from "../api/costOfLiving";
 
 const props = defineProps<{ city: string; state: string }>();
 const emit = defineEmits<{ (e: "close"): void }>();
 
 const data    = ref<any>(null);
+const col     = ref<any>(null);
 const loading = ref(false);
 const error   = ref<string | null>(null);
 
@@ -14,10 +16,15 @@ async function load() {
   loading.value = true;
   error.value   = null;
   data.value    = null;
+  col.value     = null;
   try {
-    data.value = await fetchDetailedAffordability(props.state, props.city);
-  } catch {
-    error.value = "Failed to load affordability details";
+    const [aff, colResult] = await Promise.allSettled([
+      fetchDetailedAffordability(props.state, props.city),
+      fetchCostOfLiving(props.state, props.city),
+    ]);
+    if (aff.status === "fulfilled") data.value = aff.value;
+    else error.value = "Failed to load affordability details";
+    if (colResult.status === "fulfilled") col.value = colResult.value;
   } finally {
     loading.value = false;
   }
@@ -194,6 +201,48 @@ const EV_TOOLTIPS: Record<string, { title: string; body: string }> = {
   },
 };
 
+// ── Cost of living helpers ────────────────────────────────────────────────────
+
+const COL_SCALE_MIN = 70;
+const COL_SCALE_MAX = 130;
+const NATIONAL_MEDIAN_INCOME = 77719;
+
+const colDeltaClass = computed(() => {
+  const v = col.value?.rppVsNational;
+  if (v == null) return "";
+  if (v <= -5)  return "positive";
+  if (v >= 10)  return "status-danger";
+  if (v >= 5)   return "status-warning";
+  return "";
+});
+
+const colScalePosition = computed(() => {
+  const v = col.value?.rppIndex;
+  if (v == null) return 50;
+  const clamped = Math.max(COL_SCALE_MIN, Math.min(COL_SCALE_MAX, v));
+  return ((clamped - COL_SCALE_MIN) / (COL_SCALE_MAX - COL_SCALE_MIN)) * 100;
+});
+
+const colPurchasingMultiplier = computed(() => {
+  const v = col.value?.rppIndex;
+  if (v == null) return null;
+  return 100 / v;
+});
+
+const colPurchasingNote = computed(() => {
+  const m = colPurchasingMultiplier.value;
+  if (m == null) return "";
+  if (m > 1.02) return "Your money goes further here";
+  if (m < 0.98) return "Your money goes less far here";
+  return "About the national average";
+});
+
+const colEquivalentIncome = computed(() => {
+  const v = col.value?.rppIndex;
+  if (v == null) return null;
+  return Math.round(NATIONAL_MEDIAN_INCOME * (v / 100));
+});
+
 // ── Status helpers ────────────────────────────────────────────────────────────
 
 const statusClass = computed(() => {
@@ -354,6 +403,18 @@ const loadingInsightCards = [1, 2, 3];
           </div>
         </div>
       </section>
+      <section class="data-card housing-exp__panel housing-exp__panel--wide">
+        <div class="housing-exp__panel-head">
+          <span class="data-card__icon mdi mdi-map-marker-radius-outline"></span>
+          <span class="housing-exp__panel-title">Cost of Living Index</span>
+        </div>
+        <div class="housing-exp__panel-metrics">
+          <div v-for="i in 3" :key="i" class="metric skeleton-block">
+            <span class="metric__label skeleton-line skeleton-line--label"></span>
+            <span class="metric__value skeleton-line skeleton-line--value-sm"></span>
+          </div>
+        </div>
+      </section>
       <section class="data-card housing-exp__panel housing-exp__panel--compact">
         <div class="housing-exp__panel-head">
           <span class="data-card__icon mdi mdi-gas-station-outline"></span>
@@ -426,15 +487,17 @@ const loadingInsightCards = [1, 2, 3];
           <span class="data-card__icon mdi mdi-home-switch-outline"></span>
           <span class="housing-exp__panel-title">Buying vs Renting</span>
         </div>
-        <div class="housing-exp__panel-metrics housing-exp__panel-metrics--buying">
+        <div class="housing-exp__panel-metrics--buying-hero">
           <div v-if="data.medianRent" class="metric buying-metric buying-metric--hero">
             <span class="metric__label">Monthly Rent</span>
             <span class="metric__value">${{ data.medianRent.toLocaleString() }}</span>
           </div>
-          <div v-if="data.estimatedMortgage" class="metric buying-metric">
+          <div v-if="data.estimatedMortgage" class="metric buying-metric buying-metric--hero">
             <span class="metric__label">Est. Mortgage</span>
             <span class="metric__value">${{ data.estimatedMortgage.toLocaleString() }}</span>
           </div>
+        </div>
+        <div class="housing-exp__panel-metrics housing-exp__panel-metrics--buying">
           <div v-if="data.mortgageToIncomeRatio != null" class="metric buying-metric">
             <span class="metric__label">Mortgage / Income</span>
             <span
@@ -486,6 +549,58 @@ const loadingInsightCards = [1, 2, 3];
           </div>
         </div>
         <p class="muted housing-exp__note">30% rent threshold · 28% mortgage DTI · 20% down · 10% annual savings rate</p>
+      </section>
+
+      <!-- Cost of Living Index -->
+      <section v-if="col" class="data-card housing-exp__panel housing-exp__panel--wide">
+        <div class="housing-exp__panel-head">
+          <span class="data-card__icon mdi mdi-map-marker-radius-outline"></span>
+          <span class="housing-exp__panel-title">Cost of Living Index</span>
+        </div>
+
+        <div class="col-scale">
+          <div class="col-scale__top">
+            <span class="col-scale__value">{{ col.rppIndex.toFixed(1) }}</span>
+            <span class="col-scale__category" :class="colDeltaClass">{{ col.category }}</span>
+          </div>
+          <div class="col-scale__track">
+            <span class="col-scale__avg-tick" style="left: 50%"></span>
+            <span class="col-scale__marker" :style="{ left: colScalePosition + '%' }"></span>
+          </div>
+          <div class="col-scale__labels">
+            <span>Much Below</span>
+            <span>Below</span>
+            <span class="col-scale__labels-avg">US Avg</span>
+            <span>Above</span>
+            <span>Much Above</span>
+          </div>
+        </div>
+
+        <div class="housing-exp__panel-metrics">
+          <div class="metric col-metric">
+            <span class="metric__label">RPP Index</span>
+            <span class="metric__value">{{ col.rppIndex.toFixed(1) }}</span>
+            <span class="metric__sub">US average = 100</span>
+          </div>
+          <div class="metric col-metric">
+            <span class="metric__label">vs National Average</span>
+            <span class="metric__value" :class="colDeltaClass">
+              {{ col.rppVsNational >= 0 ? '+' : '' }}{{ col.rppVsNational.toFixed(1) }}%
+            </span>
+            <span class="metric__sub">{{ col.category }}</span>
+          </div>
+          <div v-if="colPurchasingMultiplier != null" class="metric col-metric">
+            <span class="metric__label">Purchasing Power</span>
+            <span class="metric__value" :class="colDeltaClass">{{ colPurchasingMultiplier.toFixed(2) }}×</span>
+            <span class="metric__sub">{{ colPurchasingNote }}</span>
+          </div>
+        </div>
+
+        <p class="muted housing-exp__note">
+          {{ col.level === 'msa' ? `MSA-level data for ${col.geographyName}.` : `State-level fallback — no MSA data available for this city. Showing ${STATE_NAMES[col.state] ?? col.state} average.` }}
+          A national-median household income (~${{ NATIONAL_MEDIAN_INCOME.toLocaleString() }}) buys the same lifestyle as ~${{ colEquivalentIncome?.toLocaleString() }} here.
+          BEA Regional Price Parities, {{ col.year }}.
+        </p>
       </section>
 
       <!-- Gas Costs -->
@@ -746,6 +861,85 @@ const loadingInsightCards = [1, 2, 3];
 .ev-tip-leave-to {
   opacity: 0;
   transform: translateY(4px);
+}
+
+/* Cost of Living scale */
+.col-scale {
+  margin-bottom: 16px;
+}
+
+.col-scale__top {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.col-scale__value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.col-scale__category {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.col-scale__track {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--positive) 0%,
+    color-mix(in srgb, var(--positive) 40%, var(--text-muted) 10%) 25%,
+    var(--text-muted) 50%,
+    var(--warning) 75%,
+    var(--danger) 100%
+  );
+  opacity: 0.85;
+}
+
+.col-scale__avg-tick {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 16px;
+  background: var(--text-primary);
+  opacity: 0.5;
+  transform: translateX(-50%);
+}
+
+.col-scale__marker {
+  position: absolute;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 3px solid var(--text-primary);
+  transform: translate(-50%, -50%);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  transition: left 0.4s ease;
+}
+
+.col-scale__labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.col-scale__labels-avg {
+  font-weight: 700;
+  color: var(--text-secondary);
 }
 
 /* Loading skeletons */

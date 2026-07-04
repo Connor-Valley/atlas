@@ -316,7 +316,7 @@ html:not(.dark) .dashboard-panel {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .housing-exp__panel {
@@ -364,29 +364,32 @@ html:not(.dark) .dashboard-panel {
 }
 
 .housing-exp__note {
-  margin-top: 10px;
+  margin-top: auto;
+  padding-top: 10px;
   font-size: 0.79rem;
   line-height: 1.45;
 }
 
 .housing-exp__panel--affordability .housing-exp__note {
-  margin-top: 10px;
-  padding: 0;
+  padding: 10px 0 0;
   border: 0;
   background: none;
 }
 
-.housing-exp__panel-metrics--buying .buying-metric--hero {
-  grid-column: 1 / -1;
+.housing-exp__panel-metrics--buying-hero {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
-.housing-exp__panel-metrics--buying .buying-metric--hero .metric__value {
+.housing-exp__panel-metrics--buying-hero .buying-metric--hero .metric__value {
   font-size: 1.9rem;
   font-weight: 800;
   letter-spacing: -0.04em;
 }
 
-.housing-exp__panel-metrics--buying .buying-metric--hero .metric__label {
+.housing-exp__panel-metrics--buying-hero .buying-metric--hero .metric__label {
   font-size: 0.62rem;
   margin-bottom: 6px;
 }
@@ -1139,6 +1142,10 @@ html:not(.dark) .snap-metric--secondary {
 
   .housing-exp__panel--buying .housing-exp__panel-metrics--buying {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .housing-exp__panel--buying .housing-exp__panel-metrics--buying-hero {
     gap: 12px;
   }
 
