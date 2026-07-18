@@ -2,6 +2,7 @@
 import { onMounted } from 'vue';
 import { useTheme } from './composables/useTheme';
 import ToastContainer from './components/ToastContainer.vue';
+import SiteFooter from './components/SiteFooter.vue';
 
 const { init } = useTheme();
 
@@ -22,6 +23,7 @@ onMounted(() => {
   <div class="app">
     <div class="app-safe-top" aria-hidden="true"></div>
     <router-view />
+    <SiteFooter />
     <ToastContainer />
   </div>
 </template>
