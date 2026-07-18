@@ -3,6 +3,7 @@ import { onMounted } from 'vue';
 import { useTheme } from './composables/useTheme';
 import ToastContainer from './components/ToastContainer.vue';
 import SiteFooter from './components/SiteFooter.vue';
+import { footerHidden } from './composables/useFooterVisibility';
 
 const { init } = useTheme();
 
@@ -23,7 +24,7 @@ onMounted(() => {
   <div class="app">
     <div class="app-safe-top" aria-hidden="true"></div>
     <router-view />
-    <SiteFooter />
+    <SiteFooter v-if="!footerHidden" />
     <ToastContainer />
   </div>
 </template>

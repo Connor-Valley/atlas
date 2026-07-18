@@ -19,6 +19,7 @@ import AuthModal from "../components/AuthModal.vue";
 import DashboardHeader from "../components/DashboardHeader.vue";
 import ThemeToggle from "../components/ThemeToggle.vue";
 import { useAuth } from "../composables/useAuth";
+import { footerHidden } from "../composables/useFooterVisibility";
 import AtlasScoreCard from "../components/AtlasScoreCard.vue";
 import { prefetchDetailedHousing } from "../api/housing";
 import { prefetchDetailedCityProfile } from "../api/cityProfile";
@@ -130,6 +131,8 @@ const showLanding = computed(
 const showDashboard = computed(
   () => hasSearched.value || transitioningToLanding.value
 );
+
+watch(showLanding, (v) => { footerHidden.value = v; }, { immediate: true });
 
 const topCategory = computed(() => {
   const entries = (Object.entries(scores) as [string, number | null][])
@@ -400,6 +403,7 @@ watch(() => props.city, (newCity) => {
 });
 
 onUnmounted(() => {
+  footerHidden.value = false;
   if (typeTimer) clearTimeout(typeTimer);
   if (cityShareCopiedTimeout) clearTimeout(cityShareCopiedTimeout);
   document.removeEventListener('click', handleUserMenuClickOutside, { capture: true });

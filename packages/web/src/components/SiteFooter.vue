@@ -1,3 +1,10 @@
+<script setup lang="ts">
+import { ref } from 'vue';
+import AuthModal from './AuthModal.vue';
+
+const showAuthModal = ref(false);
+</script>
+
 <template>
   <footer class="site-footer">
     <div class="site-footer__inner">
@@ -12,9 +19,9 @@
 
         <nav class="site-footer__col" aria-label="Product">
           <span class="site-footer__heading">Product</span>
-          <a href="#" class="site-footer__link">City Search</a>
-          <a href="#" class="site-footer__link">Compare Cities</a>
-          <a href="#" class="site-footer__link">Sign Up</a>
+          <router-link :to="{ name: 'home' }" class="site-footer__link">City Search</router-link>
+          <router-link :to="{ name: 'compare-empty' }" class="site-footer__link">Compare Cities</router-link>
+          <button type="button" class="site-footer__link site-footer__link--button" @click="showAuthModal = true">Sign Up</button>
         </nav>
 
         <nav class="site-footer__col" aria-label="Data & Methodology">
@@ -32,5 +39,7 @@
         </nav>
       </div>
     </div>
+
+    <AuthModal v-if="showAuthModal" mode="register" @close="showAuthModal = false" />
   </footer>
 </template>
