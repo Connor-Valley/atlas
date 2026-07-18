@@ -153,11 +153,46 @@ html:not(.dark) .dashboard-panel {
 }
 
 .dashboard-panel--affordability {
+  grid-column: 1;
+  grid-row: 4 / span 2;
+  align-self: stretch;
+}
+
+.dashboard-panel--affordability .expansion-slot__layer--overview,
+.dashboard-panel--affordability .data-card {
+  height: 100%;
+}
+
+.dashboard-panel--affordability .data-card__body {
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-panel--affordability .data-card__metrics {
+  flex: 1;
+  grid-auto-rows: 1fr;
+  align-items: stretch;
+  gap: 14px;
+}
+
+.dashboard-panel--affordability .data-card__metrics .metric {
+  padding: 18px;
+}
+
+/* Only the trailing metric that would otherwise sit alone in its row (i.e. an
+   even total count, since the hero metric always takes position 1) goes full width. */
+.dashboard-panel--affordability .data-card__metrics .metric:last-child:nth-child(even) {
   grid-column: 1 / -1;
 }
 
 .dashboard-panel--climate {
-  grid-column: 1 / -1;
+  grid-column: 2;
+  grid-row: 4;
+}
+
+.dashboard-panel--lifestyle {
+  grid-column: 2;
+  grid-row: 5;
 }
 
 .dashboard-panel--expanded {

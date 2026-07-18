@@ -104,6 +104,42 @@ const priceAppreciationInsight = computed(() => {
   };
 });
 
+const rentGrowthInsight = computed(() => {
+  const pct = data.value?.housing?.rentGrowthPct5yr;
+  if (pct == null) return null;
+  const absPct = Math.abs(pct).toFixed(1);
+  if (pct > 20) {
+    return {
+      type: 'warning',
+      icon: 'mdi-trending-up',
+      headline: `Rent up ${pct.toFixed(1)}% over 5 years`,
+      detail: 'Fast-rising rents — budget for continued increases',
+    };
+  }
+  if (pct > 5) {
+    return {
+      type: 'neutral',
+      icon: 'mdi-trending-up',
+      headline: `Rent up ${pct.toFixed(1)}% over 5 years`,
+      detail: 'Steady rent growth, roughly tracking inflation',
+    };
+  }
+  if (pct >= -5) {
+    return {
+      type: 'positive',
+      icon: 'mdi-trending-neutral',
+      headline: `Rent up ${pct.toFixed(1)}% over 5 years`,
+      detail: 'Rent has stayed roughly flat — a favorable sign for renters',
+    };
+  }
+  return {
+    type: 'positive',
+    icon: 'mdi-trending-down',
+    headline: `Rent down ${absPct}% over 5 years`,
+    detail: 'Falling rents may signal softening demand',
+  };
+});
+
 const rentBurdenInsight = computed(() => {
   const burden = data.value?.housing?.rentBurdenPercent;
   if (burden == null) return null;
@@ -133,7 +169,7 @@ const rentBurdenInsight = computed(() => {
 });
 
 const insights = computed(() =>
-  [buyVsRentInsight.value, priceAppreciationInsight.value, rentBurdenInsight.value].filter(Boolean)
+  [buyVsRentInsight.value, priceAppreciationInsight.value, rentGrowthInsight.value, rentBurdenInsight.value].filter(Boolean)
 );
 
 // ── Housing structure donut chart ─────────────────────────────────────────────

@@ -54,7 +54,7 @@ watch(() => [props.city, props.state], ([city, state]) => {
 </script>
 
 <template>
-  <div class="data-card data-card--wide">
+  <div class="data-card">
     <div class="data-card__header">
       <div class="data-card__title">
         <span class="data-card__icon mdi mdi-weather-partly-cloudy"></span>
@@ -78,7 +78,7 @@ watch(() => [props.city, props.state], ([city, state]) => {
 
     <div class="data-card__body">
       <div v-if="loading" class="data-card__metrics">
-        <div v-for="i in 6" :key="i" class="metric skeleton-block">
+        <div v-for="i in 3" :key="i" class="metric skeleton-block">
           <span class="metric__label skeleton-line skeleton-line--label"></span>
           <span class="metric__value skeleton-line skeleton-line--value-sm"></span>
         </div>
@@ -93,18 +93,6 @@ watch(() => [props.city, props.state], ([city, state]) => {
         <div class="metric">
           <span class="metric__label">Winter Low</span>
           <span class="metric__value">{{ data.winterAvgLowF != null ? Math.round(data.winterAvgLowF) + '°F' : '—' }}</span>
-        </div>
-        <div class="metric">
-          <span class="metric__label">Sunny Days/Yr</span>
-          <span class="metric__value">{{ data.sunnyDaysPerYear != null ? Math.round(data.sunnyDaysPerYear) : '—' }}</span>
-        </div>
-        <div class="metric">
-          <span class="metric__label">Annual Precip.</span>
-          <span class="metric__value">{{ data.annualPrecipitationInches != null ? data.annualPrecipitationInches.toFixed(1) + '"' : '—' }}</span>
-        </div>
-        <div class="metric">
-          <span class="metric__label">Annual Snowfall</span>
-          <span class="metric__value">{{ data.annualSnowfallInches != null ? data.annualSnowfallInches.toFixed(1) + '"' : '—' }}</span>
         </div>
         <div class="metric">
           <span class="metric__label">Hazard Risk</span>

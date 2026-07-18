@@ -53,6 +53,12 @@ const router = createRouter({
       props: (route) => ({ state: route.params.state, city: route.params.city, section: 'climate' })
     },
     {
+      path: '/city/:state/:city/lifestyle',
+      name: 'city-lifestyle',
+      component: Home,
+      props: (route) => ({ state: route.params.state, city: route.params.city, section: 'lifestyle' })
+    },
+    {
       path: '/housing/:state/:city',
       name: 'housing',
       component: Housing,

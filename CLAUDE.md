@@ -4,23 +4,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Pending Frontend Work
 
-The following backend endpoints were built during the `api-expansion` branch but have **no frontend implementation yet**. Each needs a panel/section wired into the city expanded view or dashboard.
+Dashboard is being restructured to a hybrid model: existing topic-based sections (City, Income, Housing, Affordability, Climate) plus one new **Lifestyle & Connectivity** section covering the Atlas Score dimensions that had no home. See `atlasScore.ts` for the 8 scored dimensions (`affordability`, `jobMarket`, `climate`, `opportunity`, `lifestyleVibrancy`, `airQuality`, `connectivity`, `safety`).
+
+Still no frontend panel:
 
 | Endpoint | Data to show | Notes |
 |---|---|---|
-| `GET /climate/:state/:city` | Seasonal temps, sunny days, precipitation, snowfall, hot/freezing days, hazard risk scores | `hazardRisks` is nested; show top risks with rating labels |
-| `GET /air-quality/:state/:city` | Median AQI, good/unhealthy day %, AQI category | Null for counties without EPA monitoring stations |
-| `GET /lifestyle/:state/:city` | Restaurants/bars/arts per 10k residents | County-level CBP data |
-| `GET /education/:state/:city` | HS+, bachelor's+, graduate+ attainment % | ACS B15003, population 25+ |
-| `GET /political-lean/:state/:city` | Lean label, D%/R%, margin | 2020 county presidential results |
-| `GET /cost-of-living/:state/:city` | RPP index, vs-national %, category label | BEA data; MSA-level or state fallback |
+| `GET /air-quality/:state/:city` | Median AQI, good/unhealthy day %, AQI category | Null for counties without EPA monitoring stations. Lands in new Lifestyle & Connectivity section. |
+| `GET /lifestyle/:state/:city` | Restaurants/bars/arts per 10k residents | County-level CBP data. Lands in new Lifestyle & Connectivity section. |
+| `GET /political-lean/:state/:city` | Lean label, D%/R%, margin | 2020 county presidential results. Opt-in only (matches algorithm) — deliberately not a default-visible panel. |
 
-**Also wired into existing endpoints (need UI updates):**
-- `/housing/:state/:city/details` → now includes `rentGrowthPct5yr` (5yr rent growth %)
-- `/income/:state/:city/details` → now includes `employmentGrowthPct5yr` (5yr employment growth %) and `industryDiversityIndex`
-- `/city-profile/:state/:city` → now includes `densityPerSquareMile` and `urbanCharacter` classification
+**`GET /education/:state/:city` — resolved, will not get a dedicated panel.** It's a redundant re-summary of the same ACS B15003 table already fully broken out (6 buckets, including "Graduate degree" as its own bucket) by `profile.educationalAttainment` on `/city-profile`, which `CityInfoExpandedView.vue`'s existing Education panel already renders. `atlasScore.ts`'s `opportunityScore()` now derives its bachelor's+/graduate+ inputs from `profile.educationalAttainment` directly instead of fetching `/education`. The `/education` backend endpoint still exists but has no frontend caller.
 
-**Atlas Algorithm scoring logic** is also still unbuilt — it depends on all of the above data being wired into the frontend first.
+**Also wired into existing endpoints (still need UI updates):**
+- `/housing/:state/:city/details` → `rentGrowthPct5yr` (5yr rent growth %)
+- `/income/:state/:city/details` → `employmentGrowthPct5yr` (5yr employment growth %) and `industryDiversityIndex`
+- `/city-profile/:state/:city` → `densityPerSquareMile` and `urbanCharacter` classification
+
+**Atlas Algorithm scoring logic** is live client-side (`packages/web/src/lib/atlasScore.ts`), computed per-dashboard-load in `AtlasScoreCard.vue`. No backend `/atlas-algorithm` domain exists — all scoring is frontend-only.
 
 ---
 

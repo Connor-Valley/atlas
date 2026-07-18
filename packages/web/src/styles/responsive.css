@@ -8,7 +8,9 @@
 
   .dashboard-panel--income,
   .dashboard-panel--housing,
-  .dashboard-panel--affordability {
+  .dashboard-panel--affordability,
+  .dashboard-panel--climate,
+  .dashboard-panel--lifestyle {
     grid-column: 1;
     grid-row: auto;
   }

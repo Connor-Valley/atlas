@@ -22,3 +22,7 @@ export async function fetchAirQuality(state: string, city: string) {
   const key = createKey(state, city);
   return getCached(key, () => fetchJson(`/air-quality/${state}/${city}`));
 }
+
+export function prefetchAirQuality(state: string, city: string) {
+  fetchAirQuality(state, city);
+}

@@ -22,3 +22,7 @@ export async function fetchLifestyle(state: string, city: string) {
   const key = createKey(state, city);
   return getCached(key, () => fetchJson(`/lifestyle/${state}/${city}`));
 }
+
+export function prefetchLifestyle(state: string, city: string) {
+  fetchLifestyle(state, city);
+}

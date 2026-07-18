@@ -84,8 +84,36 @@ const inequalityInsight = computed(() => {
   };
 });
 
+const employmentGrowthInsight = computed(() => {
+  const pct = data.value?.employmentGrowthPct5yr;
+  if (pct == null) return null;
+  const absPct = Math.abs(pct).toFixed(1);
+  if (pct > 8) {
+    return {
+      type: 'positive',
+      icon: 'mdi-trending-up',
+      headline: `Employment up ${pct.toFixed(1)}% over 5 years`,
+      detail: 'Strong job growth — the local economy is expanding',
+    };
+  }
+  if (pct > 0) {
+    return {
+      type: 'neutral',
+      icon: 'mdi-trending-up',
+      headline: `Employment up ${pct.toFixed(1)}% over 5 years`,
+      detail: 'Modest job growth',
+    };
+  }
+  return {
+    type: 'warning',
+    icon: 'mdi-trending-down',
+    headline: `Employment down ${absPct}% over 5 years`,
+    detail: 'Shrinking job base over the last 5 years',
+  };
+});
+
 const insights = computed(() =>
-  [affordabilityInsight.value, inequalityInsight.value].filter(Boolean)
+  [affordabilityInsight.value, inequalityInsight.value, employmentGrowthInsight.value].filter(Boolean)
 );
 
 // ── Poverty rate derived from depth buckets ────────────────────────────────────
@@ -176,6 +204,24 @@ const allIndustries = computed(() => {
     ...s,
     barPct: maxShare > 0 ? (s.share / maxShare) * 100 : 0,
   }));
+});
+
+// Herfindahl-Hirschman-based diversity index: 1 - sum(share^2). 0 = single-industry
+// dependent, closer to 1 = employment spread evenly across many sectors.
+const industryDiversityIndex = computed(() => {
+  const sectors = data.value?.industryBreakdown;
+  if (!sectors?.length) return null;
+  const hhi = sectors.reduce((sum: number, s: any) => sum + s.share * s.share, 0);
+  return Math.max(0, 1 - hhi);
+});
+
+const industryDiversityLabel = computed(() => {
+  const idx = industryDiversityIndex.value;
+  if (idx == null) return null;
+  if (idx >= 0.85) return 'Highly diversified';
+  if (idx >= 0.7)  return 'Diversified';
+  if (idx >= 0.5)  return 'Moderately concentrated';
+  return 'Concentrated';
 });
 
 // ── Loading skeletons ──────────────────────────────────────────────────────────
@@ -417,6 +463,9 @@ onUnmounted(() => {
         <div class="housing-exp__panel-head">
           <span class="data-card__icon mdi mdi-briefcase-outline"></span>
           <span class="housing-exp__panel-title">Industry Breakdown</span>
+          <span v-if="industryDiversityLabel" class="muted" style="margin-left: auto; font-size: 0.74rem;">
+            {{ industryDiversityLabel }}
+          </span>
         </div>
         <div class="bar-list bar-list--wide">
           <div v-for="sector in topIndustries" :key="sector.name" class="bar-list__row">

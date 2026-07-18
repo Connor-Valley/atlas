@@ -44,6 +44,14 @@ const colDeltaLabel = computed(() => {
   return `${sign}${v.toFixed(1)}%`;
 });
 
+const NATIONAL_MEDIAN_INCOME = 77719;
+
+const colEquivalentIncome = computed(() => {
+  const v = col.value?.rppIndex;
+  if (v == null) return null;
+  return Math.round(NATIONAL_MEDIAN_INCOME * (v / 100));
+});
+
 async function load() {
   if (!props.city || !props.state) return;
   loading.value = true;
@@ -74,7 +82,7 @@ watch(() => [props.city, props.state], ([city, state]) => {
 </script>
 
 <template>
-  <div class="data-card data-card--wide">
+  <div class="data-card">
     <div class="data-card__header">
       <div class="data-card__title">
         <span class="data-card__icon mdi mdi-scale-balance"></span>
@@ -122,6 +130,10 @@ watch(() => [props.city, props.state], ([city, state]) => {
           <span class="metric__label skeleton-line skeleton-line--label"></span>
           <span class="metric__value skeleton-line skeleton-line--value-sm"></span>
         </div>
+        <div class="metric skeleton-block affordability-card__metric affordability-card__metric--purchasing-power">
+          <span class="metric__label skeleton-line skeleton-line--label"></span>
+          <span class="metric__value skeleton-line skeleton-line--value-sm"></span>
+        </div>
       </div>
       <p v-else-if="error" class="muted">{{ error }}</p>
 
@@ -151,6 +163,10 @@ watch(() => [props.city, props.state], ([city, state]) => {
           <span class="metric__label">vs National</span>
           <span class="metric__value" :class="colDeltaClass">{{ colDeltaLabel }}</span>
           <span class="metric__sub">{{ col.category }}</span>
+        </div>
+        <div v-if="colEquivalentIncome != null" class="metric affordability-card__metric affordability-card__metric--purchasing-power">
+          <span class="metric__label">National Median Income (${{ NATIONAL_MEDIAN_INCOME.toLocaleString() }}) Buys Here</span>
+          <span class="metric__value">${{ colEquivalentIncome.toLocaleString() }}</span>
         </div>
       </div>
     </div>

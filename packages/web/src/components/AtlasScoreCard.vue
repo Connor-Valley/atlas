@@ -9,12 +9,12 @@ import { fetchDetailedHousing } from '../api/housing';
 import { fetchClimate } from '../api/climate';
 import { fetchAirQuality } from '../api/airQuality';
 import { fetchLifestyle } from '../api/lifestyle';
-import { fetchEducation } from '../api/education';
 import { fetchPoliticalLean } from '../api/politicalLean';
 import { fetchCostOfLiving } from '../api/costOfLiving';
 import { useAuth } from '../composables/useAuth';
 import { usePreferences } from '../composables/usePreferences';
-import { computeAtlasScore, scoreTier, type DimensionScores } from '../lib/atlasScore';
+import { computeAtlasScore, scoreTier } from '../lib/atlasScore';
+import { DIMS } from '../lib/atlasScoreDims';
 
 const props = defineProps<{ city: string; state: string }>();
 
@@ -31,7 +31,6 @@ const housing        = ref<any>(null);
 const climate        = ref<any>(null);
 const airQuality     = ref<any>(null);
 const lifestyle      = ref<any>(null);
-const education      = ref<any>(null);
 const politicalLean  = ref<any>(null);
 const costOfLiving   = ref<any>(null);
 const loading        = ref(false);
@@ -47,7 +46,6 @@ async function load() {
   climate.value       = null;
   airQuality.value    = null;
   lifestyle.value     = null;
-  education.value     = null;
   politicalLean.value = null;
   costOfLiving.value  = null;
 
@@ -60,7 +58,6 @@ async function load() {
     fetchClimate(props.state, props.city),
     fetchAirQuality(props.state, props.city),
     fetchLifestyle(props.state, props.city),
-    fetchEducation(props.state, props.city),
     fetchPoliticalLean(props.state, props.city),
     fetchCostOfLiving(props.state, props.city),
   ]);
@@ -75,7 +72,6 @@ async function load() {
     climate.value,
     airQuality.value,
     lifestyle.value,
-    education.value,
     politicalLean.value,
     costOfLiving.value,
   ] = vals;
@@ -97,23 +93,12 @@ const result = computed(() => {
     climate:        climate.value,
     airQuality:     airQuality.value,
     lifestyle:      lifestyle.value,
-    education:      education.value,
     politicalLean:  politicalLean.value,
     housing:        housing.value,
   }, prefs);
 });
 
 const tier = computed(() => result.value ? scoreTier(result.value.score) : null);
-
-const DIMS: Array<{ key: keyof DimensionScores; label: string; tooltip: string }> = [
-  { key: 'affordability',     label: 'Affordability',       tooltip: 'How far income stretches relative to local rent and cost of living.' },
-  { key: 'jobMarket',         label: 'Job Market',          tooltip: 'Strength of the local economy based on median income and unemployment.' },
-  { key: 'climate',           label: 'Climate',             tooltip: 'Year-round weather quality — sunny days, mild temps, and low hazard risk.' },
-  { key: 'opportunity',       label: 'Opportunity',         tooltip: 'Growth potential based on education attainment, labor force participation, and employment trends.' },
-  { key: 'lifestyleVibrancy', label: 'Lifestyle & Vibrancy', tooltip: 'Day-to-day quality of life including restaurants, arts, and walkability.' },
-  { key: 'airQuality',        label: 'Air Quality',         tooltip: 'Air cleanliness based on EPA AQI data — good days vs. unhealthy days.' },
-  { key: 'connectivity',      label: 'Connectivity',        tooltip: 'Access to transportation options including airports and public transit.' },
-];
 
 function dimTier(value: number | null | undefined): 'good' | 'average' | 'below' | null {
   if (value == null) return null;

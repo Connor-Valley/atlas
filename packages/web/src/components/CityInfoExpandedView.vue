@@ -57,7 +57,6 @@ const unemployment = computed(() => qol.value?.unemploymentRate?.value != null ?
 const laborPartic  = computed(() => qol.value?.laborForceParticipationRate?.value != null ? (qol.value.laborForceParticipationRate.value * 100).toFixed(1) : null);
 const eduHeadline  = computed(() => profile.value?.educationHeadline ?? null);
 const commuteMin   = computed(() => profile.value?.meanCommuteMinutes ?? null);
-const airport      = computed(() => qol.value?.nearestMajorAirport?.value ?? null);
 const bachelorsPlus = computed(() => {
   const att = profile.value?.educationalAttainment;
   if (!att?.length) return null;
@@ -103,21 +102,6 @@ const mobileEconomyStats = computed(() => {
 });
 
 // TODO(color-tokens): This component still uses hardcoded palette values for charts, badges, and tooltips outside shared CSS variables. Keep them unchanged during the token refactor.
-const AIRLINE_COLORS: Record<string, { bg: string; text: string }> = {
-  "Delta":     { bg: "#2B5EAD66", text: "#ffffff" },
-  "United":    { bg: "#2B5EE066", text: "#ffffff" },
-  "American":  { bg: "#C8102E66", text: "#ffffff" },
-  "Southwest": { bg: "#D4970A66", text: "#ffffff" },
-  "Alaska":    { bg: "#0D6E9E66", text: "#ffffff" },
-  "JetBlue":   { bg: "#1A6FD466", text: "#ffffff" },
-  "Hawaiian":  { bg: "#7B3FAE66", text: "#ffffff" },
-  "Frontier":  { bg: "#3D9E3866", text: "#ffffff" },
-  "Spirit":    { bg: "#B8960066", text: "#ffffff" },
-};
-
-function airlineTooltip(code: string, airline: string): string {
-  return `${code} is a ${airline} hub`;
-}
 
 function ridershipTooltip(annualRidership: number): string {
   if (annualRidership < 3_000_000) return "Small transit system";
@@ -126,13 +110,6 @@ function ridershipTooltip(annualRidership: number): string {
   return "Very large transit system";
 }
 
-function airlineStyle(airline: string) {
-  const colors = AIRLINE_COLORS[airline];
-  if (!colors) return {};
-  return { backgroundColor: colors.bg, color: colors.text };
-}
-
-const airportCardRef = ref<HTMLElement | null>(null);
 const tooltipState = ref<{ text: string; x: number; y: number; color: string } | null>(null);
 
 const tooltipFixedStyle = computed((): CSSProperties => {
@@ -150,12 +127,6 @@ function showTooltipText(e: MouseEvent | FocusEvent, text: string, color = '#555
     y: isMouseEvent ? e.clientY + 14 : tagRect.bottom + 10,
     color,
   };
-}
-
-function showTooltip(e: MouseEvent, airline: string) {
-  const code = airport.value?.code ?? '';
-  const solidColor = (AIRLINE_COLORS[airline]?.bg ?? '#66666666').slice(0, 7);
-  showTooltipText(e, airlineTooltip(code, airline), solidColor);
 }
 
 function showRidershipTooltip(e: MouseEvent | FocusEvent, annualRidership: number) {
@@ -379,6 +350,14 @@ const whoLivesHereSubtitle = computed(() =>
 const hasPoliticsData = computed(() => politicsSegments.value.length > 0);
 const hasWhoLivesHereData = computed(() => ageSegments.value.length > 0 || politicsSegments.value.length > 0);
 
+const densityBadge = computed(() => {
+  const character = profile.value?.urbanCharacter;
+  const density    = profile.value?.densityPerSquareMile;
+  if (!character && density == null) return null;
+  const parts = [character, density != null ? `${density.toLocaleString()}/sq mi` : null].filter(Boolean);
+  return parts.join(' · ');
+});
+
 const raceEthnicityRaw = computed(() => profile.value?.raceEthnicityMix ?? []);
 
 const raceSegments = computed(() => {
@@ -559,6 +538,9 @@ const commuteBars = computed(() => {
             <div class="housing-exp__panel-head">
               <span class="data-card__icon mdi mdi-account-group-outline"></span>
               <span class="housing-exp__panel-title">Who Lives Here</span>
+              <span v-if="densityBadge" class="muted" style="margin-left: auto; font-size: 0.74rem;">
+                {{ densityBadge }}
+              </span>
             </div>
             <div v-if="hasPoliticsData" class="city-exp__community-toggle" role="tablist" aria-label="Who lives here demographic view">
               <button
@@ -700,44 +682,6 @@ const commuteBars = computed(() => {
                 <p v-if="ownerShare || renterShare" class="city-exp__economy-para">
                   <template v-if="ownerShare"><span class="city-exp__accent">{{ ownerShare }}%</span> of households own their home</template><template v-if="renterShare"> while <span class="city-exp__accent">{{ renterShare }}%</span> rent</template>.
                 </p>
-              </div>
-              <div v-if="airport" ref="airportCardRef" class="city-exp__airport">
-                <div class="city-exp__airport-row">
-                  <span class="mdi mdi-airplane city-exp__airport-icon"></span>
-                  <div class="city-exp__airport-info">
-                    <span class="city-exp__airport-code">{{ airport.code }}</span>
-                    <span class="city-exp__airport-name">{{ airport.name }}</span>
-                  </div>
-                </div>
-                <div v-if="qol.airportBusyness?.value?.hubAirlines?.length" class="city-exp__airline-tags">
-                  <span
-                    v-for="airline in qol.airportBusyness.value.hubAirlines"
-                    :key="airline"
-                    class="city-exp__airline-tag"
-                    :style="airlineStyle(airline)"
-                    @mouseenter="e => showTooltip(e, airline)"
-                    @mouseleave="hideTooltip"
-                  >{{ airline.trim() }}</span>
-                </div>
-                <Teleport to="body">
-                  <div v-if="tooltipState" class="city-exp__airline-tooltip" :style="tooltipFixedStyle">
-                    {{ tooltipState.text }}
-                  </div>
-                </Teleport>
-                <div v-if="qol.airportBusyness?.value" class="city-exp__busy">
-                  <div class="city-exp__busy-header">
-                    <span class="city-exp__busy-label">Traffic</span>
-                    <span class="city-exp__busy-tag">{{ qol.airportBusyness.value.hubLabel }}</span>
-                  </div>
-                  <div class="city-exp__busy-track">
-                    <div
-                      v-for="i in 5" :key="i"
-                      class="city-exp__busy-pip"
-                      :class="{ 'city-exp__busy-pip--active': i <= qol.airportBusyness.value.busyScale }"
-                    ></div>
-                  </div>
-                  <span class="city-exp__busy-sub">{{ (qol.airportBusyness.value.annualEnplanements / 1_000_000).toFixed(1) }}M passengers/yr · busier than {{ qol.airportBusyness.value.nationalPercentile }}% of tracked airports</span>
-                </div>
               </div>
             </div>
           </section>

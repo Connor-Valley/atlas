@@ -12,6 +12,9 @@ import AffordabilitySection from "../components/AffordabilitySection.vue";
 import AffordabilityExpandedView from "../components/AffordabilityExpandedView.vue";
 import ClimateSection from "../components/ClimateSection.vue";
 import ClimateExpandedView from "../components/ClimateExpandedView.vue";
+import LifestyleSection from "../components/LifestyleSection.vue";
+import LifestyleExpandedView from "../components/LifestyleExpandedView.vue";
+import ScoreAttribution from "../components/ScoreAttribution.vue";
 import AuthModal from "../components/AuthModal.vue";
 import DashboardHeader from "../components/DashboardHeader.vue";
 import ThemeToggle from "../components/ThemeToggle.vue";
@@ -23,8 +26,20 @@ import { prefetchDetailedQualityOfLife } from "../api/qualityOfLife";
 import { prefetchIncome } from "../api/income";
 import { prefetchAffordability } from "../api/affordability";
 import { prefetchClimate } from "../api/climate";
+import { prefetchLifestyle } from "../api/lifestyle";
+import { prefetchAirQuality } from "../api/airQuality";
+import type { DimensionScores } from "../lib/atlasScore";
 
-type ExpandableSection = "city" | "economic" | "housing" | "affordability" | "climate";
+type ExpandableSection = "city" | "economic" | "housing" | "affordability" | "climate" | "lifestyle";
+
+const SECTION_DIMS: Record<ExpandableSection, Array<keyof DimensionScores>> = {
+  city: ['opportunity'],
+  economic: ['jobMarket', 'opportunity'],
+  housing: ['affordability'],
+  affordability: ['affordability'],
+  climate: ['climate'],
+  lifestyle: ['lifestyleVibrancy', 'airQuality', 'connectivity'],
+};
 
 const props = defineProps<{
   state?: string;
@@ -72,12 +87,14 @@ const openedSections = reactive<Record<ExpandableSection, boolean>>({
   housing: false,
   affordability: false,
   climate: false,
+  lifestyle: false,
 });
 const heroPanel = ref<HTMLElement | null>(null);
 const incomePanel = ref<HTMLElement | null>(null);
 const housingPanel = ref<HTMLElement | null>(null);
 const affordabilityPanel = ref<HTMLElement | null>(null);
 const climatePanel = ref<HTMLElement | null>(null);
+const lifestylePanel = ref<HTMLElement | null>(null);
 const landingStage = ref<HTMLElement | null>(null);
 const landingContent = ref<HTMLElement | null>(null);
 const heroDots = ref<HTMLElement | null>(null);
@@ -94,6 +111,7 @@ const scores = reactive({
   affordability: null as number | null,
   people: null as number | null,
   climate: null as number | null,
+  lifestyle: null as number | null,
 });
 
 const cityDisplayName = computed(() =>
@@ -362,14 +380,15 @@ watch(() => props.city, (newCity) => {
     scores.affordability = null;
     scores.people = null;
     scores.climate = null;
+    scores.lifestyle = null;
     expandedSection.value = null;
     expandedPhase.value = 'collapsed';
     openedSections.city = false;
     openedSections.economic = false;
     openedSections.housing = false;
     openedSections.affordability = false;
-  openedSections.climate = false;
     openedSections.climate = false;
+    openedSections.lifestyle = false;
     if (typeTimer) clearTimeout(typeTimer);
     displayedTagline.value = '';
     typewriterDone.value = false;
@@ -408,6 +427,7 @@ function onSearch(payload: { city: string; state: string }) {
   scores.affordability = null;
   scores.people = null;
   scores.climate = null;
+  scores.lifestyle = null;
   cityNotFound.value = false;
   expandedSection.value = null;
   expandedPhase.value = "collapsed";
@@ -416,6 +436,7 @@ function onSearch(payload: { city: string; state: string }) {
   openedSections.housing = false;
   openedSections.affordability = false;
   openedSections.climate = false;
+  openedSections.lifestyle = false;
 
   router.push(`/city/${payload.state}/${payload.city}`);
 
@@ -437,6 +458,7 @@ function clearSearchState() {
   scores.affordability = null;
   scores.people = null;
   scores.climate = null;
+  scores.lifestyle = null;
   expandedSection.value = null;
   expandedPhase.value = "collapsed";
   openedSections.city = false;
@@ -444,6 +466,7 @@ function clearSearchState() {
   openedSections.housing = false;
   openedSections.affordability = false;
   openedSections.climate = false;
+  openedSections.lifestyle = false;
   router.replace('/');
 
   if (typeTimer) clearTimeout(typeTimer);
@@ -629,6 +652,7 @@ function getPanelElement(section: ExpandableSection) {
   if (section === "economic") return incomePanel.value;
   if (section === "housing") return housingPanel.value;
   if (section === "climate") return climatePanel.value;
+  if (section === "lifestyle") return lifestylePanel.value;
   return affordabilityPanel.value;
 }
 
@@ -921,6 +945,7 @@ function getPrefetcher(section: ExpandableSection) {
   if (section === "economic") return prefetchIncome;
   if (section === "housing") return prefetchDetailedHousing;
   if (section === "climate") return prefetchClimate;
+  if (section === "lifestyle") return (state: string, city: string) => { prefetchLifestyle(state, city); prefetchAirQuality(state, city); };
   return prefetchAffordability;
 }
 
@@ -937,6 +962,7 @@ function getPanelKeyframes(
       housing:      [ 56, 0],
       affordability: [0, 48],
       climate:       [0, 48],
+      lifestyle:     [0, 48],
     };
     const [x, y] = dirs[selectedSection];
     const gone = { transform: `translate(${x}px, ${y}px)`, opacity: 0 };
@@ -976,6 +1002,7 @@ async function animateSectionTransition(section: ExpandableSection, expand: bool
       { element: housingPanel.value,       keyframes: getPanelKeyframes(section, "housing", true) },
       { element: affordabilityPanel.value, keyframes: getPanelKeyframes(section, "affordability", true) },
       { element: climatePanel.value,       keyframes: getPanelKeyframes(section, "climate", true) },
+      { element: lifestylePanel.value,     keyframes: getPanelKeyframes(section, "lifestyle", true) },
     ].filter((p): p is { element: HTMLElement; keyframes: Keyframe[] } => Boolean(p.element && p.keyframes));
 
     const exits = panelItems.map(({ element, keyframes }) =>
@@ -1026,6 +1053,7 @@ async function animateSectionTransition(section: ExpandableSection, expand: bool
       { element: housingPanel.value,       keyframes: getPanelKeyframes(section, "housing", false) },
       { element: affordabilityPanel.value, keyframes: getPanelKeyframes(section, "affordability", false) },
       { element: climatePanel.value,       keyframes: getPanelKeyframes(section, "climate", false) },
+      { element: lifestylePanel.value,     keyframes: getPanelKeyframes(section, "lifestyle", false) },
     ]
       .filter((p): p is { element: HTMLElement; keyframes: Keyframe[] } => Boolean(p.element && p.keyframes))
       .map(({ element, keyframes }) =>
@@ -1047,6 +1075,7 @@ const sectionRouteNames: Record<ExpandableSection, string> = {
   housing: 'city-housing',
   affordability: 'city-affordability',
   climate: 'city-climate',
+  lifestyle: 'city-lifestyle',
 };
 
 let programmaticNavigation = false;
@@ -1206,6 +1235,7 @@ async function closeExpandedSection() {
         <span class="breadcrumb__arr breadcrumb__arr--2 mdi mdi-arrow-left"></span>
         <span class="breadcrumb__circle"></span>
       </button>
+      <ScoreAttribution v-if="sectionExpanded" :dims="SECTION_DIMS[expandedSection!]" />
       <CitySearch
         v-if="!sectionExpanded"
         class="score-pills__search"
@@ -1271,6 +1301,7 @@ async function closeExpandedSection() {
         expandedSection === 'economic' ? 'Income Details' :
         expandedSection === 'housing' ? 'Housing Details' :
         expandedSection === 'climate' ? 'Climate Details' :
+        expandedSection === 'lifestyle' ? 'Lifestyle & Connectivity Details' :
         'Affordability Details'
       }}</span>
     </div>
@@ -1441,6 +1472,35 @@ async function closeExpandedSection() {
           class="expansion-slot__layer expansion-slot__layer--details"
         >
           <ClimateExpandedView
+            :city="city"
+            :state="state"
+            @close="closeExpandedSection"
+          />
+        </div>
+      </div>
+
+      <div
+        ref="lifestylePanel"
+        class="dashboard-panel dashboard-panel--lifestyle expansion-slot"
+        :class="[
+          { 'dashboard-panel--expanded': expandedLayoutSection === 'lifestyle' },
+          { 'expansion-slot--selected': expandedSection === 'lifestyle' },
+          `expansion-slot--${expandedPhase}`,
+        ]"
+      >
+        <div class="expansion-slot__layer expansion-slot__layer--overview">
+          <LifestyleSection
+            :city="city"
+            :state="state"
+            @score="scores.lifestyle = $event"
+            @expand="openSectionDetails('lifestyle')"
+          />
+        </div>
+        <div
+          v-if="openedSections.lifestyle"
+          class="expansion-slot__layer expansion-slot__layer--details"
+        >
+          <LifestyleExpandedView
             :city="city"
             :state="state"
             @close="closeExpandedSection"

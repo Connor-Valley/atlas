@@ -20,7 +20,6 @@ export type ScoreInputs = {
   climate:       any; // /climate
   airQuality:    any; // /air-quality
   lifestyle:     any; // /lifestyle
-  education:     any; // /education
   politicalLean: any; // /political-lean
   housing:       any; // /housing/details
 };
@@ -63,7 +62,13 @@ function jobMarketScore(income: any, qol: any): number | null {
   const incomeS    = score(income?.medianHouseholdIncome, 30_000, 150_000, 'higher');
   const unempS     = score(qol?.unemploymentRate?.value, 0.02, 0.12, 'lower');
   const growthS    = score(income?.employmentGrowthPct5yr, -5, 15, 'higher');
-  const diversityS = score(income?.industryDiversityIndex, 0, 1, 'higher');
+  // Herfindahl-Hirschman-based diversity index: 1 - sum(share^2). No dedicated backend
+  // field exists — industryBreakdown shares are already fetched for the Income panel.
+  const sectors = income?.industryBreakdown as Array<{ share: number }> | undefined;
+  const diversityIndex = sectors?.length
+    ? Math.max(0, 1 - sectors.reduce((sum, s) => sum + s.share * s.share, 0))
+    : null;
+  const diversityS = score(diversityIndex, 0, 1, 'higher');
   // income + unemployment drive the score; growth and diversity are supporting signals
   const signals = [
     { s: incomeS, w: 0.35 },
@@ -118,23 +123,18 @@ function climateScore(climate: any, climatePref: UserPreferences['climate_prefer
 }
 
 
-function opportunityScore(education: any, profile: any, income: any, qol: any): number | null {
+function opportunityScore(profile: any, income: any, qol: any): number | null {
   let bachelorS: number | null = null;
   let graduateS: number | null = null;
 
-  if (education) {
-    // /education endpoint returns 0–100 percentages
-    bachelorS = score(education.bachelorsPlusPct, 15, 75, 'higher');
-    graduateS = score(education.graduatePlusPct, 5, 35, 'higher');
-  } else {
-    // Safety net — /education should always resolve first; profile attainment shares are 0–1
-    const att = profile?.educationalAttainment as Array<{ label: string; share: number }> | undefined;
-    if (att) {
-      const collegeRate =
-        ((att.find((e) => e.label === "Bachelor's degree")?.share ?? 0) +
-         (att.find((e) => e.label === "Graduate degree")?.share ?? 0)) * 100;
-      bachelorS = score(collegeRate, 15, 75, 'higher');
-    }
+  // profile.educationalAttainment buckets (ACS B15003, shares 0–1) isolate "Graduate degree"
+  // separately from "Bachelor's degree", so both bachelor's-plus and graduate-plus are derivable.
+  const att = profile?.educationalAttainment as Array<{ label: string; share: number }> | undefined;
+  if (att) {
+    const bachelorsShare = att.find((e) => e.label === "Bachelor's degree")?.share ?? 0;
+    const graduateShare  = att.find((e) => e.label === "Graduate degree")?.share ?? 0;
+    bachelorS = score((bachelorsShare + graduateShare) * 100, 15, 75, 'higher');
+    graduateS = score(graduateShare * 100, 5, 35, 'higher');
   }
 
   const povertyS = score(income?.povertyRate, 3, 30, 'lower');
@@ -200,7 +200,7 @@ export function computeAtlasScore(inputs: ScoreInputs, prefs?: UserPreferences |
     affordability:     affordabilityScore(inputs.affordability, inputs.costOfLiving, inputs.housing),
     jobMarket:         jobMarketScore(inputs.income, inputs.qol),
     climate:           climateScore(inputs.climate, p.climate_preference),
-    opportunity:       opportunityScore(inputs.education, inputs.profile, inputs.income, inputs.qol),
+    opportunity:       opportunityScore(inputs.profile, inputs.income, inputs.qol),
     lifestyleVibrancy: lifestyleVibrancyScore(inputs.lifestyle, inputs.profile),
     airQuality:        airQualityScore(inputs.airQuality),
     safety:            safetyScore(),
