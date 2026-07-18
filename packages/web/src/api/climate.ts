@@ -22,3 +22,7 @@ export async function fetchClimate(state: string, city: string) {
   const key = createKey(state, city);
   return getCached(key, () => fetchJson(`/climate/${state}/${city}`));
 }
+
+export function prefetchClimate(state: string, city: string) {
+  fetchClimate(state, city);
+}

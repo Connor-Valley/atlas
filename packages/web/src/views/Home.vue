@@ -10,6 +10,8 @@ import IncomeSection from "../components/IncomeSection.vue";
 import IncomeExpandedView from "../components/IncomeExpandedView.vue";
 import AffordabilitySection from "../components/AffordabilitySection.vue";
 import AffordabilityExpandedView from "../components/AffordabilityExpandedView.vue";
+import ClimateSection from "../components/ClimateSection.vue";
+import ClimateExpandedView from "../components/ClimateExpandedView.vue";
 import AuthModal from "../components/AuthModal.vue";
 import DashboardHeader from "../components/DashboardHeader.vue";
 import ThemeToggle from "../components/ThemeToggle.vue";
@@ -20,8 +22,9 @@ import { prefetchDetailedCityProfile } from "../api/cityProfile";
 import { prefetchDetailedQualityOfLife } from "../api/qualityOfLife";
 import { prefetchIncome } from "../api/income";
 import { prefetchAffordability } from "../api/affordability";
+import { prefetchClimate } from "../api/climate";
 
-type ExpandableSection = "city" | "economic" | "housing" | "affordability";
+type ExpandableSection = "city" | "economic" | "housing" | "affordability" | "climate";
 
 const props = defineProps<{
   state?: string;
@@ -68,11 +71,13 @@ const openedSections = reactive<Record<ExpandableSection, boolean>>({
   economic: false,
   housing: false,
   affordability: false,
+  climate: false,
 });
 const heroPanel = ref<HTMLElement | null>(null);
 const incomePanel = ref<HTMLElement | null>(null);
 const housingPanel = ref<HTMLElement | null>(null);
 const affordabilityPanel = ref<HTMLElement | null>(null);
+const climatePanel = ref<HTMLElement | null>(null);
 const landingStage = ref<HTMLElement | null>(null);
 const landingContent = ref<HTMLElement | null>(null);
 const heroDots = ref<HTMLElement | null>(null);
@@ -88,6 +93,7 @@ const scores = reactive({
   housing: null as number | null,
   affordability: null as number | null,
   people: null as number | null,
+  climate: null as number | null,
 });
 
 const cityDisplayName = computed(() =>
@@ -355,12 +361,15 @@ watch(() => props.city, (newCity) => {
     scores.housing = null;
     scores.affordability = null;
     scores.people = null;
+    scores.climate = null;
     expandedSection.value = null;
     expandedPhase.value = 'collapsed';
     openedSections.city = false;
     openedSections.economic = false;
     openedSections.housing = false;
     openedSections.affordability = false;
+  openedSections.climate = false;
+    openedSections.climate = false;
     if (typeTimer) clearTimeout(typeTimer);
     displayedTagline.value = '';
     typewriterDone.value = false;
@@ -398,6 +407,7 @@ function onSearch(payload: { city: string; state: string }) {
   scores.housing = null;
   scores.affordability = null;
   scores.people = null;
+  scores.climate = null;
   cityNotFound.value = false;
   expandedSection.value = null;
   expandedPhase.value = "collapsed";
@@ -405,6 +415,7 @@ function onSearch(payload: { city: string; state: string }) {
   openedSections.economic = false;
   openedSections.housing = false;
   openedSections.affordability = false;
+  openedSections.climate = false;
 
   router.push(`/city/${payload.state}/${payload.city}`);
 
@@ -425,12 +436,14 @@ function clearSearchState() {
   scores.housing = null;
   scores.affordability = null;
   scores.people = null;
+  scores.climate = null;
   expandedSection.value = null;
   expandedPhase.value = "collapsed";
   openedSections.city = false;
   openedSections.economic = false;
   openedSections.housing = false;
   openedSections.affordability = false;
+  openedSections.climate = false;
   router.replace('/');
 
   if (typeTimer) clearTimeout(typeTimer);
@@ -615,6 +628,7 @@ function getPanelElement(section: ExpandableSection) {
   if (section === "city") return heroPanel.value;
   if (section === "economic") return incomePanel.value;
   if (section === "housing") return housingPanel.value;
+  if (section === "climate") return climatePanel.value;
   return affordabilityPanel.value;
 }
 
@@ -906,6 +920,7 @@ function getPrefetcher(section: ExpandableSection) {
   if (section === "city") return (state: string, city: string) => { prefetchDetailedCityProfile(state, city); prefetchDetailedQualityOfLife(state, city); };
   if (section === "economic") return prefetchIncome;
   if (section === "housing") return prefetchDetailedHousing;
+  if (section === "climate") return prefetchClimate;
   return prefetchAffordability;
 }
 
@@ -921,6 +936,7 @@ function getPanelKeyframes(
       economic:     [-56, 0],
       housing:      [ 56, 0],
       affordability: [0, 48],
+      climate:       [0, 48],
     };
     const [x, y] = dirs[selectedSection];
     const gone = { transform: `translate(${x}px, ${y}px)`, opacity: 0 };
@@ -959,6 +975,7 @@ async function animateSectionTransition(section: ExpandableSection, expand: bool
       { element: incomePanel.value,        keyframes: getPanelKeyframes(section, "economic", true) },
       { element: housingPanel.value,       keyframes: getPanelKeyframes(section, "housing", true) },
       { element: affordabilityPanel.value, keyframes: getPanelKeyframes(section, "affordability", true) },
+      { element: climatePanel.value,       keyframes: getPanelKeyframes(section, "climate", true) },
     ].filter((p): p is { element: HTMLElement; keyframes: Keyframe[] } => Boolean(p.element && p.keyframes));
 
     const exits = panelItems.map(({ element, keyframes }) =>
@@ -1008,6 +1025,7 @@ async function animateSectionTransition(section: ExpandableSection, expand: bool
       { element: incomePanel.value,        keyframes: getPanelKeyframes(section, "economic", false) },
       { element: housingPanel.value,       keyframes: getPanelKeyframes(section, "housing", false) },
       { element: affordabilityPanel.value, keyframes: getPanelKeyframes(section, "affordability", false) },
+      { element: climatePanel.value,       keyframes: getPanelKeyframes(section, "climate", false) },
     ]
       .filter((p): p is { element: HTMLElement; keyframes: Keyframe[] } => Boolean(p.element && p.keyframes))
       .map(({ element, keyframes }) =>
@@ -1028,6 +1046,7 @@ const sectionRouteNames: Record<ExpandableSection, string> = {
   economic: 'city-income',
   housing: 'city-housing',
   affordability: 'city-affordability',
+  climate: 'city-climate',
 };
 
 let programmaticNavigation = false;
@@ -1251,6 +1270,7 @@ async function closeExpandedSection() {
         expandedSection === 'city' ? 'City Details' :
         expandedSection === 'economic' ? 'Income Details' :
         expandedSection === 'housing' ? 'Housing Details' :
+        expandedSection === 'climate' ? 'Climate Details' :
         'Affordability Details'
       }}</span>
     </div>
@@ -1392,6 +1412,35 @@ async function closeExpandedSection() {
           class="expansion-slot__layer expansion-slot__layer--details"
         >
           <AffordabilityExpandedView
+            :city="city"
+            :state="state"
+            @close="closeExpandedSection"
+          />
+        </div>
+      </div>
+
+      <div
+        ref="climatePanel"
+        class="dashboard-panel dashboard-panel--climate expansion-slot"
+        :class="[
+          { 'dashboard-panel--expanded': expandedLayoutSection === 'climate' },
+          { 'expansion-slot--selected': expandedSection === 'climate' },
+          `expansion-slot--${expandedPhase}`,
+        ]"
+      >
+        <div class="expansion-slot__layer expansion-slot__layer--overview">
+          <ClimateSection
+            :city="city"
+            :state="state"
+            @score="scores.climate = $event"
+            @expand="openSectionDetails('climate')"
+          />
+        </div>
+        <div
+          v-if="openedSections.climate"
+          class="expansion-slot__layer expansion-slot__layer--details"
+        >
+          <ClimateExpandedView
             :city="city"
             :state="state"
             @close="closeExpandedSection"

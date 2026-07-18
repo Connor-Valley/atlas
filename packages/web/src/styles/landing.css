@@ -156,6 +156,10 @@ html:not(.dark) .dashboard-panel {
   grid-column: 1 / -1;
 }
 
+.dashboard-panel--climate {
+  grid-column: 1 / -1;
+}
+
 .dashboard-panel--expanded {
   grid-column: 1 / -1;
   grid-row: 1;
