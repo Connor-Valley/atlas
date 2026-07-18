@@ -1225,78 +1225,70 @@ async function closeExpandedSection() {
 
   <!-- After search: city data view -->
   <div v-if="showDashboard" ref="dashboardStage" class="container">
-    <DashboardHeader :city="city" :state="state" @logo-click="resetSearch" />
+    <DashboardHeader :city="city" :state="state" @logo-click="resetSearch" @search="onSearch">
+      <template v-if="!cityNotFound && !sectionExpanded" #actions>
+        <div ref="cityShareMenuRef" class="score-pills__share-wrap">
+          <button
+            class="score-pills__compare-btn"
+            :class="{ 'score-pills__compare-btn--active': cityShareMenuOpen }"
+            @click.stop="openCityShareOptions"
+          >
+            <span class="mdi" :class="cityShareCopied ? 'mdi-check' : 'mdi-share-variant-outline'"></span>
+            {{ cityShareCopied ? 'Copied Link' : 'Share City' }}
+          </button>
 
-    <!-- Score pills bar -->
-    <div v-if="!cityNotFound" ref="scorePills" class="score-pills" :class="{ 'score-pills--expanded': sectionExpanded }">
-      <button v-if="sectionExpanded" class="breadcrumb score-pills__back" @click="closeExpandedSection">
+          <div v-if="cityShareMenuOpen" class="score-pills__share-menu" @click.stop>
+            <button
+              v-if="supportsCityNativeShare"
+              class="score-pills__share-item score-pills__share-item--primary"
+              @click="shareCityNatively"
+            >
+              <span class="mdi mdi-cellphone-arrow-down score-pills__share-item-icon"></span>
+              Share via device
+            </button>
+            <button class="score-pills__share-item" @click="copyCityShareLink">
+              <span class="mdi mdi-content-copy score-pills__share-item-icon"></span>
+              Copy link
+            </button>
+            <button class="score-pills__share-item" @click="shareCityToMessages">
+              <span class="mdi mdi-message-text-outline score-pills__share-item-icon"></span>
+              Messages
+            </button>
+            <button class="score-pills__share-item" @click="shareCityToEmail">
+              <span class="mdi mdi-email-outline score-pills__share-item-icon"></span>
+              Email
+            </button>
+            <button class="score-pills__share-item" @click="shareCityToX">
+              <span class="mdi mdi-twitter score-pills__share-item-icon"></span>
+              X
+            </button>
+            <button class="score-pills__share-item" @click="shareCityToFacebook">
+              <span class="mdi mdi-facebook score-pills__share-item-icon"></span>
+              Facebook
+            </button>
+            <button class="score-pills__share-item" @click="shareCityToLinkedIn">
+              <span class="mdi mdi-linkedin score-pills__share-item-icon"></span>
+              LinkedIn
+            </button>
+          </div>
+        </div>
+        <button class="score-pills__compare-btn" @click="openCompareView">
+          <span class="mdi mdi-compare-horizontal score-pills__compare-icon"></span>
+          Compare City
+        </button>
+      </template>
+    </DashboardHeader>
+
+    <!-- Score pills bar (expanded-detail breadcrumb only) -->
+    <div v-if="!cityNotFound && sectionExpanded" ref="scorePills" class="score-pills score-pills--expanded">
+      <button class="breadcrumb score-pills__back" @click="closeExpandedSection">
         <span class="breadcrumb__arr breadcrumb__arr--1 mdi mdi-arrow-left"></span>
         <span class="breadcrumb__text">Back</span>
         <span class="breadcrumb__arr breadcrumb__arr--2 mdi mdi-arrow-left"></span>
         <span class="breadcrumb__circle"></span>
       </button>
-      <ScoreAttribution v-if="sectionExpanded" :dims="SECTION_DIMS[expandedSection!]" />
-      <CitySearch
-        v-if="!sectionExpanded"
-        class="score-pills__search"
-        :initial-city="city"
-        :initial-state="state"
-        @search="onSearch"
-      />
-      <div v-if="!sectionExpanded" ref="cityShareMenuRef" class="score-pills__share-wrap">
-        <button
-          class="score-pills__compare-btn"
-          :class="{ 'score-pills__compare-btn--active': cityShareMenuOpen }"
-          @click.stop="openCityShareOptions"
-        >
-          <span class="mdi" :class="cityShareCopied ? 'mdi-check' : 'mdi-share-variant-outline'"></span>
-          {{ cityShareCopied ? 'Copied Link' : 'Share City' }}
-        </button>
-
-        <div v-if="cityShareMenuOpen" class="score-pills__share-menu" @click.stop>
-          <button
-            v-if="supportsCityNativeShare"
-            class="score-pills__share-item score-pills__share-item--primary"
-            @click="shareCityNatively"
-          >
-            <span class="mdi mdi-cellphone-arrow-down score-pills__share-item-icon"></span>
-            Share via device
-          </button>
-          <button class="score-pills__share-item" @click="copyCityShareLink">
-            <span class="mdi mdi-content-copy score-pills__share-item-icon"></span>
-            Copy link
-          </button>
-          <button class="score-pills__share-item" @click="shareCityToMessages">
-            <span class="mdi mdi-message-text-outline score-pills__share-item-icon"></span>
-            Messages
-          </button>
-          <button class="score-pills__share-item" @click="shareCityToEmail">
-            <span class="mdi mdi-email-outline score-pills__share-item-icon"></span>
-            Email
-          </button>
-          <button class="score-pills__share-item" @click="shareCityToX">
-            <span class="mdi mdi-twitter score-pills__share-item-icon"></span>
-            X
-          </button>
-          <button class="score-pills__share-item" @click="shareCityToFacebook">
-            <span class="mdi mdi-facebook score-pills__share-item-icon"></span>
-            Facebook
-          </button>
-          <button class="score-pills__share-item" @click="shareCityToLinkedIn">
-            <span class="mdi mdi-linkedin score-pills__share-item-icon"></span>
-            LinkedIn
-          </button>
-        </div>
-      </div>
-      <button
-        v-if="!sectionExpanded"
-        class="score-pills__compare-btn"
-        @click="openCompareView"
-      >
-        <span class="mdi mdi-compare-horizontal score-pills__compare-icon"></span>
-        Compare City
-      </button>
-      <span v-if="sectionExpanded" class="housing-exp__subtitle score-pills__page-title">{{
+      <ScoreAttribution :dims="SECTION_DIMS[expandedSection!]" />
+      <span class="housing-exp__subtitle score-pills__page-title">{{
         expandedSection === 'city' ? 'City Details' :
         expandedSection === 'economic' ? 'Income Details' :
         expandedSection === 'housing' ? 'Housing Details' :

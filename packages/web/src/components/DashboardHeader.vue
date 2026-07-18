@@ -4,6 +4,7 @@ import { useRouter } from "vue-router";
 import { useAuth } from "../composables/useAuth";
 import ThemeToggle from "./ThemeToggle.vue";
 import AuthModal from "./AuthModal.vue";
+import CitySearch from "./CitySearch.vue";
 
 const props = defineProps<{
   city?: string;
@@ -13,6 +14,7 @@ const props = defineProps<{
 
 defineEmits<{
   "logo-click": [];
+  search: [payload: { city: string; state: string }];
 }>();
 
 const router = useRouter();
@@ -73,6 +75,20 @@ function openAuth(mode: "login" | "register") {
       </template>
     </div>
 
+    <div class="dashboard-hdr__search">
+      <CitySearch
+        compact
+        :initial-city="city"
+        :initial-state="state"
+        @search="payload => $emit('search', payload)"
+      />
+    </div>
+
+    <div class="dashboard-hdr__end">
+    <div v-if="$slots.actions" class="dashboard-hdr__actions">
+      <slot name="actions" />
+    </div>
+
     <div class="dashboard-hdr__right">
       <ThemeToggle />
 
@@ -114,6 +130,7 @@ function openAuth(mode: "login" | "register") {
         <span class="auth-btn__avatar"><span class="mdi mdi-account-outline"></span></span>
       </button>
     </div>
+    </div>
   </header>
 
   <AuthModal v-if="showAuthModal" :mode="authModalMode" @close="showAuthModal = false" />
@@ -123,8 +140,7 @@ function openAuth(mode: "login" | "register") {
 .dashboard-hdr {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  height: 54px;
+  height: 60px;
   gap: 16px;
   position: sticky;
   top: 0;
@@ -205,10 +221,53 @@ html.dark .dashboard-hdr__favicon {
   white-space: nowrap;
 }
 
+.dashboard-hdr__search {
+  display: flex;
+  flex: 0 1 680px;
+  min-width: 220px;
+  margin-right: auto;
+}
+
+.dashboard-hdr__search .search-bar {
+  width: 100%;
+}
+
+.dashboard-hdr__end {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
 .dashboard-hdr__right {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
+}
+
+.dashboard-hdr__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.dashboard-hdr__actions :deep(.score-pills__compare-btn) {
+  height: 33px;
+  padding: 0 13px;
+  gap: 6px;
+  font-size: 0.77rem;
+  border-radius: 8px;
+}
+
+.dashboard-hdr__actions :deep(.score-pills__compare-icon),
+.dashboard-hdr__actions :deep(.score-pills__share-wrap .mdi) {
+  font-size: 0.85rem;
+}
+
+.dashboard-hdr__actions :deep(.score-pills__share-wrap) {
+  margin-left: 0;
 }
 
 :deep(.theme-toggle) {
@@ -245,5 +304,72 @@ html.dark .dashboard-hdr__favicon {
   box-shadow:
     0 1px 3px rgba(0, 0, 0, 0.22),
     inset -0.38em -0.08em 0 0 color-mix(in srgb, var(--text-primary) 92%, var(--accent) 8%);
+}
+
+/* Narrow desktop / tablet squeeze zone: free up room before the full mobile stack kicks in */
+@media (max-width: 900px) {
+  .dashboard-hdr__sep,
+  .dashboard-hdr__page-title {
+    display: none;
+  }
+
+  .dashboard-hdr__search {
+    flex-basis: 240px;
+    min-width: 160px;
+  }
+
+  .dashboard-hdr__actions :deep(.score-pills__compare-btn) {
+    padding: 0 10px;
+    font-size: 0.72rem;
+  }
+}
+
+@media (max-width: 800px) {
+  .dashboard-hdr {
+    display: flex;
+    flex-wrap: wrap;
+    height: auto;
+    padding: 10px 20px;
+    row-gap: 10px;
+  }
+
+  .dashboard-hdr__left {
+    order: 1;
+    flex: 1 1 auto;
+  }
+
+  /* Unwrap so __actions and __right participate directly in the header's own flex-wrap/order */
+  .dashboard-hdr__end {
+    display: contents;
+  }
+
+  .dashboard-hdr__right {
+    order: 2;
+  }
+
+  .dashboard-hdr__search {
+    order: 3;
+    width: auto;
+    flex: 1 1 100%;
+  }
+
+  .dashboard-hdr__actions {
+    order: 4;
+    flex: 1 1 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .dashboard-hdr__actions :deep(.score-pills__share-wrap) {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .dashboard-hdr__actions :deep(.score-pills__compare-btn) {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
 }
 </style>

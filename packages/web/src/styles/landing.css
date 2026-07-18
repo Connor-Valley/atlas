@@ -118,6 +118,7 @@ html:not(.dark) .hero-dots {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 16px;
+  margin-top: 24px;
   position: relative;
   align-items: start;
 }

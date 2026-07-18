@@ -8,6 +8,11 @@ import { useToast } from '../composables/useToast';
 import { supabase } from '../lib/supabase';
 
 const router = useRouter();
+
+function onHeaderSearch(payload: { city: string; state: string }) {
+  router.push(`/city/${payload.state}/${payload.city}`);
+}
+
 const { user } = useAuth();
 const isMobile = ref(typeof window !== 'undefined' && window.innerWidth < 640);
 const {
@@ -139,7 +144,7 @@ onUnmounted(() => {
 <template>
   <div class="friends-page">
     <div class="container container--header-only">
-      <DashboardHeader page-label="Friends" @logo-click="router.push({ name: 'home' })" />
+      <DashboardHeader page-label="Friends" @logo-click="router.push({ name: 'home' })" @search="onHeaderSearch" />
     </div>
 
     <!-- Title bar -->

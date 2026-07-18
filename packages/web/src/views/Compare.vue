@@ -29,6 +29,11 @@ const props = defineProps<{
 }>();
 
 const router = useRouter();
+
+function onHeaderSearch(payload: { city: string; state: string }) {
+  router.push(`/city/${payload.state}/${payload.city}`);
+}
+
 const { user } = useAuth();
 const { fetchComparisons, addComparison, removeComparison, isComparisonSaved } = useComparisons();
 const loading = ref(false);
@@ -628,7 +633,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="container compare-view">
-    <DashboardHeader page-label="City Comparison" @logo-click="resetToHome" />
+    <DashboardHeader page-label="City Comparison" @logo-click="resetToHome" @search="onHeaderSearch" />
 
     <div v-if="compareReady" class="compare-view__actions-bar">
       <div ref="shareMenuRef" class="compare-view__share-wrap">

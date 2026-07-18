@@ -10,6 +10,11 @@ import { canViewerAccessProfileContent, getProfileVisibilityNotice, type Profile
 
 const route  = useRoute();
 const router = useRouter();
+
+function onHeaderSearch(payload: { city: string; state: string }) {
+  router.push(`/city/${payload.state}/${payload.city}`);
+}
+
 const { user } = useAuth();
 const { sendFriendRequest, acceptFriendRequest, declineFriendRequest, cancelFriendRequest, removeFriend, getFriendshipStatus } = useFriends();
 
@@ -245,6 +250,7 @@ watch(() => user.value?.id, loadProfile);
       <DashboardHeader
         :page-label="targetProfile?.display_name || targetProfile?.username || 'Profile'"
         @logo-click="router.push({ name: 'home' })"
+        @search="onHeaderSearch"
       />
     </div>
 

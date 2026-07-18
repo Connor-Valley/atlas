@@ -5,6 +5,7 @@ import { getStates, type StateOption, getCitiesForState } from "../api/states";
 const props = defineProps<{
   initialCity?: string;
   initialState?: string;
+  compact?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -254,7 +255,7 @@ watch(() => localState.value, fetchCities, { immediate: true });
 </script>
 
 <template>
-  <div class="search-bar">
+  <div class="search-bar" :class="{ 'search-bar--compact': compact }">
     <div class="state-search-container">
       <input
         v-model="stateQuery"
@@ -298,6 +299,9 @@ watch(() => localState.value, fetchCities, { immediate: true });
         </li>
       </ul>
     </div>
-    <button @click="submit">Search</button>
+    <button class="search-bar__submit" :class="{ 'search-bar__submit--icon': compact }" @click="submit" :aria-label="compact ? 'Search' : undefined">
+      <span v-if="compact" class="mdi mdi-magnify"></span>
+      <span v-else>Search</span>
+    </button>
   </div>
 </template>

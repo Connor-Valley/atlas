@@ -11,6 +11,11 @@ const props = defineProps<{
 }>();
 
 const router = useRouter();
+
+function onHeaderSearch(payload: { city: string; state: string }) {
+  router.push(`/city/${payload.state}/${payload.city}`);
+}
+
 const data = ref<any>(null);
 const loading = ref(false);
 const error = ref<string | null>(null);
@@ -66,7 +71,7 @@ onMounted(() => {
 
 <template>
   <div class="container">
-    <DashboardHeader :city="city" :state="state" @logo-click="goBack" />
+    <DashboardHeader :city="city" :state="state" @logo-click="goBack" @search="onHeaderSearch" />
 
     <div v-if="loading" class="hero">
       <p>Loading detailed housing data…</p>

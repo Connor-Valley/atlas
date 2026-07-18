@@ -13,6 +13,11 @@ import { canViewerAccessProfileContent, getProfileVisibilityNotice, type Profile
 const props = defineProps<{ username?: string }>();
 
 const router = useRouter();
+
+function onHeaderSearch(payload: { city: string; state: string }) {
+  router.push(`/city/${payload.state}/${payload.city}`);
+}
+
 const { user } = useAuth();
 const { getFriendshipStatus } = useFriends();
 const { savedComparisons, fetchComparisons, removeComparison } = useComparisons();
@@ -157,7 +162,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="cmp-page">
     <div class="container container--header-only">
-      <DashboardHeader page-label="Saved Comparisons" @logo-click="router.push({ name: 'home' })" />
+      <DashboardHeader page-label="Saved Comparisons" @logo-click="router.push({ name: 'home' })" @search="onHeaderSearch" />
     </div>
 
     <div class="cmp-page__heading">

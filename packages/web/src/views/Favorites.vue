@@ -12,6 +12,11 @@ import { canViewerAccessProfileContent, getProfileVisibilityNotice, type Profile
 const props = defineProps<{ username?: string }>();
 
 const router = useRouter();
+
+function onHeaderSearch(payload: { city: string; state: string }) {
+  router.push(`/city/${payload.state}/${payload.city}`);
+}
+
 const { user } = useAuth();
 const { getFriendshipStatus } = useFriends();
 const { favorites, fetchFavorites, removeFavorite } = useFavorites();
@@ -218,7 +223,7 @@ function onMouseLeave(el: HTMLElement) {
   <div class="fav-page">
 
     <div class="container container--header-only">
-      <DashboardHeader page-label="Favorites" @logo-click="router.push({ name: 'home' })" />
+      <DashboardHeader page-label="Favorites" @logo-click="router.push({ name: 'home' })" @search="onHeaderSearch" />
     </div>
 
     <div class="fav-page__heading">

@@ -126,35 +126,6 @@
     display: none;
   }
 
-  .score-pills:not(.score-pills--expanded) {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: stretch;
-    gap: 12px;
-  }
-
-  /* Share + Compare buttons split equally, full width */
-  .score-pills__share-wrap {
-    width: 100%;
-    min-width: 0;
-    display: flex;
-    align-self: stretch;
-    margin-left: 0;
-  }
-
-  .score-pills__share-wrap .score-pills__compare-btn,
-  .score-pills > .score-pills__compare-btn {
-    width: 100%;
-    min-height: 48px;
-    justify-content: center;
-  }
-
-  .score-pills__compare-btn {
-    width: 100%;
-    justify-content: center;
-    margin-left: 0;
-  }
-
   .compare-view__topbar,
   .compare-view__setup,
   .compare-city-info,

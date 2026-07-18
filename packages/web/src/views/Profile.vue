@@ -11,6 +11,11 @@ import { useFriends } from '../composables/useFriends';
 import { PROFILE_VISIBILITY_OPTIONS, getProfileVisibilityMeta, type ProfileVisibility } from '../lib/profilePrivacy';
 
 const router = useRouter();
+
+function onHeaderSearch(payload: { city: string; state: string }) {
+  router.push(`/city/${payload.state}/${payload.city}`);
+}
+
 const { user, profile, displayName, signOut, reauthenticate, updateDisplayName, updatePassword, updateUsername, updateProfileVisibility, checkUsernameAvailable } = useAuth();
 const { favorites, fetchFavorites } = useFavorites();
 const { savedComparisons, fetchComparisons } = useComparisons();
@@ -310,7 +315,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="profile-page">
     <div class="container container--header-only">
-      <DashboardHeader page-label="Profile" @logo-click="router.push({ name: 'home' })" />
+      <DashboardHeader page-label="Profile" @logo-click="router.push({ name: 'home' })" @search="onHeaderSearch" />
     </div>
 
     <div class="profile-page__heading">
