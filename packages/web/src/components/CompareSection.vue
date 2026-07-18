@@ -33,7 +33,7 @@ const mobileBackRef = ref<HTMLElement | null>(null);
 const mobileFlipHeight = ref<number | null>(null);
 
 function metricClass(winner: "a" | "b" | "tie" | "difference", side: "a" | "b") {
-  if (winner === "difference") return side === "a" ? "compare-section__metric-val--wins-a" : "compare-section__metric-val--wins-b";
+  if (winner === "difference") return "compare-section__metric-val--dim";
   if (winner === side) return side === "a" ? "compare-section__metric-val--wins-a" : "compare-section__metric-val--wins-b";
   if (winner === "tie") return "compare-section__metric-val--tie";
   return "compare-section__metric-val--dim";
@@ -644,12 +644,31 @@ watch(activeMobileFace, () => {
   text-align: left;
 }
 
+.compare-section__metric-val--wins-a,
+.compare-section__metric-val--wins-b {
+  display: inline-flex;
+  padding: 3px 11px;
+  border-radius: 999px;
+  animation: compare-metric-win-pop 0.25s ease-out;
+}
+
 .compare-section__metric-val--wins-a {
   color: var(--compare-city-a);
+  background: color-mix(in srgb, var(--compare-city-a) 12%, transparent);
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--compare-city-a) 45%, transparent);
 }
 
 .compare-section__metric-val--wins-b {
   color: var(--compare-city-b);
+  background: color-mix(in srgb, var(--compare-city-b) 12%, transparent);
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--compare-city-b) 45%, transparent);
+}
+
+@keyframes compare-metric-win-pop {
+  from {
+    transform: scale(0.92);
+    box-shadow: 0 0 0 0 transparent;
+  }
 }
 
 .compare-section__metric-val--tie {
