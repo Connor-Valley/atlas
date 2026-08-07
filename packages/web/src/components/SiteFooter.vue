@@ -26,15 +26,14 @@ const showAuthModal = ref(false);
 
         <nav class="site-footer__col" aria-label="Data & Methodology">
           <span class="site-footer__heading">Data &amp; Methodology</span>
-          <a href="#" class="site-footer__link">Data Sources</a>
+          <router-link :to="{ name: 'data-sources' }" class="site-footer__link">Data Sources</router-link>
           <a href="#" class="site-footer__link">How the Atlas Score Works</a>
           <a href="#" class="site-footer__link">How Affordability Is Calculated</a>
         </nav>
 
         <nav class="site-footer__col" aria-label="About">
           <span class="site-footer__heading">About</span>
-          <a href="#" class="site-footer__link">About Atlas</a>
-          <a href="#" class="site-footer__link">The Developers</a>
+          <router-link :to="{ name: 'about' }" class="site-footer__link">About Atlas</router-link>
           <a href="mailto:hello@example.com" class="site-footer__link">Contact Us</a>
         </nav>
       </div>
