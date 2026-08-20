@@ -48,7 +48,7 @@ export async function getCached<T>(
     mem.set(key, { data: fresh, ts: Date.now() });
     if (redis) {
       redis.set(key, fresh, { ex: TTL_SECONDS }).catch((e: Error) =>
-        console.warn(`[cache] write failed for "${key}":`, e.message)
+        console.warn('[cache] write failed for "%s": %s', key, e.message)
       );
     }
   }
