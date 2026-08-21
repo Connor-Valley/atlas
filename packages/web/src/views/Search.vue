@@ -84,21 +84,17 @@ function browseByState(code: string) {
     </div>
 
     <div class="container search-page__body">
-      <div class="search-page__heading">
-        <h1 class="search-page__heading-title">
-          <span class="search-page__heading-icon"><span class="mdi mdi-magnify"></span></span>
-          Search Cities
-        </h1>
+      <div ref="heroRef" class="search-page__heading">
+        <span class="search-page__heading-icon"><span class="mdi mdi-magnify"></span></span>
+        <div class="search-page__search">
+          <CitySearch :initial-state="browseStateCode" @search="onSearch" />
+        </div>
         <button class="breadcrumb" @click="router.back()">
           <span class="breadcrumb__arr breadcrumb__arr--1 mdi mdi-arrow-left"></span>
           <span class="breadcrumb__text">Back</span>
           <span class="breadcrumb__arr breadcrumb__arr--2 mdi mdi-arrow-left"></span>
           <span class="breadcrumb__circle"></span>
         </button>
-      </div>
-
-      <div ref="heroRef" class="search-page__hero data-card">
-        <CitySearch class="search-page__search" :initial-state="browseStateCode" @search="onSearch" />
       </div>
 
       <section class="search-page__panel data-card">
@@ -255,51 +251,56 @@ function browseByState(code: string) {
   gap: 20px;
 }
 
-/* ── Page heading ──────────────────────────────────────── */
+/* ── Page heading + search row ─────────────────────────── */
 .search-page__heading {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 24px;
   margin-bottom: 4px;
-}
-
-.search-page__heading-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 1.6rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  color: var(--text-primary);
-  margin: 0;
 }
 
 .search-page__heading-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
   border-radius: 10px;
   background: color-mix(in srgb, var(--accent) 16%, transparent);
   color: var(--accent);
   font-size: 1.1rem;
 }
 
-/* ── Search hero ───────────────────────────────────────── */
-.search-page__hero {
-  position: relative;
-  min-height: 0;
-  padding: 22px;
+.search-page__heading .breadcrumb {
+  height: 38px;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 .search-page__search {
-  position: relative;
-  z-index: 2;
+  flex: 1;
+  min-width: 0;
+  display: flex;
 }
 
 .search-page__search :deep(.search-bar) {
+  flex: 1;
+  height: 46px;
   margin-bottom: 0;
+  padding: 4px 8px;
+}
+
+.search-page__search :deep(input) {
+  height: 36px;
+  padding: 0 12px;
+  font-size: 0.88rem;
+}
+
+.search-page__search :deep(.search-bar__submit) {
+  height: 36px;
+  padding: 0 20px;
+  font-size: 0.85rem;
 }
 
 /* ── Shared panel chrome ───────────────────────────────── */
@@ -518,13 +519,17 @@ function browseByState(code: string) {
 }
 
 @media (max-width: 640px) {
-  .search-page__panel,
-  .search-page__hero {
+  .search-page__panel {
     padding: 18px;
   }
 
-  .search-page__heading-title {
-    font-size: 1.3rem;
+  .search-page__heading {
+    flex-wrap: wrap;
+  }
+
+  .search-page__search {
+    flex-basis: 100%;
+    order: 1;
   }
 }
 </style>
