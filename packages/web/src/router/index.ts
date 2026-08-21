@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Home from '../views/Home.vue';
+import Search from '../views/Search.vue';
 import Housing from '../views/Housing.vue';
 import Favorites from '../views/Favorites.vue';
 import Compare from '../views/Compare.vue';
@@ -15,6 +16,11 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: Home
+    },
+    {
+      path: '/search',
+      name: 'search',
+      component: Search
     },
     {
       path: '/city/:state/:city',

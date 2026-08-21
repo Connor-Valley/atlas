@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useAuth } from "../composables/useAuth";
 import ThemeToggle from "./ThemeToggle.vue";
 import AuthModal from "./AuthModal.vue";
@@ -17,8 +17,11 @@ defineEmits<{
   search: [payload: { city: string; state: string }];
 }>();
 
+const route = useRoute();
 const router = useRouter();
 const { user, displayName, signOut } = useAuth();
+
+const showSearch = computed(() => route.name !== "search");
 
 const userMenuOpen = ref(false);
 const userMenuRef = ref<HTMLElement | null>(null);
@@ -75,7 +78,7 @@ function openAuth(mode: "login" | "register") {
       </template>
     </div>
 
-    <div class="dashboard-hdr__search" :class="{ 'dashboard-hdr__search--wide': !$slots.actions }">
+    <div v-if="showSearch" class="dashboard-hdr__search" :class="{ 'dashboard-hdr__search--wide': !$slots.actions }">
       <CitySearch
         compact
         :initial-city="city"
@@ -83,6 +86,7 @@ function openAuth(mode: "login" | "register") {
         @search="payload => $emit('search', payload)"
       />
     </div>
+    <div v-else class="dashboard-hdr__search-spacer"></div>
 
     <div class="dashboard-hdr__end">
     <div v-if="$slots.actions" class="dashboard-hdr__actions">
@@ -226,6 +230,10 @@ html.dark .dashboard-hdr__favicon {
   flex: 0 1 680px;
   min-width: 220px;
   margin-right: auto;
+}
+
+.dashboard-hdr__search-spacer {
+  flex: 1;
 }
 
 /* No action buttons on this page (e.g. Profile, Favorites) — the search bar

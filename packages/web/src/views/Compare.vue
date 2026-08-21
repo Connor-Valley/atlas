@@ -20,6 +20,7 @@ import {
 } from "../lib/compare";
 import { useAuth } from "../composables/useAuth";
 import { useComparisons } from "../composables/useComparisons";
+import { useRecentSearches } from "../composables/useRecentSearches";
 
 const props = defineProps<{
   stateA?: string;
@@ -29,8 +30,10 @@ const props = defineProps<{
 }>();
 
 const router = useRouter();
+const { recordRecentSearch } = useRecentSearches();
 
 function onHeaderSearch(payload: { city: string; state: string }) {
+  void recordRecentSearch(payload.city, payload.state);
   router.push(`/city/${payload.state}/${payload.city}`);
 }
 
@@ -362,7 +365,7 @@ function goBack() {
 }
 
 function resetToHome() {
-  router.push({ name: "home" });
+  router.push({ name: "search" });
 }
 
 function updateRoute(params: { stateA: string; cityA: string; stateB?: string; cityB?: string }) {

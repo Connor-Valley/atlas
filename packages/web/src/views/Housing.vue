@@ -4,6 +4,7 @@ import { useRouter } from "vue-router";
 import { fetchDetailedHousing } from "../api/housing";
 import { mdiOfficeBuildingOutline } from "@mdi/js";
 import DashboardHeader from "../components/DashboardHeader.vue";
+import { useRecentSearches } from "../composables/useRecentSearches";
 
 const props = defineProps<{
   state: string;
@@ -11,8 +12,10 @@ const props = defineProps<{
 }>();
 
 const router = useRouter();
+const { recordRecentSearch } = useRecentSearches();
 
 function onHeaderSearch(payload: { city: string; state: string }) {
+  void recordRecentSearch(payload.city, payload.state);
   router.push(`/city/${payload.state}/${payload.city}`);
 }
 

@@ -5,11 +5,14 @@ import DashboardHeader from '../components/DashboardHeader.vue';
 import { useAuth } from '../composables/useAuth';
 import { useFriends } from '../composables/useFriends';
 import { useToast } from '../composables/useToast';
+import { useRecentSearches } from '../composables/useRecentSearches';
 import { supabase } from '../lib/supabase';
 
 const router = useRouter();
+const { recordRecentSearch } = useRecentSearches();
 
 function onHeaderSearch(payload: { city: string; state: string }) {
+  void recordRecentSearch(payload.city, payload.state);
   router.push(`/city/${payload.state}/${payload.city}`);
 }
 
@@ -144,7 +147,7 @@ onUnmounted(() => {
 <template>
   <div class="friends-page">
     <div class="container container--header-only">
-      <DashboardHeader page-label="Friends" @logo-click="router.push({ name: 'home' })" @search="onHeaderSearch" />
+      <DashboardHeader page-label="Friends" @logo-click="router.push({ name: 'search' })" @search="onHeaderSearch" />
     </div>
 
     <!-- Title bar -->
