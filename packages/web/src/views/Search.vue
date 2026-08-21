@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import DashboardHeader from '../components/DashboardHeader.vue';
 import CitySearch from '../components/CitySearch.vue';
+import UsStateMap from '../components/UsStateMap.vue';
 import { useAuth } from '../composables/useAuth';
 import { useRecentSearches } from '../composables/useRecentSearches';
 import { useFavorites } from '../composables/useFavorites';
@@ -56,9 +57,14 @@ function rentFor(entry: { state: string; city: string }) {
 
 // ── Browse by state ───────────────────────────────────────────────────────
 const states = ref<StateOption[]>([]);
-const showAllStates = ref(false);
-const INITIAL_STATE_COUNT = 14;
-const visibleStates = computed(() => showAllStates.value ? states.value : states.value.slice(0, INITIAL_STATE_COUNT));
+const hoveredStateCode = ref<string | null>(null);
+const stateListRef = ref<HTMLElement | null>(null);
+
+watch(hoveredStateCode, (code) => {
+  if (!code || !stateListRef.value) return;
+  const el = stateListRef.value.querySelector<HTMLElement>(`[data-code="${code}"]`);
+  el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+});
 
 onMounted(async () => {
   try {
@@ -209,22 +215,34 @@ function browseByState(code: string) {
         <div class="search-page__panel-header">
           <span class="search-page__panel-label">Browse by State</span>
         </div>
-        <div class="search-page__chip-row">
-          <button
-            v-for="s in visibleStates"
-            :key="s.code"
-            class="search-page__chip search-page__chip--plain"
-            @click="browseByState(s.code)"
-          >
-            {{ s.name }}
-          </button>
-          <button
-            v-if="!showAllStates && states.length > INITIAL_STATE_COUNT"
-            class="search-page__chip search-page__chip--plain search-page__chip--muted"
-            @click="showAllStates = true"
-          >
-            +{{ states.length - INITIAL_STATE_COUNT }} more states
-          </button>
+        <div class="search-page__map-layout">
+          <UsStateMap
+            :states="states"
+            :hovered-code="hoveredStateCode"
+            class="search-page__map"
+            @select="browseByState"
+            @hover="code => hoveredStateCode = code"
+          />
+          <div class="search-page__state-list-wrap">
+            <h3 class="search-page__state-list-title">
+              <span class="mdi mdi-format-list-bulleted"></span>
+              All States
+            </h3>
+            <div ref="stateListRef" class="search-page__state-list">
+              <button
+                v-for="s in states"
+                :key="s.code"
+                class="search-page__state-list-item"
+                :class="{ 'search-page__state-list-item--active': hoveredStateCode === s.code.toUpperCase() }"
+                :data-code="s.code.toUpperCase()"
+                @click="browseByState(s.code)"
+                @mouseenter="hoveredStateCode = s.code.toUpperCase()"
+                @mouseleave="hoveredStateCode = null"
+              >
+                {{ s.name }}
+              </button>
+            </div>
+          </div>
         </div>
       </section>
     </div>
@@ -512,9 +530,98 @@ function browseByState(code: string) {
   color: var(--text-muted);
 }
 
+/* ── Browse-by-state map ───────────────────────────────── */
+.search-page__map-layout {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 36px;
+}
+
+.search-page__map {
+  flex: 1 1 560px;
+  min-width: 0;
+  max-width: 560px;
+  margin: 4px 0 0;
+}
+
+.search-page__state-list-wrap {
+  flex: 0 0 400px;
+  background: var(--bg-card-inner);
+  border: 1px solid var(--border-card);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.search-page__state-list-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.search-page__state-list-title .mdi {
+  color: var(--accent);
+  font-size: 0.85rem;
+}
+
+.search-page__state-list {
+  max-height: 380px;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-content: start;
+  gap: 6px 8px;
+  padding-right: 4px;
+  scrollbar-width: thin;
+}
+
+.search-page__state-list-item {
+  display: block;
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid var(--border-card);
+  border-radius: 7px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+
+.search-page__state-list-item:hover,
+.search-page__state-list-item--active {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--text-primary);
+}
+
 @media (max-width: 720px) {
   .search-page__split {
     grid-template-columns: 1fr;
+  }
+
+  .search-page__map-layout {
+    flex-direction: column;
+  }
+
+  .search-page__state-list-wrap {
+    flex-basis: auto;
+    width: 100%;
+  }
+
+  .search-page__state-list {
+    max-height: 220px;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   }
 }
 

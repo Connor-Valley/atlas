@@ -68,8 +68,10 @@ function openAuth(mode: "login" | "register") {
 <template>
   <header class="dashboard-hdr">
     <div class="dashboard-hdr__left">
+      <button class="dashboard-hdr__home-btn" @click="router.push({ name: 'home' })" aria-label="Go to landing page">
+        <span class="dashboard-hdr__home-slash">/</span>
+      </button>
       <div class="dashboard-hdr__logo-wrap" @click="$emit('logo-click')">
-        <img src="/favicon.svg" class="dashboard-hdr__favicon" alt="Atlas" />
         <span class="dashboard-hdr__logo">Atlas</span>
       </div>
       <template v-if="pageLabel || (cityDisplayName && state)">
@@ -184,15 +186,38 @@ function openAuth(mode: "login" | "register") {
   flex-shrink: 0;
 }
 
-.dashboard-hdr__favicon {
-  width: 22px;
-  height: 22px;
-  opacity: 0.8;
-  filter: brightness(0) opacity(0.75);
+.dashboard-hdr__home-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.15s ease;
 }
 
-html.dark .dashboard-hdr__favicon {
-  filter: brightness(1) opacity(0.75);
+.dashboard-hdr__home-btn:hover {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  transform: translateY(-1px);
+}
+
+.dashboard-hdr__home-btn:active {
+  transform: translateY(0) scale(0.94);
+}
+
+.dashboard-hdr__home-slash {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 1.2rem;
+  line-height: 1;
+  color: var(--accent);
+  transform: translateY(-1px);
 }
 
 .dashboard-hdr__logo {
