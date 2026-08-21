@@ -6,6 +6,30 @@
   margin-bottom: 20px;
 }
 
+.missing-data-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--warning) 14%, var(--bg-card));
+  border: 1px solid color-mix(in srgb, var(--warning) 35%, transparent);
+}
+
+.missing-data-banner__icon {
+  flex-shrink: 0;
+  font-size: 1.1rem;
+  color: var(--warning);
+}
+
+.missing-data-banner__text {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: color-mix(in srgb, var(--text-primary) 80%, var(--text-secondary) 20%);
+  line-height: 1.35;
+}
+
 .city-hero-card {
   background-color: var(--accent-soft);
   background-size: cover;

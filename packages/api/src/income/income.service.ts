@@ -1,6 +1,6 @@
 import type { City } from '../cities/cities.types.js';
 import type { CityIncome, DetailedCityIncome, EarningsByEducation, IncomeAffordabilityMetrics, IndustrySector, PovertyDepth, RawIncomeDistribution } from './income.types.js'
-import { buildCensusGeoQuery } from "../common/census.js";
+import { buildCensusGeoQuery, toNumber } from "../common/census.js";
 import { getCached } from "../common/cache.js";
 
 export function getCityIncome(city: City, year: number): Promise<CityIncome> {
@@ -52,10 +52,7 @@ async function fetchCityIncome(city: City, year: number): Promise<CityIncome> {
   if (!row) throw new Error("Census income response missing data row");
 
   // Helper: Census sometimes returns null-like strings
-  const n = (v: string | undefined) => {
-    const num = Number(v);
-    return Number.isFinite(num) ? num : 0;
-  };
+  const n = toNumber;
 
   // IMPORTANT: Order here must match the ?get= list above
   const [
@@ -202,10 +199,7 @@ async function fetchDetailedCityIncome(city: City, year: number): Promise<Detail
     fetchCensusRow(emp2019Url),
   ]);
 
-  const n = (v: string | undefined) => {
-    const num = Number(v);
-    return Number.isFinite(num) ? num : 0;
-  };
+  const n = toNumber;
   const nullable = (v: string | undefined): number | null => {
     const num = Number(v);
     return num > 0 ? num : null;

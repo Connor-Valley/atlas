@@ -1,6 +1,6 @@
 import type { MetricWithSource, SourceAttribution } from "../common/source.types.js";
 import type { City } from "../cities/cities.types.js";
-import { buildCensusGeoQuery } from "../common/census.js";
+import { buildCensusGeoQuery, toNumber } from "../common/census.js";
 import { BTS_ENPLANEMENTS_AS_OF, BTS_SOURCE_URL, FAA_AIRPORT_REFERENCE_AS_OF, FAA_AIRPORT_SOURCE_URL, findNearestAirport, getAirportBusyness } from "./airport-reference.js";
 import { getTransitInfo, NTD_AS_OF, NTD_SOURCE_URL } from "./transit-reference.js";
 import type { AirportInfo, QualityOfLifeDetails, QualityOfLifeSummary } from "./quality-of-life.types.js";
@@ -144,7 +144,3 @@ function nullMetric(source: SourceAttribution): MetricWithSource<null> {
   return { value: null, source };
 }
 
-function toNumber(value: string | undefined): number {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : 0;
-}

@@ -311,6 +311,32 @@ html:not(.dark) .metric {
   opacity: 0.55;
 }
 
+/* "No data" state — distinct from the shimmering --placeholder skeleton above,
+   which is reserved for genuinely still-loading content. This is static: the
+   underlying Census sample was too small to publish, not still in flight. */
+.data-card__score--unavailable {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--text-muted);
+}
+
+.data-card__bar--unavailable {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--progress-bg) 0px,
+    var(--progress-bg) 5px,
+    color-mix(in srgb, var(--progress-bg) 55%, var(--bg-card-subtle)) 5px,
+    color-mix(in srgb, var(--progress-bg) 55%, var(--bg-card-subtle)) 10px
+  );
+}
+
+.data-card__bar-label--unavailable {
+  color: var(--text-muted);
+  font-style: italic;
+  font-weight: 600;
+}
+
 .skeleton-block {
   pointer-events: none;
 }

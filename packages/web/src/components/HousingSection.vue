@@ -6,6 +6,7 @@ const props = defineProps<{ city: string; state: string }>();
 const emit = defineEmits<{
   (e: 'score', value: number): void;
   (e: 'expand'): void;
+  (e: 'data-unavailable', value: boolean): void;
 }>();
 
 const data    = ref<any>(null);
@@ -13,9 +14,14 @@ const loading = ref(false);
 const error   = ref<string | null>(null);
 
 const score = computed(() => {
-  if (!data.value) return null;
+  if (!data.value?.housing.medianRent) return null;
   return Math.min(100, Math.round((2000 / data.value.housing.medianRent) * 100));
 });
+
+// Loaded successfully, but Census suppressed the underlying sample — distinct
+// from "still loading," which also has score === null.
+const dataUnavailable = computed(() => !!data.value && score.value === null);
+watch(dataUnavailable, (v) => emit('data-unavailable', v), { immediate: true });
 
 async function load() {
   if (!props.city || !props.state) return;
@@ -47,6 +53,7 @@ watch(
         <span class="data-card__name">Housing</span>
       </div>
       <span v-if="score !== null" class="data-card__score">{{ score }}</span>
+      <span v-else-if="dataUnavailable" class="data-card__score data-card__score--unavailable">N/A</span>
     </div>
 
     <div v-if="score !== null" class="data-card__bar-row">
@@ -54,6 +61,10 @@ watch(
         <div class="data-card__bar-fill" :style="{ width: score + '%' }"></div>
       </div>
       <span class="data-card__bar-label">{{ score }}/100</span>
+    </div>
+    <div v-else-if="dataUnavailable" class="data-card__bar-row">
+      <div class="data-card__bar data-card__bar--unavailable"></div>
+      <span class="data-card__bar-label data-card__bar-label--unavailable">N/A</span>
     </div>
     <div v-else class="data-card__bar-row">
       <div class="data-card__bar data-card__bar--placeholder">
@@ -81,7 +92,7 @@ watch(
       <div v-else-if="data" class="data-card__metrics">
         <div class="metric">
           <span class="metric__label">Median Rent</span>
-          <span class="metric__value">${{ data.housing.medianRent.toLocaleString() }}</span>
+          <span class="metric__value">{{ data.housing.medianRent ? `$${data.housing.medianRent.toLocaleString()}` : "—" }}</span>
         </div>
         <div class="metric">
           <span class="metric__label">Renter Share</span>

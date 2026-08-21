@@ -7,6 +7,7 @@ const props = defineProps<{ city: string; state: string }>();
 const emit = defineEmits<{
   (e: 'score', value: number): void;
   (e: 'expand'): void;
+  (e: 'data-unavailable', value: boolean): void;
 }>();
 
 const data    = ref<any>(null);
@@ -15,9 +16,14 @@ const loading = ref(false);
 const error   = ref<string | null>(null);
 
 const score = computed(() => {
-  if (!data.value) return null;
+  if (!data.value || data.value.rentToIncomeRatio == null) return null;
   return Math.max(0, Math.min(100, Math.round((1 - data.value.rentToIncomeRatio / 0.6) * 100)));
 });
+
+// Loaded successfully, but Census suppressed rent and/or renter income for
+// this city — distinct from "still loading," which also has score === null.
+const dataUnavailable = computed(() => !!data.value && score.value === null);
+watch(dataUnavailable, (v) => emit('data-unavailable', v), { immediate: true });
 
 const statusClass = computed(() => {
   const a = data.value?.affordability;
@@ -25,7 +31,8 @@ const statusClass = computed(() => {
   if (a === "Affordable") return "positive";
   if (a === "Moderately Burdened") return "status-caution";
   if (a === "Rent Burdened") return "status-warning";
-  return "status-danger";
+  if (a === "Severely Rent Burdened") return "status-danger";
+  return "";
 });
 
 const colDeltaClass = computed(() => {
@@ -89,6 +96,7 @@ watch(() => [props.city, props.state], ([city, state]) => {
         <span class="data-card__name">Affordability &amp; Cost of Living</span>
       </div>
       <span v-if="score !== null" class="data-card__score">{{ score }}</span>
+      <span v-else-if="dataUnavailable" class="data-card__score data-card__score--unavailable">N/A</span>
     </div>
 
     <div v-if="score !== null" class="data-card__bar-row">
@@ -96,6 +104,10 @@ watch(() => [props.city, props.state], ([city, state]) => {
         <div class="data-card__bar-fill" :style="{ width: Math.max(0, score) + '%' }"></div>
       </div>
       <span class="data-card__bar-label">{{ Math.max(0, score) }}/100</span>
+    </div>
+    <div v-else-if="dataUnavailable" class="data-card__bar-row">
+      <div class="data-card__bar data-card__bar--unavailable"></div>
+      <span class="data-card__bar-label data-card__bar-label--unavailable">N/A</span>
     </div>
     <div v-else class="data-card__bar-row">
       <div class="data-card__bar data-card__bar--placeholder">
@@ -140,19 +152,19 @@ watch(() => [props.city, props.state], ([city, state]) => {
       <div v-else-if="data" class="data-card__metrics affordability-card__metrics">
         <div class="metric affordability-card__metric affordability-card__metric--rent">
           <span class="metric__label">Median Rent</span>
-          <span class="metric__value">${{ data.medianRent.toLocaleString() }}</span>
+          <span class="metric__value">{{ data.medianRent != null ? `$${data.medianRent.toLocaleString()}` : "—" }}</span>
         </div>
         <div class="metric affordability-card__metric affordability-card__metric--income">
           <span class="metric__label">Renter Income</span>
-          <span class="metric__value">${{ data.medianRenterIncome.toLocaleString() }}</span>
+          <span class="metric__value">{{ data.medianRenterIncome != null ? `$${data.medianRenterIncome.toLocaleString()}` : "—" }}</span>
         </div>
         <div class="metric affordability-card__metric affordability-card__metric--ratio">
           <span class="metric__label">Rent / Income</span>
-          <span class="metric__value">{{ (data.rentToIncomeRatio * 100).toFixed(1) }}%</span>
+          <span class="metric__value">{{ data.rentToIncomeRatio != null ? `${(data.rentToIncomeRatio * 100).toFixed(1)}%` : "—" }}</span>
         </div>
         <div class="metric affordability-card__metric affordability-card__metric--status">
           <span class="metric__label">Rent Status</span>
-          <span class="metric__value" :class="statusClass">{{ data.affordability }}</span>
+          <span class="metric__value" :class="statusClass">{{ data.affordability ?? "—" }}</span>
         </div>
         <div v-if="col" class="metric affordability-card__metric affordability-card__metric--col-index">
           <span class="metric__label">Cost of Living Index</span>

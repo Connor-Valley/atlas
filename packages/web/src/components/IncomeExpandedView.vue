@@ -316,7 +316,7 @@ onUnmounted(() => {
             <span class="snap-metric__label">
               <span class="mdi mdi-key-outline snap-metric__icon"></span>Renter Income
             </span>
-            <span class="snap-metric__value">${{ data.medianRenterIncome.toLocaleString() }}</span>
+            <span class="snap-metric__value">{{ data.medianRenterIncome ? `$${data.medianRenterIncome.toLocaleString()}` : "—" }}</span>
           </div>
           <div v-if="data.medianOwnerIncome" class="snap-metric snap-metric--secondary">
             <span class="snap-metric__label">

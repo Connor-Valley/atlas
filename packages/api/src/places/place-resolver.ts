@@ -1,4 +1,5 @@
 import { STATE_FIPS, type SupportedState } from "../states/states.types.js";
+import { toNumber } from "../common/census.js";
 
 export type PlaceType =
   | "city"
@@ -320,10 +321,6 @@ function slugify(value: string): string {
     .replace(/\s+/g, "-");
 }
 
-function toNumber(value: string | undefined): number {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
 
 function normalizeCountyName(value: string): string {
   return value.replace(/\bCounty\b/i, "").trim();

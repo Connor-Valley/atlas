@@ -108,10 +108,16 @@ export function cityLabel(city: string, state: string) {
 }
 
 export function calculateScores(cityInfo: any, income: any, housing: any, affordability: any): SummaryScoreSet {
+  const rent = housing.housing.medianRent;
+  const rentToIncomeRatio = affordability.rentToIncomeRatio;
   return {
     income: Math.min(100, Math.round((income.medianHouseholdIncome / 150000) * 100)),
-    housing: Math.min(100, Math.round((2000 / housing.housing.medianRent) * 100)),
-    affordability: Math.max(0, Math.min(100, Math.round((1 - affordability.rentToIncomeRatio / 0.6) * 100))),
+    // rent/ratio can be null when Census suppresses the underlying sample (too few renters) —
+    // fall back to a neutral 50 rather than letting missing data score as a perfect 100.
+    housing: rent ? Math.min(100, Math.round((2000 / rent) * 100)) : 50,
+    affordability: rentToIncomeRatio != null
+      ? Math.max(0, Math.min(100, Math.round((1 - rentToIncomeRatio / 0.6) * 100)))
+      : 50,
     people: Math.min(100, Math.round((cityInfo.population / 1000000) * 100)),
   };
 }
@@ -383,11 +389,18 @@ export function buildSections(cityA: ComparedCity, cityB: ComparedCity): Compare
       insight:
         affordabilityWinner === "tie"
           ? "Both cities put renters under nearly the same amount of pressure."
-          : cityA.affordability.rentToIncomeRatio < cityB.affordability.rentToIncomeRatio
-            ? `${slugToDisplay(cityA.city)} asks for a smaller share of renter income, even before broader tradeoffs.`
-            : `${slugToDisplay(cityB.city)} asks for a smaller share of renter income, even before broader tradeoffs.`,
+          : cityA.affordability.rentToIncomeRatio == null || cityB.affordability.rentToIncomeRatio == null
+            ? "Rent-to-income data isn't available for at least one of these cities."
+            : cityA.affordability.rentToIncomeRatio < cityB.affordability.rentToIncomeRatio
+              ? `${slugToDisplay(cityA.city)} asks for a smaller share of renter income, even before broader tradeoffs.`
+              : `${slugToDisplay(cityB.city)} asks for a smaller share of renter income, even before broader tradeoffs.`,
       summaryLabel: "Renter pressure",
-      summaryDelta: formatDelta((cityA.affordability.rentToIncomeRatio - cityB.affordability.rentToIncomeRatio) * 100, (value) => `${value.toFixed(1)} pts`),
+      summaryDelta: formatDelta(
+        cityA.affordability.rentToIncomeRatio == null || cityB.affordability.rentToIncomeRatio == null
+          ? null
+          : (cityA.affordability.rentToIncomeRatio - cityB.affordability.rentToIncomeRatio) * 100,
+        (value) => `${value.toFixed(1)} pts`,
+      ),
       aSummary: formatPercent(cityA.affordability.rentToIncomeRatio),
       bSummary: formatPercent(cityB.affordability.rentToIncomeRatio),
       metrics: affordabilityMetrics,

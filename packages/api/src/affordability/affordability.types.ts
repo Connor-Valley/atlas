@@ -14,11 +14,11 @@ export type CityAffordability = {
     city: string;
     state: string;
     medianHouseholdIncome: number;
-    medianRenterIncome: number;
-    medianRent: number;
-    annualRent: number;
-    rentToIncomeRatio: number;
-    affordability: AffordabilityLevel;
+    medianRenterIncome: number | null;   // null when Census suppresses the renter-income sample (e.g. very few renters)
+    medianRent: number | null;           // null when Census suppresses median gross rent for the same reason
+    annualRent: number | null;
+    rentToIncomeRatio: number | null;    // null (not 0) when rent or renter income is unavailable — 0 would wrongly read as "free rent"
+    affordability: AffordabilityLevel | null;
 };
 
 export type DetailedCityAffordability = CityAffordability & {

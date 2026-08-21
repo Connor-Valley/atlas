@@ -122,6 +122,15 @@ const scores = reactive({
   lifestyle: null as number | null,
 });
 
+// Tracks which sections have hit a Census sample too small to publish, so the
+// hero card can surface a single "some data is missing" banner.
+const dataGaps = reactive({
+  economic: false,
+  housing: false,
+  affordability: false,
+});
+const hasMissingData = computed(() => Object.values(dataGaps).some(Boolean));
+
 const cityDisplayName = computed(() =>
   city.value.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
 );
@@ -1408,6 +1417,7 @@ async function closeExpandedSection() {
           <CityInfoSection
             :city="city"
             :state="state"
+            :has-missing-data="hasMissingData"
             @score="scores.people = $event"
             @not-found="cityNotFound = true"
             @auth-required="openAuth('login')"
@@ -1445,6 +1455,7 @@ async function closeExpandedSection() {
             :state="state"
             @score="scores.economic = $event"
             @expand="openSectionDetails('economic')"
+            @data-unavailable="dataGaps.economic = $event"
           />
         </div>
         <div
@@ -1474,6 +1485,7 @@ async function closeExpandedSection() {
             :state="state"
             @score="scores.housing = $event"
             @expand="openSectionDetails('housing')"
+            @data-unavailable="dataGaps.housing = $event"
           />
         </div>
 
@@ -1504,6 +1516,7 @@ async function closeExpandedSection() {
             :state="state"
             @score="scores.affordability = $event"
             @expand="openSectionDetails('affordability')"
+            @data-unavailable="dataGaps.affordability = $event"
           />
         </div>
         <div
