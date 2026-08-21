@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { useAuth } from '../composables/useAuth';
-import { usePreferences, type UserPreferences } from '../composables/usePreferences';
+import { usePreferences, DEFAULT_PREFERENCES, type UserPreferences } from '../composables/usePreferences';
 
 const emit = defineEmits<{ (e: 'saved'): void }>();
 
@@ -10,112 +10,120 @@ const { preferences, loaded, fetchPreferences, savePreferences } = usePreference
 
 watch(() => user.value, () => fetchPreferences(), { immediate: true });
 
-type PersonaWeights = Pick<UserPreferences,
-  'weight_affordability' | 'weight_job_market' | 'weight_climate' |
-  'weight_opportunity' | 'weight_lifestyle_vibrancy' | 'weight_air_quality' |
-  'weight_safety' | 'weight_connectivity'
->;
+// ── Quiz step definitions ─────────────────────────────────────────────────────
 
-type Persona = {
-  id: string;
+type QuizOption<T extends string> = {
+  value: T;
   label: string;
   icon: string;
   description: string;
-  weights: PersonaWeights;
-  climate_preference: UserPreferences['climate_preference'];
 };
 
-const PERSONAS: Persona[] = [
+type QuizStep = {
+  key: keyof UserPreferences;
+  title: string;
+  subtitle: string;
+  options: QuizOption<string>[];
+};
+
+const STEPS: QuizStep[] = [
   {
-    id: 'balanced',
-    label: 'Balanced',
-    icon: 'mdi-scale-balance',
-    description: 'Equal weight across all factors',
-    weights: { weight_affordability: 15, weight_job_market: 15, weight_climate: 15, weight_opportunity: 15, weight_lifestyle_vibrancy: 15, weight_air_quality: 10, weight_safety: 0, weight_connectivity: 15 },
-    climate_preference: 'any',
+    key: 'climate_preference',
+    title: 'What kind of climate do you prefer?',
+    subtitle: 'This shapes how weather data factors into your score.',
+    options: [
+      { value: 'warm',         icon: 'mdi-weather-sunny',         label: 'Warm & sunny',       description: 'Hot summers, mild winters, lots of sun' },
+      { value: 'cool',         icon: 'mdi-snowflake',             label: 'Cool & crisp',        description: 'Cold winters, mild summers, refreshing air' },
+      { value: 'mild',         icon: 'mdi-weather-partly-cloudy', label: 'Mild year-round',     description: 'Comfortable temps with minimal extremes' },
+      { value: 'four_seasons', icon: 'mdi-leaf',                  label: 'Four seasons',        description: 'Distinct spring, summer, fall, and winter' },
+      { value: 'any',          icon: 'mdi-earth',                 label: 'No preference',       description: 'Climate won\'t heavily influence my score' },
+    ],
   },
   {
-    id: 'young_professional',
-    label: 'Young Professional',
-    icon: 'mdi-briefcase-outline',
-    description: 'Career growth, city energy, strong connections',
-    weights: { weight_affordability: 15, weight_job_market: 30, weight_climate: 10, weight_opportunity: 15, weight_lifestyle_vibrancy: 25, weight_air_quality: 5, weight_safety: 0, weight_connectivity: 20 },
-    climate_preference: 'any',
+    key: 'affordability_preference',
+    title: 'How important is cost of living?',
+    subtitle: 'Affects how much rent, expenses, and cost trends influence your score.',
+    options: [
+      { value: 'budget',   icon: 'mdi-piggy-bank-outline',  label: 'Affordability is a must',   description: 'Keeping rent and daily costs low is a priority' },
+      { value: 'value',    icon: 'mdi-scale-balance',        label: 'Reasonable is enough',      description: 'Not the cheapest, but shouldn\'t feel expensive' },
+      { value: 'flexible', icon: 'mdi-credit-card-outline',  label: 'I\'ll pay for the right city', description: 'Cost won\'t hold me back from the right fit' },
+    ],
   },
   {
-    id: 'remote_worker',
-    label: 'Remote Worker',
-    icon: 'mdi-laptop',
-    description: 'Affordable, livable, and great weather',
-    weights: { weight_affordability: 30, weight_job_market: 5, weight_climate: 25, weight_opportunity: 10, weight_lifestyle_vibrancy: 20, weight_air_quality: 10, weight_safety: 0, weight_connectivity: 10 },
-    climate_preference: 'warm',
+    key: 'job_market_preference',
+    title: 'What matters most about the job market?',
+    subtitle: 'Changes how income, employment, and growth data are weighted.',
+    options: [
+      { value: 'high_earning', icon: 'mdi-trending-up',      label: 'High-earning market',  description: 'I want cities with strong median incomes' },
+      { value: 'stable',       icon: 'mdi-shield-check-outline', label: 'Stable & secure',   description: 'Low unemployment and a steady local economy' },
+      { value: 'growth',       icon: 'mdi-sprout-outline',   label: 'Growth potential',     description: 'Fast-growing job markets and expanding industries' },
+      { value: 'remote',       icon: 'mdi-laptop',           label: 'I work remotely',      description: 'Local job market is less critical for me' },
+    ],
   },
   {
-    id: 'growing_family',
-    label: 'Growing Family',
-    icon: 'mdi-home-heart',
-    description: 'Good schools, safe neighborhoods, clean air',
-    weights: { weight_affordability: 20, weight_job_market: 15, weight_climate: 10, weight_opportunity: 25, weight_lifestyle_vibrancy: 10, weight_air_quality: 20, weight_safety: 25, weight_connectivity: 5 },
-    climate_preference: 'mild',
+    key: 'lifestyle_preference',
+    title: 'How do you like to spend your time?',
+    subtitle: 'Adjusts how restaurants, arts, commute, and transit factor in.',
+    options: [
+      { value: 'urban',    icon: 'mdi-city-variant-outline', label: 'City energy',      description: 'Walkable, vibrant — restaurants, bars, arts, transit' },
+      { value: 'suburban', icon: 'mdi-home-outline',         label: 'Quiet & suburban', description: 'Short commutes, space, and a calmer pace' },
+      { value: 'nature',   icon: 'mdi-hiking',               label: 'Outdoors & nature', description: 'Access to parks, trails, and open space' },
+    ],
   },
   {
-    id: 'career_climber',
-    label: 'Career Climber',
-    icon: 'mdi-trending-up',
-    description: 'High-earning markets with opportunity density',
-    weights: { weight_affordability: 10, weight_job_market: 35, weight_climate: 5, weight_opportunity: 25, weight_lifestyle_vibrancy: 10, weight_air_quality: 5, weight_safety: 0, weight_connectivity: 25 },
-    climate_preference: 'any',
+    key: 'opportunity_preference',
+    title: 'What kind of opportunity are you looking for?',
+    subtitle: 'Shapes how education, mobility, and economic data are scored.',
+    options: [
+      { value: 'education', icon: 'mdi-school-outline',        label: 'Knowledge economy',   description: 'Educated workforce, universities, research hubs' },
+      { value: 'growth',    icon: 'mdi-chart-line',            label: 'Fast-growing market',  description: 'Strong job growth and expanding local economy' },
+      { value: 'diverse',   icon: 'mdi-view-grid-outline',     label: 'Diverse economy',      description: 'Not dependent on one industry — resilient and varied' },
+      { value: 'mobility',  icon: 'mdi-stairs-up',             label: 'Economic mobility',    description: 'Low poverty, strong middle class, upward movement' },
+      { value: 'any',       icon: 'mdi-equal-box',             label: 'No strong preference', description: 'All opportunity signals weighted equally' },
+    ],
   },
   {
-    id: 'retiree',
-    label: 'Retiree',
-    icon: 'mdi-weather-sunny-alert',
-    description: 'Warm climate, low cost of living, clean and safe',
-    weights: { weight_affordability: 25, weight_job_market: 0, weight_climate: 30, weight_opportunity: 10, weight_lifestyle_vibrancy: 15, weight_air_quality: 15, weight_safety: 20, weight_connectivity: 5 },
-    climate_preference: 'warm',
+    key: 'air_quality_priority',
+    title: 'How much does air quality matter to you?',
+    subtitle: 'Sets the weight of EPA AQI data in your overall score.',
+    options: [
+      { value: 'high',   icon: 'mdi-air-filter',          label: 'Very important',       description: 'Clean air is a dealbreaker for me' },
+      { value: 'medium', icon: 'mdi-leaf-circle-outline',  label: 'Somewhat important',   description: 'I care, but it won\'t make or break a city' },
+      { value: 'low',    icon: 'mdi-minus-circle-outline', label: 'Not a priority',        description: 'Air quality won\'t heavily influence my score' },
+    ],
   },
   {
-    id: 'urban_enthusiast',
-    label: 'Urban Enthusiast',
-    icon: 'mdi-city-variant-outline',
-    description: 'Walkable, vibrant, transit-rich city life',
-    weights: { weight_affordability: 10, weight_job_market: 20, weight_climate: 5, weight_opportunity: 10, weight_lifestyle_vibrancy: 35, weight_air_quality: 5, weight_safety: 5, weight_connectivity: 25 },
-    climate_preference: 'mild',
+    key: 'connectivity_preference',
+    title: 'How do you get around?',
+    subtitle: 'Weights transit, walkability, and airport access accordingly.',
+    options: [
+      { value: 'walkable', icon: 'mdi-walk',             label: 'Dense & walkable',       description: 'I want to walk or take transit everywhere' },
+      { value: 'balanced', icon: 'mdi-map-marker-radius-outline', label: 'Balanced & accessible', description: 'Good airport, some transit, still drivable' },
+      { value: 'car',      icon: 'mdi-car-outline',      label: 'Suburban & drivable',    description: 'Car-dependent is fine — highways and parking matter' },
+      { value: 'airport',  icon: 'mdi-airplane',         label: 'Airport proximity',      description: 'I travel frequently — being near a major hub is key' },
+    ],
   },
   {
-    id: 'nature_outdoors',
-    label: 'Nature / Outdoors',
-    icon: 'mdi-hiking',
-    description: 'Clean air, mild weather, natural surroundings',
-    weights: { weight_affordability: 15, weight_job_market: 15, weight_climate: 35, weight_opportunity: 10, weight_lifestyle_vibrancy: 10, weight_air_quality: 20, weight_safety: 0, weight_connectivity: 5 },
-    climate_preference: 'mild',
+    key: 'political_lean_preference',
+    title: 'Does political lean matter to you?',
+    subtitle: 'Scores cities based on how closely their political climate matches yours.',
+    options: [
+      { value: 'progressive',  icon: 'mdi-alpha-d-circle-outline', label: 'Progressive-leaning cities', description: 'I strongly prefer cities that lean progressive' },
+      { value: 'conservative', icon: 'mdi-alpha-r-circle-outline', label: 'Conservative-leaning cities', description: 'I strongly prefer cities that lean conservative' },
+      { value: 'open',         icon: 'mdi-approximately-equal',    label: 'Open to either',              description: 'Political lean is a mild preference, not a dealbreaker' },
+      { value: 'not_a_factor', icon: 'mdi-close-circle-outline',   label: 'Not a factor',               description: 'Political climate won\'t affect my score at all' },
+    ],
   },
 ];
 
-const DIMS: Array<{ key: keyof PersonaWeights; label: string; icon: string; comingSoon?: boolean }> = [
-  { key: 'weight_affordability',      label: 'Affordability',        icon: 'mdi-home-city-outline' },
-  { key: 'weight_job_market',         label: 'Job Market',           icon: 'mdi-briefcase-outline' },
-  { key: 'weight_climate',            label: 'Climate',              icon: 'mdi-weather-sunny' },
-  { key: 'weight_opportunity',        label: 'Opportunity',          icon: 'mdi-school-outline' },
-  { key: 'weight_lifestyle_vibrancy', label: 'Lifestyle & Vibrancy', icon: 'mdi-city-variant-outline' },
-  { key: 'weight_air_quality',        label: 'Air Quality',          icon: 'mdi-air-filter' },
-  { key: 'weight_connectivity',       label: 'Connectivity',         icon: 'mdi-train-car' },
-];
+// ── State ─────────────────────────────────────────────────────────────────────
 
-const CLIMATE_OPTIONS: Array<{ value: UserPreferences['climate_preference']; label: string; icon: string }> = [
-  { value: 'any',          label: 'No preference',  icon: 'mdi-minus-circle-outline' },
-  { value: 'warm',         label: 'Warm',           icon: 'mdi-weather-sunny' },
-  { value: 'mild',         label: 'Mild',           icon: 'mdi-weather-partly-cloudy' },
-  { value: 'four_seasons', label: 'Four seasons',   icon: 'mdi-weather-snowy-rainy' },
-  { value: 'cool',         label: 'Cool',           icon: 'mdi-snowflake' },
-];
-
-const draft = ref<UserPreferences>({ ...preferences.value });
+const draft = ref<UserPreferences>({ ...DEFAULT_PREFERENCES });
+const currentStep = ref(0);
 const saving = ref(false);
 const saved = ref(false);
 const initialized = ref(false);
 
-// Only sync draft from preferences once — preserve unsaved changes across re-fetches
 watch(preferences, (p) => {
   if (!initialized.value) {
     draft.value = { ...p };
@@ -123,29 +131,26 @@ watch(preferences, (p) => {
   }
 }, { immediate: true });
 
-function resetToPersonaDefaults() {
-  const persona = PERSONAS.find(p => p.id === draft.value.persona_id) ?? PERSONAS[0];
-  draft.value = {
-    ...draft.value,
-    ...persona.weights,
-    climate_preference: persona.climate_preference,
-    political_preference_enabled: false,
-  };
+const totalSteps = STEPS.length;
+
+function selectOption(key: keyof UserPreferences, value: string) {
+  (draft.value as any)[key] = value;
 }
 
-function selectPersona(p: Persona) {
-  draft.value = {
-    ...draft.value,
-    persona_id: p.id,
-    ...p.weights,
-    climate_preference: p.climate_preference,
-    political_preference_enabled: false, // personas never activate political matching
-  };
+function isSelected(key: keyof UserPreferences, value: string): boolean {
+  return (draft.value as any)[key] === value;
 }
 
-function sliderTrackStyle(value: number): string {
-  const pct = `${value}%`;
-  return `background: linear-gradient(to right, var(--accent) ${pct}, color-mix(in srgb, var(--accent) 22%, var(--bg-card-inner)) ${pct})`;
+function next() {
+  if (currentStep.value < totalSteps - 1) currentStep.value++;
+}
+
+function prev() {
+  if (currentStep.value > 0) currentStep.value--;
+}
+
+function goToStep(i: number) {
+  currentStep.value = i;
 }
 
 async function save() {
@@ -158,519 +163,367 @@ async function save() {
   setTimeout(() => { saved.value = false; }, 2500);
 }
 
-defineExpose({ save, resetToPersonaDefaults, saving, saved });
+defineExpose({ save, saving, saved });
 </script>
 
 <template>
-  <div v-if="loaded" class="prefs">
-    <div class="prefs__body">
-      <!-- Left: persona picker -->
-      <div class="prefs__left">
-        <p class="prefs__section-label">Choose your profile</p>
-        <div class="prefs__persona-grid">
-          <button
-            v-for="p in PERSONAS"
-            :key="p.id"
-            class="prefs__persona-card"
-            :class="{ 'prefs__persona-card--active': draft.persona_id === p.id }"
-            @click="selectPersona(p)"
-          >
-            <span class="mdi prefs__persona-icon" :class="p.icon"></span>
-            <span class="prefs__persona-label">{{ p.label }}</span>
-            <span class="prefs__persona-desc">{{ p.description }}</span>
-          </button>
-        </div>
+  <div v-if="loaded" class="quiz">
+
+    <!-- Progress bar -->
+    <div class="quiz__progress">
+      <div
+        class="quiz__progress-fill"
+        :style="{ width: `${((currentStep + 1) / totalSteps) * 100}%` }"
+      ></div>
+    </div>
+
+    <!-- Step dots -->
+    <div class="quiz__dots">
+      <button
+        v-for="(step, i) in STEPS"
+        :key="step.key"
+        class="quiz__dot"
+        :class="{
+          'quiz__dot--active': i === currentStep,
+          'quiz__dot--done': i < currentStep,
+        }"
+        :aria-label="`Go to step ${i + 1}`"
+        @click="goToStep(i)"
+      ></button>
+    </div>
+
+    <!-- Step content -->
+    <div class="quiz__body">
+      <div class="quiz__step-header">
+        <p class="quiz__step-count">Step {{ currentStep + 1 }} of {{ totalSteps }}</p>
+        <h3 class="quiz__title">{{ STEPS[currentStep].title }}</h3>
+        <p class="quiz__subtitle">{{ STEPS[currentStep].subtitle }}</p>
       </div>
 
-      <!-- Divider -->
-      <div class="prefs__divider"></div>
-
-      <!-- Right: controls + save -->
-      <div class="prefs__right-wrap">
-      <div class="prefs__right">
-        <!-- Climate preference -->
-        <div class="prefs__subsection">
-          <p class="prefs__section-label">Climate preference</p>
-          <div class="prefs__climate-pills">
-            <button
-              v-for="opt in CLIMATE_OPTIONS"
-              :key="opt.value"
-              class="prefs__pill"
-              :class="{ 'prefs__pill--active': draft.climate_preference === opt.value }"
-              @click="draft.climate_preference = opt.value"
-            >
-              <span class="mdi" :class="opt.icon"></span>
-              {{ opt.label }}
-            </button>
-          </div>
-        </div>
-
-        <!-- Weight sliders -->
-        <div class="prefs__subsection">
-          <p class="prefs__section-label">Fine-tune weights</p>
-          <div class="prefs__sliders">
-            <div
-              v-for="dim in DIMS"
-              :key="dim.key"
-              class="prefs__slider-row"
-              :class="{ 'prefs__slider-row--disabled': dim.comingSoon }"
-            >
-              <div class="prefs__slider-meta">
-                <span class="mdi prefs__slider-icon" :class="dim.icon"></span>
-                <span class="prefs__slider-label">{{ dim.label }}</span>
-                <span v-if="dim.comingSoon" class="prefs__coming-soon">soon</span>
-                <span v-else class="prefs__slider-value">{{ draft[dim.key] }}</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                :value="draft[dim.key]"
-                class="prefs__range"
-                :class="{ 'prefs__range--disabled': dim.comingSoon }"
-                :disabled="dim.comingSoon"
-                :style="dim.comingSoon ? '' : sliderTrackStyle(draft[dim.key])"
-                @input="draft[dim.key] = +($event.target as HTMLInputElement).value"
-              />
-            </div>
-          </div>
-        </div>
-
-        <!-- Political lean (opt-in) -->
-        <div class="prefs__subsection prefs__political" :class="{ 'prefs__political--off': !draft.political_preference_enabled }">
-          <label class="prefs__political-toggle">
-            <input
-              type="checkbox"
-              v-model="draft.political_preference_enabled"
-              class="prefs__checkbox"
-            />
-            <span class="prefs__political-toggle-label">Factor in political lean</span>
-            <span class="prefs__optional">optional</span>
-          </label>
-          <div class="prefs__political-slider">
-            <div class="prefs__political-labels">
-              <span>Progressive</span>
-              <span>Conservative</span>
-            </div>
-            <input
-              type="range"
-              min="-100"
-              max="100"
-              step="5"
-              :value="draft.political_preference"
-              class="prefs__range"
-              :disabled="!draft.political_preference_enabled"
-              :style="sliderTrackStyle((draft.political_preference + 100) / 2)"
-              @input="draft.political_preference = +($event.target as HTMLInputElement).value"
-            />
-            <p class="prefs__political-neutral">
-              <template v-if="!draft.political_preference_enabled">Not affecting score</template>
-              <template v-else-if="draft.political_preference === 0">Centered — matches all cities equally</template>
-              <template v-else>Prefers {{ draft.political_preference < 0 ? 'progressive' : 'conservative' }}-leaning cities</template>
-            </p>
-          </div>
-        </div>
-
-      </div>
-      <div class="prefs__right-fade" aria-hidden="true"></div>
+      <div
+        class="quiz__options"
+        :class="`quiz__options--count-${STEPS[currentStep].options.length}`"
+      >
+        <button
+          v-for="opt in STEPS[currentStep].options"
+          :key="opt.value"
+          class="quiz__option"
+          :class="{ 'quiz__option--selected': isSelected(STEPS[currentStep].key, opt.value) }"
+          @click="selectOption(STEPS[currentStep].key, opt.value)"
+        >
+          <span class="mdi quiz__option-icon" :class="opt.icon"></span>
+          <span class="quiz__option-label">{{ opt.label }}</span>
+          <span class="quiz__option-desc">{{ opt.description }}</span>
+        </button>
       </div>
     </div>
+
+    <!-- Navigation -->
+    <div class="quiz__nav">
+      <button
+        class="quiz__nav-btn quiz__nav-btn--prev"
+        :disabled="currentStep === 0"
+        @click="prev"
+      >
+        <span class="mdi mdi-arrow-left"></span>
+        Back
+      </button>
+
+      <button
+        v-if="currentStep < totalSteps - 1"
+        class="quiz__nav-btn quiz__nav-btn--next"
+        @click="next"
+      >
+        Next
+        <span class="mdi mdi-arrow-right"></span>
+      </button>
+
+      <button
+        v-else
+        class="quiz__nav-btn quiz__nav-btn--save"
+        :disabled="saving"
+        @click="save"
+      >
+        <span v-if="saving" class="mdi mdi-loading quiz__spin"></span>
+        <span v-else-if="saved" class="mdi mdi-check"></span>
+        {{ saved ? 'Saved!' : saving ? 'Saving…' : 'Save preferences' }}
+      </button>
+    </div>
+
   </div>
 
-  <div v-else class="prefs__loading">
-    <span class="mdi mdi-loading prefs__spin"></span>
+  <div v-else class="quiz__loading">
+    <span class="mdi mdi-loading quiz__spin"></span>
   </div>
 </template>
 
 <style scoped>
-.prefs {
-  flex: 1;
-  min-height: 0;
+.quiz {
   display: flex;
   flex-direction: column;
-}
-
-.prefs__body {
-  display: grid;
-  grid-template-columns: 1fr auto 360px;
   gap: 0;
-  padding: 24px 28px 0;
-  flex: 1;
-  min-height: 0;
-}
-
-.prefs__left {
-  padding-right: 28px;
-  padding-bottom: 28px;
-  min-width: 0;
-  overflow: visible;
-  display: flex;
-  flex-direction: column;
-}
-
-.prefs__right {
   height: 100%;
-  padding-left: 28px;
-  padding-right: 24px;
-  padding-bottom: 28px;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--accent) 40%, transparent) transparent;
-}
-
-.prefs__right::-webkit-scrollbar {
-  width: 3px;
-}
-
-.prefs__right::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.prefs__right::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--accent) 40%, transparent);
-  border-radius: 2px;
-}
-
-.prefs__right-wrap {
-  position: relative;
   min-height: 0;
+}
+
+/* ── Progress bar ── */
+.quiz__progress {
+  height: 3px;
+  background: color-mix(in srgb, var(--accent) 15%, var(--border-card));
+  border-radius: 2px;
   overflow: hidden;
-}
-
-.prefs__right-fade {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 56px;
-  background: linear-gradient(to bottom, transparent, var(--bg-card));
-  pointer-events: none;
-}
-
-.prefs__divider {
-  width: 1px;
-  background: color-mix(in srgb, var(--accent) 12%, var(--border-card));
-  align-self: stretch;
+  margin: 0 28px;
   flex-shrink: 0;
 }
 
-.prefs__section-label {
-  margin: 0 0 12px;
-  font-size: 0.7rem;
+.quiz__progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Step dots ── */
+.quiz__dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 14px 0 0;
+  flex-shrink: 0;
+}
+
+.quiz__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: none;
+  background: color-mix(in srgb, var(--accent) 20%, var(--border-card));
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.2s ease, transform 0.2s ease, width 0.2s ease;
+}
+
+.quiz__dot--active {
+  background: var(--accent);
+  width: 18px;
+  border-radius: 3px;
+}
+
+.quiz__dot--done {
+  background: color-mix(in srgb, var(--accent) 55%, var(--border-card));
+}
+
+/* ── Body ── */
+.quiz__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px 28px 12px;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--accent) 30%, transparent) transparent;
+}
+
+.quiz__body::-webkit-scrollbar { width: 3px; }
+.quiz__body::-webkit-scrollbar-track { background: transparent; }
+.quiz__body::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+  border-radius: 2px;
+}
+
+/* ── Step header ── */
+.quiz__step-header {
+  margin-bottom: 18px;
+}
+
+.quiz__step-count {
+  margin: 0 0 6px;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.11em;
   text-transform: uppercase;
+  color: var(--accent);
+}
+
+.quiz__title {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.35;
+}
+
+.quiz__subtitle {
+  margin: 0;
+  font-size: 0.8rem;
   color: var(--text-muted);
+  line-height: 1.5;
 }
 
-.prefs__subsection {
-  margin-bottom: 20px;
-}
-
-.prefs__persona-grid {
+/* ── Options grid ── */
+.quiz__options {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-auto-rows: 1fr;
-  gap: 10px;
-  flex: 1;
+  gap: 8px;
+  grid-template-columns: 1fr 1fr;
 }
 
-.prefs__persona-card {
+.quiz__options--count-3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.quiz__options--count-5 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.quiz__option {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 5px;
+  gap: 4px;
   padding: 14px 13px;
   background: var(--bg-card-inner);
   border: 2px solid transparent;
   border-radius: 12px;
   cursor: pointer;
   text-align: left;
-  transition: border-color 0.15s, background 0.15s;
-  min-width: 0;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
   width: 100%;
-  box-sizing: border-box;
 }
 
-.prefs__persona-card:hover {
+.quiz__option:hover {
   background: var(--bg-card-subtle);
+  transform: translateY(-1px);
 }
 
-.prefs__persona-card--active {
+.quiz__option--selected {
   border-color: var(--accent);
   background: color-mix(in srgb, var(--accent) 8%, var(--bg-card-inner));
 }
 
-.prefs__persona-icon {
+.quiz__option-icon {
   font-size: 1.4rem;
   color: var(--accent);
   margin-bottom: 2px;
+  opacity: 0.85;
 }
 
-.prefs__persona-label {
-  font-size: 0.83rem;
+.quiz__option--selected .quiz__option-icon {
+  opacity: 1;
+}
+
+.quiz__option-label {
+  font-size: 0.82rem;
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1.2;
 }
 
-.prefs__persona-desc {
-  font-size: 0.72rem;
+.quiz__option-desc {
+  font-size: 0.71rem;
   color: var(--text-muted);
   line-height: 1.4;
-  word-break: normal;
-  overflow-wrap: break-word;
-  white-space: normal;
 }
 
-/* Climate pills */
-.prefs__climate-pills {
+/* ── Navigation ── */
+.quiz__nav {
   display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 28px 20px;
+  border-top: 1px solid color-mix(in srgb, var(--accent) 10%, var(--border-card));
+  flex-shrink: 0;
+  gap: 10px;
 }
 
-.prefs__pill {
+.quiz__nav-btn {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 6px 12px;
-  background: var(--bg-card-inner);
-  border: 1.5px solid transparent;
-  border-radius: 20px;
-  font-size: 0.78rem;
+  gap: 6px;
+  padding: 8px 20px;
+  border-radius: 10px;
+  font-size: 0.85rem;
   font-weight: 600;
-  color: var(--text-secondary);
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s, color 0.15s;
-}
-
-.prefs__pill:hover {
-  background: var(--bg-card-subtle);
-}
-
-.prefs__pill--active {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 8%, var(--bg-card-inner));
-}
-
-.prefs__pill .mdi {
-  font-size: 0.9rem;
-}
-
-/* Sliders */
-.prefs__sliders {
-  display: flex;
-  flex-direction: column;
-  gap: 13px;
-}
-
-.prefs__slider-row {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.prefs__slider-row--disabled {
-  opacity: 0.45;
-}
-
-.prefs__slider-meta {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.prefs__slider-icon {
-  font-size: 0.9rem;
-  color: var(--accent);
-  opacity: 0.75;
-  width: 16px;
-  text-align: center;
-  flex-shrink: 0;
-}
-
-.prefs__slider-label {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  flex: 1;
-}
-
-.prefs__slider-value {
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: var(--accent);
-  min-width: 28px;
-  text-align: right;
-}
-
-.prefs__coming-soon {
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
-  background: var(--bg-card-inner);
-  border: 1px solid var(--border-card);
-  border-radius: 4px;
-  padding: 1px 5px;
-}
-
-.prefs__range {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  height: 4px;
-  border-radius: 2px;
-  background: transparent;
-  cursor: pointer;
-  padding: 0;
-}
-
-.prefs__range::-webkit-slider-runnable-track {
-  height: 6px;
-  border-radius: 3px;
-}
-
-.prefs__range::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--accent);
-  margin-top: -5px;
-  cursor: pointer;
-}
-
-.prefs__range::-moz-range-track {
-  height: 6px;
-  border-radius: 3px;
-}
-
-.prefs__range::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--accent);
+  transition: filter 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
   border: none;
-  cursor: pointer;
 }
 
-.prefs__range:disabled {
-  cursor: not-allowed;
-  opacity: 1;
-}
-
-.prefs__range:disabled::-webkit-slider-thumb {
-  background: color-mix(in srgb, var(--accent) 40%, var(--bg-card-inner));
-}
-
-.prefs__range:disabled::-moz-range-thumb {
-  background: color-mix(in srgb, var(--accent) 40%, var(--bg-card-inner));
-}
-
-/* Political section */
-.prefs__political {
-  border-top: 1px solid color-mix(in srgb, var(--accent) 12%, var(--border-card));
-  padding-top: 16px;
-}
-
-.prefs__political-toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  margin-bottom: 4px;
-}
-
-.prefs__checkbox {
-  accent-color: var(--accent);
-  width: 15px;
-  height: 15px;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.prefs__political-toggle-label {
-  font-size: 0.82rem;
-  font-weight: 600;
+.quiz__nav-btn--prev {
+  background: var(--bg-card-inner);
   color: var(--text-secondary);
+  border: 1px solid var(--border-card);
 }
 
-.prefs__optional {
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
-  margin-left: 2px;
+.quiz__nav-btn--prev:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
-.prefs__political-slider {
-  margin-top: 12px;
+.quiz__nav-btn--prev:not(:disabled):hover {
+  filter: brightness(1.05);
 }
 
-.prefs__political-labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  margin-bottom: 4px;
+.quiz__nav-btn--next {
+  background: var(--bg-card-inner);
+  color: var(--text-primary);
+  border: 1px solid var(--border-card);
+  margin-left: auto;
 }
 
-.prefs__political-neutral {
-  margin: 6px 0 0;
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  font-style: italic;
+.quiz__nav-btn--next:hover {
+  background: var(--bg-card-subtle);
+  transform: translateX(1px);
 }
 
-.prefs__political--off .prefs__political-slider {
-  opacity: 0.4;
-  pointer-events: none;
+.quiz__nav-btn--save {
+  background: var(--accent);
+  color: #fff;
+  margin-left: auto;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
+.quiz__nav-btn--save:not(:disabled):hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
 
-.prefs__loading {
+.quiz__nav-btn--save:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* ── Loading ── */
+.quiz__loading {
   display: flex;
   justify-content: center;
+  align-items: center;
   padding: 40px;
   color: var(--text-muted);
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
-.prefs__spin { display: inline-block; animation: spin 0.8s linear infinite; }
+.quiz__spin {
+  display: inline-block;
+  animation: spin 0.8s linear infinite;
+}
 
-/* Responsive */
+/* ── Responsive ── */
 @media (max-width: 640px) {
-  .prefs__body {
+  .quiz__progress {
+    margin: 0 16px;
+  }
+
+  .quiz__body {
+    padding: 16px 16px 8px;
+  }
+
+  .quiz__nav {
+    padding: 12px 16px 16px;
+  }
+
+  .quiz__options,
+  .quiz__options--count-3,
+  .quiz__options--count-5 {
     grid-template-columns: 1fr;
-    padding: 0 16px 20px;
-  }
-
-  .prefs__left {
-    padding-right: 0;
-    padding-bottom: 20px;
-  }
-
-  .prefs__right {
-    padding-left: 0;
-    padding-top: 20px;
-  }
-
-  .prefs__divider {
-    width: 100%;
-    height: 1px;
-  }
-
-  .prefs__persona-grid {
-    grid-template-columns: repeat(2, 1fr);
   }
 }
 </style>

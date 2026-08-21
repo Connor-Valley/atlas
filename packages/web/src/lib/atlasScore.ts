@@ -1,4 +1,5 @@
 import type { UserPreferences } from '../composables/usePreferences';
+import { DEFAULT_PREFERENCES, deriveWeightsFromQuiz } from '../composables/usePreferences';
 
 export type DimensionScores = {
   affordability:     number | null;
@@ -12,16 +13,16 @@ export type DimensionScores = {
 };
 
 export type ScoreInputs = {
-  income:        any; // /income/details
-  affordability: any; // /affordability
-  costOfLiving:  any; // /cost-of-living
-  profile:       any; // /city-profile/details
-  qol:           any; // /quality-of-life/details
-  climate:       any; // /climate
-  airQuality:    any; // /air-quality
-  lifestyle:     any; // /lifestyle
-  politicalLean: any; // /political-lean
-  housing:       any; // /housing/details
+  income:        any;
+  affordability: any;
+  costOfLiving:  any;
+  profile:       any;
+  qol:           any;
+  climate:       any;
+  airQuality:    any;
+  lifestyle:     any;
+  politicalLean: any;
+  housing:       any;
 };
 
 export type AtlasScoreResult = {
@@ -43,6 +44,13 @@ function score(value: number | null | undefined, min: number, max: number, direc
   return direction === 'lower' ? 100 - n : n;
 }
 
+function wavg(pairs: Array<{ s: number | null; w: number }>): number | null {
+  const valid = pairs.filter(({ s }) => s != null);
+  if (!valid.length) return null;
+  const totalW = valid.reduce((a, { w }) => a + w, 0);
+  return valid.reduce((a, { s, w }) => a + s! * w, 0) / totalW;
+}
+
 function avg(...values: (number | null)[]): number | null {
   const valid = values.filter((v): v is number => v != null);
   if (!valid.length) return null;
@@ -51,85 +59,135 @@ function avg(...values: (number | null)[]): number | null {
 
 // ── Dimension scorers ─────────────────────────────────────────────────────────
 
-function affordabilityScore(affordability: any, costOfLiving: any, housing: any): number | null {
-  const rentToIncomeS  = score(affordability?.rentToIncomeRatio, 0.15, 0.6, 'lower');
-  const rppS           = score(costOfLiving?.rppIndex, 80, 130, 'lower');
-  const rentGrowthS    = score(housing?.rentGrowthPct5yr, -5, 30, 'lower');
+function affordabilityScore(
+  affordability: any,
+  costOfLiving: any,
+  housing: any,
+  pref: UserPreferences['affordability_preference'],
+): number | null {
+  const rentToIncomeS = score(affordability?.rentToIncomeRatio, 0.15, 0.6, 'lower');
+  const rppS          = score(costOfLiving?.rppIndex, 80, 130, 'lower');
+  const rentGrowthS   = score(housing?.rentGrowthPct5yr, -5, 30, 'lower');
+
+  if (pref === 'budget') {
+    // Rent-to-income is the primary signal — cost of living index is secondary
+    return wavg([
+      { s: rentToIncomeS, w: 0.55 },
+      { s: rppS,          w: 0.30 },
+      { s: rentGrowthS,   w: 0.15 },
+    ]);
+  }
+  if (pref === 'flexible') {
+    // Only care that it's not wildly expensive — rent growth trend matters most
+    return wavg([
+      { s: rppS,        w: 0.50 },
+      { s: rentGrowthS, w: 0.50 },
+    ]);
+  }
+  // 'value' or 'any' — balanced
   return avg(rentToIncomeS, rppS, rentGrowthS);
 }
 
-function jobMarketScore(income: any, qol: any): number | null {
-  const incomeS    = score(income?.medianHouseholdIncome, 30_000, 150_000, 'higher');
-  const unempS     = score(qol?.unemploymentRate?.value, 0.02, 0.12, 'lower');
-  const growthS    = score(income?.employmentGrowthPct5yr, -5, 15, 'higher');
-  // Herfindahl-Hirschman-based diversity index: 1 - sum(share^2). No dedicated backend
-  // field exists — industryBreakdown shares are already fetched for the Income panel.
-  const sectors = income?.industryBreakdown as Array<{ share: number }> | undefined;
-  const diversityIndex = sectors?.length
+function jobMarketScore(
+  income: any,
+  qol: any,
+  pref: UserPreferences['job_market_preference'],
+): number | null {
+  const incomeS   = score(income?.medianHouseholdIncome, 30_000, 150_000, 'higher');
+  const unempS    = score(qol?.unemploymentRate?.value, 0.02, 0.12, 'lower');
+  const growthS   = score(income?.employmentGrowthPct5yr, -5, 15, 'higher');
+  const sectors   = income?.industryBreakdown as Array<{ share: number }> | undefined;
+  const diversity = sectors?.length
     ? Math.max(0, 1 - sectors.reduce((sum, s) => sum + s.share * s.share, 0))
     : null;
-  const diversityS = score(diversityIndex, 0, 1, 'higher');
-  // income + unemployment drive the score; growth and diversity are supporting signals
-  const signals = [
-    { s: incomeS, w: 0.35 },
-    { s: unempS,  w: 0.35 },
-    { s: growthS, w: 0.20 },
+  const diversityS = score(diversity, 0, 1, 'higher');
+
+  if (pref === 'high_earning') {
+    return wavg([
+      { s: incomeS,    w: 0.55 },
+      { s: unempS,     w: 0.25 },
+      { s: growthS,    w: 0.15 },
+      { s: diversityS, w: 0.05 },
+    ]);
+  }
+  if (pref === 'stable') {
+    return wavg([
+      { s: unempS,     w: 0.50 },
+      { s: incomeS,    w: 0.25 },
+      { s: diversityS, w: 0.20 },
+      { s: growthS,    w: 0.05 },
+    ]);
+  }
+  if (pref === 'growth') {
+    return wavg([
+      { s: growthS,    w: 0.40 },
+      { s: diversityS, w: 0.25 },
+      { s: incomeS,    w: 0.25 },
+      { s: unempS,     w: 0.10 },
+    ]);
+  }
+  if (pref === 'remote') {
+    // Job market matters much less — just sanity-check it isn't collapsing
+    return wavg([
+      { s: unempS,  w: 0.50 },
+      { s: incomeS, w: 0.30 },
+      { s: growthS, w: 0.20 },
+    ]);
+  }
+  // 'any' — balanced defaults
+  return wavg([
+    { s: incomeS,    w: 0.35 },
+    { s: unempS,     w: 0.35 },
+    { s: growthS,    w: 0.20 },
     { s: diversityS, w: 0.10 },
-  ];
-  const valid = signals.filter(({ s }) => s != null);
-  if (!valid.length) return null;
-  const totalW = valid.reduce((a, { w }) => a + w, 0);
-  return valid.reduce((a, { s, w }) => a + s! * w, 0) / totalW;
+  ]);
 }
 
-function climateScore(climate: any, climatePref: UserPreferences['climate_preference']): number | null {
+function climateScore(
+  climate: any,
+  pref: UserPreferences['climate_preference'],
+): number | null {
   if (!climate) return null;
 
   const hazardS = score(climate.hazardRisks?.compositeScore, 0, 100, 'lower');
   const sunnyS  = score(climate.sunnyDaysPerYear, 100, 300, 'higher');
 
-  if (climatePref === 'warm') {
+  if (pref === 'warm') {
     const tempS     = score(climate.avgTempF, 45, 85, 'higher');
     const freezingS = score(climate.freezingDaysPerYear, 0, 120, 'lower');
     return avg(sunnyS, tempS, freezingS, hazardS);
   }
-
-  if (climatePref === 'cool') {
-    // cooler avg temps score better — invert by scoring distance below 70°F
+  if (pref === 'cool') {
     const coolTempS = score(climate.avgTempF, 30, 70, 'lower');
     const hotS      = score(climate.hotDaysPerYear, 0, 90, 'lower');
     return avg(coolTempS, hotS, sunnyS, hazardS);
   }
-
-  if (climatePref === 'mild') {
-    // bell curve around 65°F: the closer to 65, the better
+  if (pref === 'mild') {
     const tempDeviation = climate.avgTempF != null ? Math.abs(climate.avgTempF - 65) : null;
     const mildTempS = score(tempDeviation, 0, 40, 'lower');
     const hotS      = score(climate.hotDaysPerYear, 0, 60, 'lower');
     const freezingS = score(climate.freezingDaysPerYear, 0, 60, 'lower');
     return avg(mildTempS, hotS, freezingS, hazardS);
   }
-
-  if (climatePref === 'four_seasons') {
+  if (pref === 'four_seasons') {
     const comfortDays = (climate.hotDaysPerYear != null && climate.freezingDaysPerYear != null)
       ? 365 - climate.hotDaysPerYear - climate.freezingDaysPerYear
       : null;
     const comfortS = score(comfortDays, 100, 300, 'higher');
     return avg(comfortS, sunnyS, hazardS);
   }
-
-  // 'any' — generic desirability
   return avg(sunnyS, hazardS);
 }
 
-
-function opportunityScore(profile: any, income: any, qol: any): number | null {
+function opportunityScore(
+  profile: any,
+  income: any,
+  qol: any,
+  pref: UserPreferences['opportunity_preference'],
+): number | null {
+  const att = profile?.educationalAttainment as Array<{ label: string; share: number }> | undefined;
   let bachelorS: number | null = null;
   let graduateS: number | null = null;
-
-  // profile.educationalAttainment buckets (ACS B15003, shares 0–1) isolate "Graduate degree"
-  // separately from "Bachelor's degree", so both bachelor's-plus and graduate-plus are derivable.
-  const att = profile?.educationalAttainment as Array<{ label: string; share: number }> | undefined;
   if (att) {
     const bachelorsShare = att.find((e) => e.label === "Bachelor's degree")?.share ?? 0;
     const graduateShare  = att.find((e) => e.label === "Graduate degree")?.share ?? 0;
@@ -139,15 +197,87 @@ function opportunityScore(profile: any, income: any, qol: any): number | null {
 
   const povertyS = score(income?.povertyRate, 3, 30, 'lower');
   const laborS   = score(qol?.laborForceParticipationRate?.value, 0.55, 0.75, 'higher');
+  const growthS  = score(income?.employmentGrowthPct5yr, -5, 15, 'higher');
+
+  const sectors    = income?.industryBreakdown as Array<{ share: number }> | undefined;
+  const diversity  = sectors?.length
+    ? Math.max(0, 1 - sectors.reduce((sum, s) => sum + s.share * s.share, 0))
+    : null;
+  const diversityS = score(diversity, 0, 1, 'higher');
+
+  if (pref === 'education') {
+    return wavg([
+      { s: bachelorS,  w: 0.45 },
+      { s: graduateS,  w: 0.30 },
+      { s: laborS,     w: 0.15 },
+      { s: povertyS,   w: 0.10 },
+    ]);
+  }
+  if (pref === 'growth') {
+    return wavg([
+      { s: growthS,    w: 0.45 },
+      { s: laborS,     w: 0.25 },
+      { s: bachelorS,  w: 0.15 },
+      { s: povertyS,   w: 0.15 },
+    ]);
+  }
+  if (pref === 'diverse') {
+    return wavg([
+      { s: diversityS, w: 0.40 },
+      { s: growthS,    w: 0.25 },
+      { s: laborS,     w: 0.20 },
+      { s: povertyS,   w: 0.15 },
+    ]);
+  }
+  if (pref === 'mobility') {
+    return wavg([
+      { s: povertyS,  w: 0.40 },
+      { s: laborS,    w: 0.35 },
+      { s: growthS,   w: 0.15 },
+      { s: bachelorS, w: 0.10 },
+    ]);
+  }
+  // 'any' — balanced
   return avg(bachelorS, graduateS, povertyS, laborS);
 }
 
-function lifestyleVibrancyScore(lifestyle: any, profile: any): number | null {
+function lifestyleVibrancyScore(
+  lifestyle: any,
+  profile: any,
+  pref: UserPreferences['lifestyle_preference'],
+): number | null {
   const restaurantS = score(lifestyle?.restaurants?.perTenThousandResidents, 5, 80, 'higher');
   const barsS       = score(lifestyle?.bars?.perTenThousandResidents, 2, 40, 'higher');
   const artsS       = score(lifestyle?.artsAndCulture?.perTenThousandResidents, 1, 20, 'higher');
   const commuteS    = score(profile?.meanCommuteMinutes, 10, 45, 'lower');
   const remoteS     = score(profile?.remoteWorkShare, 0.05, 0.40, 'higher');
+  const transitS    = score(profile?.transitShare, 0.02, 0.40, 'higher');
+
+  if (pref === 'urban') {
+    return wavg([
+      { s: restaurantS, w: 0.25 },
+      { s: barsS,       w: 0.20 },
+      { s: artsS,       w: 0.20 },
+      { s: transitS,    w: 0.20 },
+      { s: commuteS,    w: 0.15 },
+    ]);
+  }
+  if (pref === 'suburban') {
+    return wavg([
+      { s: commuteS,    w: 0.50 },
+      { s: remoteS,     w: 0.30 },
+      { s: restaurantS, w: 0.20 },
+    ]);
+  }
+  if (pref === 'nature') {
+    // Vibrancy matters less — just check it isn't a dead city
+    return wavg([
+      { s: commuteS,    w: 0.40 },
+      { s: remoteS,     w: 0.35 },
+      { s: restaurantS, w: 0.25 },
+    ]);
+  }
+  // 'any'
   return avg(restaurantS, barsS, artsS, commuteS, remoteS);
 }
 
@@ -158,53 +288,71 @@ function airQualityScore(airQuality: any): number | null {
 }
 
 function safetyScore(): number | null {
-  return null; // placeholder — wires in when crime data is available
+  return null;
 }
 
-function connectivityScore(profile: any, qol: any): number | null {
-  const airportPercentile = qol?.airportBusyness?.value?.nationalPercentile ?? null;
-  const airportDistanceS  = score(qol?.airportDistanceMiles?.value, 0, 100, 'lower');
-  const transitS          = score(profile?.transitShare, 0.02, 0.40, 'higher');
+function connectivityScore(
+  profile: any,
+  qol: any,
+  pref: UserPreferences['connectivity_preference'],
+): number | null {
+  const airportPercentile  = qol?.airportBusyness?.value?.nationalPercentile ?? null;
+  const airportDistanceS   = score(qol?.airportDistanceMiles?.value, 0, 100, 'lower');
+  const transitS           = score(profile?.transitShare, 0.02, 0.40, 'higher');
+  const walkS              = score(profile?.transitShare, 0.05, 0.45, 'higher'); // proxy until walk score available
+
+  if (pref === 'walkable') {
+    return wavg([
+      { s: walkS,           w: 0.50 },
+      { s: transitS,        w: 0.35 },
+      { s: airportDistanceS, w: 0.15 },
+    ]);
+  }
+  if (pref === 'balanced') {
+    return wavg([
+      { s: airportPercentile, w: 0.30 },
+      { s: airportDistanceS,  w: 0.25 },
+      { s: transitS,          w: 0.25 },
+      { s: walkS,             w: 0.20 },
+    ]);
+  }
+  if (pref === 'airport') {
+    return wavg([
+      { s: airportPercentile, w: 0.50 },
+      { s: airportDistanceS,  w: 0.40 },
+      { s: transitS,          w: 0.10 },
+    ]);
+  }
+  if (pref === 'car') {
+    // Not a priority — return null so weight zeroes out
+    return null;
+  }
+  // 'any'
   return avg(airportPercentile, airportDistanceS, transitS);
 }
 
 function politicalMatchScore(politicalLean: any, preference: number): number | null {
-  const cityMargin = politicalLean?.marginPct; // -100 to +100, Dem-positive
+  const cityMargin = politicalLean?.marginPct;
   if (cityMargin == null) return null;
-  // 100 = perfect alignment, 0 = opposite poles
   return Math.max(0, 100 - Math.abs(cityMargin - preference) / 2);
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
-const DEFAULT_PREFS: UserPreferences = {
-  persona_id: 'balanced',
-  weight_affordability: 20,
-  weight_job_market: 20,
-  weight_opportunity: 15,
-  weight_connectivity: 20,
-  weight_climate: 20,
-  weight_lifestyle_vibrancy: 15,
-  weight_air_quality: 10,
-  weight_safety: 0,
-  climate_preference: 'any',
-  political_preference_enabled: false,
-  political_preference: 0, // -100 (full Dem) to +100 (full Rep), matches cityMargin in politicalMatchScore
-};
-
 export function computeAtlasScore(inputs: ScoreInputs, prefs?: UserPreferences | null): AtlasScoreResult {
-  const p = prefs ?? DEFAULT_PREFS;
+  const raw = prefs ?? DEFAULT_PREFERENCES;
+  const p   = deriveWeightsFromQuiz(raw);
   const isPersonalized = !!prefs;
 
   const breakdown: DimensionScores = {
-    affordability:     affordabilityScore(inputs.affordability, inputs.costOfLiving, inputs.housing),
-    jobMarket:         jobMarketScore(inputs.income, inputs.qol),
+    affordability:     affordabilityScore(inputs.affordability, inputs.costOfLiving, inputs.housing, p.affordability_preference),
+    jobMarket:         jobMarketScore(inputs.income, inputs.qol, p.job_market_preference),
     climate:           climateScore(inputs.climate, p.climate_preference),
-    opportunity:       opportunityScore(inputs.profile, inputs.income, inputs.qol),
-    lifestyleVibrancy: lifestyleVibrancyScore(inputs.lifestyle, inputs.profile),
+    opportunity:       opportunityScore(inputs.profile, inputs.income, inputs.qol, p.opportunity_preference),
+    lifestyleVibrancy: lifestyleVibrancyScore(inputs.lifestyle, inputs.profile, p.lifestyle_preference),
     airQuality:        airQualityScore(inputs.airQuality),
     safety:            safetyScore(),
-    connectivity:      connectivityScore(inputs.profile, inputs.qol),
+    connectivity:      connectivityScore(inputs.profile, inputs.qol, p.connectivity_preference),
   };
 
   const weighted: Array<{ score: number | null; weight: number }> = [
@@ -218,10 +366,9 @@ export function computeAtlasScore(inputs: ScoreInputs, prefs?: UserPreferences |
     { score: breakdown.connectivity,      weight: p.weight_connectivity },
   ];
 
-  // Optional political match — fixed weight of 15 when opted in
   if (p.political_preference_enabled) {
     const polScore = politicalMatchScore(inputs.politicalLean, p.political_preference);
-    weighted.push({ score: polScore, weight: 15 });
+    weighted.push({ score: polScore, weight: 20 });
   }
 
   let total = 0;
