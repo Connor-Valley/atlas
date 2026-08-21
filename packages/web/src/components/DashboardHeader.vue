@@ -75,7 +75,7 @@ function openAuth(mode: "login" | "register") {
       </template>
     </div>
 
-    <div class="dashboard-hdr__search">
+    <div class="dashboard-hdr__search" :class="{ 'dashboard-hdr__search--wide': !$slots.actions }">
       <CitySearch
         compact
         :initial-city="city"
@@ -226,6 +226,14 @@ html.dark .dashboard-hdr__favicon {
   flex: 0 1 680px;
   min-width: 220px;
   margin-right: auto;
+}
+
+/* No action buttons on this page (e.g. Profile, Favorites) — the search bar
+   is the only thing between the logo and the user menu, so widen it and
+   center it in the remaining space instead of hugging the left side. */
+.dashboard-hdr__search--wide {
+  flex-basis: 880px;
+  margin: 0 auto;
 }
 
 .dashboard-hdr__search .search-bar {
