@@ -40,7 +40,7 @@ const BAND_COLORS = ["var(--city-b)", "var(--city-a)", "var(--accent)", "var(--a
 
 const burdenInsight = computed(() => {
   const d = data.value;
-  if (!d) return null;
+  if (!d || d.rentToIncomeRatio == null) return null;
   const pct = (d.rentToIncomeRatio * 100).toFixed(1);
   const tier = d.affordability as string;
 
@@ -247,11 +247,12 @@ const colEquivalentIncome = computed(() => {
 
 const statusClass = computed(() => {
   const tier = data.value?.affordability as string | undefined;
-  if (tier === "Comfortably Affordable") return "positive";
-  if (tier === "Affordable")             return "positive";
-  if (tier === "Moderately Burdened")    return "status-caution";
-  if (tier === "Rent Burdened")          return "status-warning";
-  return "status-danger";
+  if (tier === "Comfortably Affordable")  return "positive";
+  if (tier === "Affordable")              return "positive";
+  if (tier === "Moderately Burdened")     return "status-caution";
+  if (tier === "Rent Burdened")           return "status-warning";
+  if (tier === "Severely Rent Burdened")  return "status-danger";
+  return "";
 });
 
 function formatChange(ratio: number) {
@@ -338,15 +339,15 @@ const loadingInsightCards = [1, 2, 3];
         <div class="housing-exp__snapshot-grid">
           <div class="snap-metric snap-metric--primary">
             <span class="snap-metric__label"><span class="mdi mdi-home-outline snap-metric__icon"></span>Median Rent</span>
-            <span class="snap-metric__value">${{ data.medianRent.toLocaleString() }}/mo</span>
+            <span class="snap-metric__value">{{ data.medianRent != null ? `$${data.medianRent.toLocaleString()}/mo` : "—" }}</span>
           </div>
           <div class="snap-metric snap-metric--primary">
             <span class="snap-metric__label"><span class="mdi mdi-account-outline snap-metric__icon"></span>Renter Income</span>
-            <span class="snap-metric__value">${{ data.medianRenterIncome.toLocaleString() }}</span>
+            <span class="snap-metric__value">{{ data.medianRenterIncome != null ? `$${data.medianRenterIncome.toLocaleString()}` : "—" }}</span>
           </div>
           <div class="snap-metric snap-metric--primary">
             <span class="snap-metric__label"><span class="mdi mdi-percent snap-metric__icon"></span>Rent / Income</span>
-            <span class="snap-metric__value" :class="statusClass">{{ (data.rentToIncomeRatio * 100).toFixed(1) }}%</span>
+            <span class="snap-metric__value" :class="statusClass">{{ data.rentToIncomeRatio != null ? `${(data.rentToIncomeRatio * 100).toFixed(1)}%` : "—" }}</span>
           </div>
           <div v-if="data.medianHomeValue" class="snap-metric snap-metric--secondary">
             <span class="snap-metric__label"><span class="mdi mdi-office-building-outline snap-metric__icon"></span>Median Home Value</span>
@@ -358,7 +359,7 @@ const loadingInsightCards = [1, 2, 3];
           </div>
           <div class="snap-metric snap-metric--secondary">
             <span class="snap-metric__label"><span class="mdi mdi-scale-balance snap-metric__icon"></span>Status</span>
-            <span class="snap-metric__value" :class="statusClass">{{ data.affordability }}</span>
+            <span class="snap-metric__value" :class="statusClass">{{ data.affordability ?? "—" }}</span>
           </div>
         </div>
       </template>
@@ -452,8 +453,12 @@ const loadingInsightCards = [1, 2, 3];
         </div>
 
         <div class="aff-burden-tier">
-          <span class="aff-burden-tier__label" :class="statusClass">{{ data.affordability }}</span>
-          <span class="muted aff-burden-tier__ratio">{{ (data.rentToIncomeRatio * 100).toFixed(1) }}% of renter income spent on rent</span>
+          <span class="aff-burden-tier__label" :class="statusClass">{{ data.affordability ?? "—" }}</span>
+          <span class="muted aff-burden-tier__ratio">
+            {{ data.rentToIncomeRatio != null
+              ? `${(data.rentToIncomeRatio * 100).toFixed(1)}% of renter income spent on rent`
+              : "Too few renters in the ACS sample to estimate rent burden" }}
+          </span>
         </div>
 
         <div v-if="data.rentBurdenBands?.length" class="aff-burden-bar-wrap">

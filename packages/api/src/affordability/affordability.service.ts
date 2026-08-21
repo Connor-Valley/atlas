@@ -1,6 +1,6 @@
 import type { City } from "../cities/cities.types.js";
 import type { CityAffordability, DetailedCityAffordability, AffordabilityLevel, RentBurdenBand } from "./affordability.types.js";
-import { buildCensusGeoQuery } from "../common/census.js";
+import { buildCensusGeoQuery, toNumber } from "../common/census.js";
 import { getCityIncome, getDetailedCityIncome } from "../income/income.service.js";
 import { getCityHousing, getDetailedCityHousing } from "../housing/housing.service.js";
 import { STATE_GAS_PREMIUMS, NATIONAL_MEDIAN_HOUSEHOLD_INCOME } from "./gas-price-reference.js";
@@ -23,21 +23,26 @@ export async function getCityAffordability(
     getCityHousing(city, year),
   ]);
 
-  const annualRent = housing.medianRent * 12;
+  // A real median rent or renter income is never exactly 0 — Census's ACS 5-year
+  // estimates fall back to 0 (post sentinel-filtering) only when the underlying
+  // sample was too small to publish. Treat that as "unavailable," not "free."
+  const medianRent = housing.medianRent > 0 ? housing.medianRent : null;
+  const medianRenterIncome = income.medianRenterIncome > 0 ? income.medianRenterIncome : null;
+  const annualRent = medianRent != null ? medianRent * 12 : null;
   const rentToIncomeRatio =
-    income.medianRenterIncome > 0
-      ? annualRent / income.medianRenterIncome
-      : 0;
+    annualRent != null && medianRenterIncome != null
+      ? annualRent / medianRenterIncome
+      : null;
 
   return {
     city: city.name.replace(/\s+city$/i, ""),
     state: city.state,
     medianHouseholdIncome: income.medianHouseholdIncome,
-    medianRenterIncome: income.medianRenterIncome,
-    medianRent: housing.medianRent,
+    medianRenterIncome,
+    medianRent,
     annualRent,
     rentToIncomeRatio,
-    affordability: classifyAffordability(rentToIncomeRatio),
+    affordability: rentToIncomeRatio != null ? classifyAffordability(rentToIncomeRatio) : null,
   };
 }
 
@@ -69,10 +74,7 @@ async function fetchRentBurdenBands(city: City, year: number): Promise<RentBurde
   const row = data[1];
   if (!row) throw new Error("Census response missing data row");
 
-  const n = (v: string | undefined) => {
-    const num = Number(v);
-    return Number.isFinite(num) ? num : 0;
-  };
+  const n = toNumber;
 
   const [total, lt10, t10to15, t15to20, t20to25, t25to30, t30to35, t35to40, t40to50, t50plus] = row.map(n);
   const safe = total > 0 ? total : 1;
@@ -96,11 +98,12 @@ export async function getDetailedCityAffordability(
     fetchRentBurdenBands(city, year),
   ]);
 
-  const annualRent = housing.medianRent * 12;
-  const rentToIncomeRatio =
-    income.medianRenterIncome > 0
-      ? annualRent / income.medianRenterIncome
-      : 0;
+  const medianRent = housing.medianRent > 0 ? housing.medianRent : null;
+  const medianRenterIncome = income.medianRenterIncome > 0 ? income.medianRenterIncome : null;
+  const annualRent = medianRent != null ? medianRent * 12 : null;
+  // income.affordabilityMetrics.rentToIncomeRatio is already computed null-safely
+  // (see fetchDetailedCityIncome) — reuse it instead of re-deriving to avoid drift.
+  const rentToIncomeRatio = income.affordabilityMetrics.rentToIncomeRatio;
 
   const electricityPremiumDecimal = STATE_ELECTRICITY_PREMIUMS[city.state] ?? null;
   const electricityVsNationalPct = electricityPremiumDecimal !== null ? electricityPremiumDecimal * 100 : null;
@@ -121,11 +124,11 @@ export async function getDetailedCityAffordability(
     city: city.name.replace(/\s+city$/i, ""),
     state: city.state,
     medianHouseholdIncome: income.medianHouseholdIncome,
-    medianRenterIncome: income.medianRenterIncome,
-    medianRent: housing.medianRent,
+    medianRenterIncome,
+    medianRent,
     annualRent,
     rentToIncomeRatio,
-    affordability: classifyAffordability(rentToIncomeRatio),
+    affordability: rentToIncomeRatio != null ? classifyAffordability(rentToIncomeRatio) : null,
     medianHomeValue: housing.medianHomeValue ?? null,
     estimatedMortgage: housing.estimatedMortgage,
     mortgageToIncomeRatio: housing.mortgageToIncomeRatio,

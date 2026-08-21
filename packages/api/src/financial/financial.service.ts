@@ -1,6 +1,6 @@
 import type { MetricWithSource, SourceAttribution } from "../common/source.types.js";
 import type { City } from "../cities/cities.types.js";
-import { buildCensusGeoQuery } from "../common/census.js";
+import { buildCensusGeoQuery, toNumber } from "../common/census.js";
 import { getCityHousing } from "../housing/housing.service.js";
 import type { FinancialDetails, FinancialSummary } from "./financial.types.js";
 import { FINANCIAL_REFERENCE_AS_OF, MINIMUM_WAGE_SOURCE_URL, STATE_FINANCIAL_REFERENCE } from "./financial-reference.js";
@@ -156,7 +156,3 @@ function metricWithSource<T>(value: T, source: SourceAttribution): MetricWithSou
   return { value, source };
 }
 
-function toNumber(value: string | undefined): number {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
