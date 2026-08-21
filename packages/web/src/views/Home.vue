@@ -53,16 +53,17 @@ const { user, displayName, signOut } = useAuth();
 const showAuthModal  = ref(false);
 const authModalMode  = ref<'login' | 'register'>('register');
 const userMenuOpen   = ref(false);
+// Hover only reveals the username label on the button — it no longer opens
+// the dropdown, which now opens strictly on click.
+const userMenuHovered = ref(false);
 const userMenuRef = ref<HTMLElement | null>(null);
-let userMenuCloseTimer: ReturnType<typeof setTimeout> | null = null;
 
 function openUserMenuHover() {
-  if (userMenuCloseTimer) { clearTimeout(userMenuCloseTimer); userMenuCloseTimer = null; }
-  userMenuOpen.value = true;
+  userMenuHovered.value = true;
 }
 
 function closeUserMenuHover() {
-  userMenuCloseTimer = setTimeout(() => { userMenuOpen.value = false; }, 300);
+  userMenuHovered.value = false;
 }
 const cityShareMenuRef = ref<HTMLElement | null>(null);
 const cityShareMenuOpen = ref(false);
@@ -1170,7 +1171,7 @@ async function closeExpandedSection() {
           @click.stop="toggleUserMenu"
         >
           <Transition name="menu-name-slide">
-            <span v-if="userMenuOpen" class="user-menu__name hero-auth__menu-name">{{ displayName() ?? 'Account' }}</span>
+            <span v-if="userMenuOpen || userMenuHovered" class="user-menu__name hero-auth__menu-name">{{ displayName() ?? 'Account' }}</span>
           </Transition>
           <span class="user-menu__avatar">{{ (displayName() ?? 'A')[0].toUpperCase() }}</span>
         </button>
