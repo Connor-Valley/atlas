@@ -26,6 +26,10 @@ export type ResolvedPlace = {
   countyFips: string;
   placeCode: string;
   population: number;
+  // County Census bakes into the NAME field itself to disambiguate two
+  // same-named places in the state, e.g. "Kailua CDP (Hawaii County)" — set
+  // only when present, so it can be used for our own disambiguation display.
+  countyHint: string | null;
 };
 
 type ListedPlace = {
@@ -149,7 +153,7 @@ async function getListedResolvedPlacesForState(
       seen.add(slug);
 
       listed.push({
-        name: `${place.displayName} (${normalizeCountyName(place.fullName.split(",")[1] ?? "")})`,
+        name: `${place.displayName} (${normalizeCountyName(place.countyHint ?? place.fullName.split(",")[1] ?? "")})`,
         slug,
         place,
       });
@@ -204,7 +208,8 @@ function buildResolvedPlace(
   geographyType: "place" | "county-subdivision",
 ): ResolvedPlace {
   const [fullName, populationRaw, stateFips, countyOrPlaceCode, maybePlaceCode] = row;
-  const localName = extractLocalName(fullName);
+  const rawLocalName = extractLocalName(fullName);
+  const { base: localName, countyHint } = stripEmbeddedCounty(rawLocalName);
   const placeType = detectPlaceType(localName);
   const baseName = cleanPlaceName(localName);
   const displayName = buildDisplayName(localName, placeType, baseName);
@@ -229,11 +234,24 @@ function buildResolvedPlace(
     countyFips: geographyType === "county-subdivision" ? `${stateFips}${countyCode}` : "",
     placeCode,
     population: toNumber(populationRaw),
+    countyHint,
   };
 }
 
 function extractLocalName(fullName: string): string {
   return fullName.split(",")[0]?.trim() ?? fullName.trim();
+}
+
+// Strips a trailing "(X County)" that Census bakes directly into the NAME
+// field to disambiguate two same-named places within a state — it sits
+// before any place-type suffix (e.g. "Kailua CDP (Hawaii County)"), so
+// without this, "CDP" is no longer at the end of the string and none of our
+// suffix patterns match, leaving it to leak through into the display name.
+function stripEmbeddedCounty(localName: string): { base: string; countyHint: string | null } {
+  // "counties" plural covers cross-county CDPs, e.g. "(Kemper and Neshoba Counties)".
+  const match = localName.match(/^(.*?)\s*\(([^()]*\bcount(?:y|ies)\b[^()]*)\)\s*$/i);
+  if (!match) return { base: localName, countyHint: null };
+  return { base: match[1]!.trim(), countyHint: match[2]!.trim() };
 }
 
 function cleanPlaceName(localName: string): string {
@@ -254,7 +272,10 @@ function cleanPlaceName(localName: string): string {
 function buildDisplayName(localName: string, placeType: PlaceType, baseName: string): string {
   const trimmed = localName.replace(/\s+/g, " ").trim();
 
-  if (placeType === "city") {
+  if (placeType === "city" || placeType === "cdp") {
+    // "CDP" (Census Designated Place) is a Census Bureau technical designation
+    // for unincorporated communities, never part of the place's actual name —
+    // unlike "Township"/"Village"/etc., which are often genuinely part of it.
     return toTitleCase(baseName);
   }
   if (/^village of\s+/i.test(trimmed)) {
@@ -323,7 +344,7 @@ function slugify(value: string): string {
 
 
 function normalizeCountyName(value: string): string {
-  return value.replace(/\bCounty\b/i, "").trim();
+  return value.replace(/\bCount(?:y|ies)\b/i, "").trim();
 }
 
 function toTitleCase(value: string): string {
@@ -331,11 +352,13 @@ function toTitleCase(value: string): string {
     .split(" ")
     .filter(Boolean)
     .map((word) => {
-      const lower = word.toLowerCase();
-      if (lower.length <= 2 && word === word.toUpperCase()) {
+      if (word.length <= 2 && word === word.toUpperCase()) {
         return word;
       }
-      return lower.charAt(0).toUpperCase() + lower.slice(1);
+      // Capitalize after hyphens/parens/slashes too, not just at the start of
+      // the space-separated token — otherwise "Athens-Clarke" title-cases to
+      // "Athens-clarke" and "(Honolulu" (mid-parenthetical) stays "(honolulu".
+      return word.toLowerCase().replace(/(^|[-(/])([a-z])/g, (_m, boundary, letter) => boundary + letter.toUpperCase());
     })
     .join(" ");
 }
