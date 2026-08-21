@@ -297,7 +297,7 @@ watch(() => localState.value, () => {
           @focus="onStateFocus"
           @blur="onStateBlur"
           @keydown="onStateKeydown"
-          placeholder="Select State"
+          placeholder="State"
           autocomplete="off"
         />
         <ul v-if="showStateSuggestions && filteredStates.length > 0" class="state-suggestions">
@@ -345,19 +345,34 @@ watch(() => localState.value, () => {
 .compare-search-card {
   padding: 18px;
   border: 1px solid var(--border-card);
-  border-radius: 20px;
+  border-radius: 16px;
   background: var(--bg-card);
   box-shadow: var(--card-shadow);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.compare-search-card:hover {
+  transform: translateY(-2px);
 }
 
 .compare-search-card--a {
-  border-color: color-mix(in srgb, var(--compare-city-a) 34%, var(--border-card));
-  background: linear-gradient(180deg, color-mix(in srgb, var(--compare-city-a) 10%, var(--bg-card)) 0%, var(--bg-card) 100%);
+  border-color: color-mix(in srgb, var(--compare-city-a) 28%, var(--border-card));
+  background: linear-gradient(160deg, color-mix(in srgb, var(--compare-city-a) 8%, var(--bg-card)) 0%, var(--bg-card) 60%);
+  box-shadow: var(--card-shadow), 0 0 20px color-mix(in srgb, var(--compare-city-a) 8%, transparent);
+}
+
+.compare-search-card--a:hover {
+  box-shadow: var(--card-shadow-hover), 0 0 28px color-mix(in srgb, var(--compare-city-a) 14%, transparent);
 }
 
 .compare-search-card--b {
-  border-color: color-mix(in srgb, var(--compare-city-b) 34%, var(--border-card));
-  background: linear-gradient(180deg, color-mix(in srgb, var(--compare-city-b) 10%, var(--bg-card)) 0%, var(--bg-card) 100%);
+  border-color: color-mix(in srgb, var(--compare-city-b) 28%, var(--border-card));
+  background: linear-gradient(160deg, color-mix(in srgb, var(--compare-city-b) 8%, var(--bg-card)) 0%, var(--bg-card) 60%);
+  box-shadow: var(--card-shadow), 0 0 20px color-mix(in srgb, var(--compare-city-b) 8%, transparent);
+}
+
+.compare-search-card--b:hover {
+  box-shadow: var(--card-shadow-hover), 0 0 28px color-mix(in srgb, var(--compare-city-b) 14%, transparent);
 }
 
 .compare-search-card__header {
@@ -369,9 +384,9 @@ watch(() => localState.value, () => {
 }
 
 .compare-search-card__label {
-  font-size: 1.05rem;
+  font-size: 0.78rem;
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
 }
 
@@ -424,12 +439,12 @@ watch(() => localState.value, () => {
 
 .compare-search-card--b button {
   background: var(--compare-city-b);
-  color: #062824;
+  color: #fff;
 }
 
 .compare-search-card--b button:hover {
   background: color-mix(in srgb, var(--compare-city-b) 82%, black);
-  color: #041c19;
+  color: #fff;
 }
 
 .compare-search-card__btn-icon {
@@ -480,15 +495,15 @@ watch(() => localState.value, () => {
 }
 
 .compare-search-card--a.compare-search-card--sheet :deep(.search-bar > button) {
-  background: color-mix(in srgb, var(--compare-city-a) 18%, #2a2d38);
-  border-color: color-mix(in srgb, var(--compare-city-a) 78%, white 8%);
-  color: #eefcf9;
+  background: color-mix(in srgb, var(--compare-city-a) 18%, var(--bg-card));
+  border-color: color-mix(in srgb, var(--compare-city-a) 60%, var(--border-card));
+  color: var(--text-primary);
 }
 
 .compare-search-card--b.compare-search-card--sheet :deep(.search-bar > button) {
-  background: color-mix(in srgb, var(--compare-city-b) 16%, #2a2d38);
-  border-color: color-mix(in srgb, var(--compare-city-b) 72%, white 8%);
-  color: #eff6ff;
+  background: color-mix(in srgb, var(--compare-city-b) 16%, var(--bg-card));
+  border-color: color-mix(in srgb, var(--compare-city-b) 55%, var(--border-card));
+  color: var(--text-primary);
 }
 
 .compare-search-card--sheet :deep(.search-bar > button:hover) {
