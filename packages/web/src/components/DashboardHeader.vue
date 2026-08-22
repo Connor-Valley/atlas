@@ -174,7 +174,7 @@ function openAuth(mode: "login" | "register") {
 .dashboard-hdr__left {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 2px;
   flex-shrink: 0;
 }
 
@@ -190,34 +190,37 @@ function openAuth(mode: "login" | "register") {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
+  width: 26px;
   height: 30px;
+  margin-right: -6px;
   flex-shrink: 0;
-  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
-  border-radius: 9px;
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border: none;
+  background: none;
   cursor: pointer;
-  transition: background 0.18s ease, border-color 0.18s ease, transform 0.15s ease;
+  transition: transform 0.15s ease;
 }
 
-.dashboard-hdr__home-btn:hover {
-  background: color-mix(in srgb, var(--accent) 22%, transparent);
-  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
-  transform: translateY(-1px);
+.dashboard-hdr__home-btn:hover .dashboard-hdr__home-slash {
+  color: var(--accent-hover, var(--accent));
+  text-shadow: 0 0 20px color-mix(in srgb, var(--accent) 75%, transparent);
+  transform: translateY(-1px) scale(1.08);
 }
 
-.dashboard-hdr__home-btn:active {
+.dashboard-hdr__home-btn:active .dashboard-hdr__home-slash {
   transform: translateY(0) scale(0.94);
 }
 
 .dashboard-hdr__home-slash {
   font-family: 'Playfair Display', serif;
   font-style: italic;
-  font-weight: 700;
-  font-size: 1.2rem;
+  font-weight: 900;
+  font-size: 1.7rem;
   line-height: 1;
   color: var(--accent);
+  -webkit-text-stroke: 1.6px var(--accent);
+  text-shadow: 0 0 14px color-mix(in srgb, var(--accent) 55%, transparent);
   transform: translateY(-1px);
+  transition: color 0.18s ease, transform 0.15s ease, text-shadow 0.18s ease;
 }
 
 .dashboard-hdr__logo {
