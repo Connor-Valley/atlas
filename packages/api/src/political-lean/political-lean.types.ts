@@ -20,7 +20,7 @@ export type PoliticalLean = {
     sourceName: string;
     sourceUrl: string;
     asOf: string;
-    geographyLevel: "county";
+    geographyLevel: "county" | "place";
     methodologyNote: string;
   };
 };

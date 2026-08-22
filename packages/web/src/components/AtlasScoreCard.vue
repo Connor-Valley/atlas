@@ -13,15 +13,21 @@ import { fetchPoliticalLean } from '../api/politicalLean';
 import { fetchCostOfLiving } from '../api/costOfLiving';
 import { useAuth } from '../composables/useAuth';
 import { usePreferences } from '../composables/usePreferences';
-import { computeAtlasScore, scoreTier } from '../lib/atlasScore';
-import { DIMS } from '../lib/atlasScoreDims';
+import { computeAtlasScore, scoreTier, politicalDimTier } from '../lib/atlasScore';
+import { DIMS, PREF_LABELS } from '../lib/atlasScoreDims';
 
 const props = defineProps<{ city: string; state: string }>();
 
-const { user } = useAuth();
-const { preferences, loaded: prefsLoaded, fetchPreferences } = usePreferences();
+const { user, loading: authLoading } = useAuth();
+const { preferences, fetchPreferences } = usePreferences();
 
-watch(() => user.value, () => fetchPreferences(), { immediate: true });
+// Wait for auth to finish restoring the session before treating `user.value === null` as
+// "not logged in" — on a fresh page load it starts null while the Supabase session is still
+// being read from storage, and firing fetchPreferences() on that transient null permanently
+// locks preferences to defaults before the real session (and real user) ever resolves.
+watch([user, authLoading], ([, isAuthLoading]) => {
+  if (!isAuthLoading) fetchPreferences();
+}, { immediate: true });
 
 const profile        = ref<any>(null);
 const qol            = ref<any>(null);
@@ -49,41 +55,49 @@ async function load() {
   politicalLean.value = null;
   costOfLiving.value  = null;
 
-  const results = await Promise.allSettled([
-    fetchDetailedCityProfile(props.state, props.city),
-    fetchDetailedQualityOfLife(props.state, props.city),
-    fetchDetailedIncome(props.state, props.city),
-    fetchAffordability(props.state, props.city),
-    fetchDetailedHousing(props.state, props.city),
-    fetchClimate(props.state, props.city),
-    fetchAirQuality(props.state, props.city),
-    fetchLifestyle(props.state, props.city),
-    fetchPoliticalLean(props.state, props.city),
-    fetchCostOfLiving(props.state, props.city),
-  ]);
+  function timed<T>(p: Promise<T>): Promise<T> {
+    return Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error('timeout')), 12_000))]);
+  }
 
-  const vals = results.map(r => r.status === 'fulfilled' ? r.value : null);
-  [
-    profile.value,
-    qol.value,
-    income.value,
-    affordability.value,
-    housing.value,
-    climate.value,
-    airQuality.value,
-    lifestyle.value,
-    politicalLean.value,
-    costOfLiving.value,
-  ] = vals;
+  try {
+    const results = await Promise.allSettled([
+      timed(fetchDetailedCityProfile(props.state, props.city)),
+      timed(fetchDetailedQualityOfLife(props.state, props.city)),
+      timed(fetchDetailedIncome(props.state, props.city)),
+      timed(fetchAffordability(props.state, props.city)),
+      timed(fetchDetailedHousing(props.state, props.city)),
+      timed(fetchClimate(props.state, props.city)),
+      timed(fetchAirQuality(props.state, props.city)),
+      timed(fetchLifestyle(props.state, props.city)),
+      timed(fetchPoliticalLean(props.state, props.city)),
+      timed(fetchCostOfLiving(props.state, props.city)),
+    ]);
 
-  loading.value = false;
+    const vals = results.map(r => r.status === 'fulfilled' ? r.value : null);
+    [
+      profile.value,
+      qol.value,
+      income.value,
+      affordability.value,
+      housing.value,
+      climate.value,
+      airQuality.value,
+      lifestyle.value,
+      politicalLean.value,
+      costOfLiving.value,
+    ] = vals;
+  } finally {
+    loading.value = false;
+  }
 }
 
 watch(() => [props.city, props.state], load, { immediate: true });
 
 const result = computed(() => {
+  // Always read both so Vue tracks them as reactive deps (avoids race with auth/prefs loading)
+  const currentUser = user.value;
+  const prefs = preferences.value;
   if (!income.value && !affordability.value && !profile.value && !qol.value) return null;
-  const prefs = user.value && prefsLoaded.value ? preferences.value : null;
   return computeAtlasScore({
     income:         income.value,
     affordability:  affordability.value,
@@ -95,10 +109,12 @@ const result = computed(() => {
     lifestyle:      lifestyle.value,
     politicalLean:  politicalLean.value,
     housing:        housing.value,
-  }, prefs);
+  }, currentUser ? prefs : null);
 });
 
 const tier = computed(() => result.value ? scoreTier(result.value.score) : null);
+const isPlaceLevelPoliticalLean = computed(() => politicalLean.value?.source?.geographyLevel === 'place');
+const politicalTier = computed(() => politicalDimTier(politicalLean.value, preferences.value.political_lean_preference));
 
 function dimTier(value: number | null | undefined): 'good' | 'average' | 'below' | null {
   if (value == null) return null;
@@ -115,16 +131,6 @@ function dimTierLabel(value: number | null | undefined): string {
   return '—';
 }
 
-const climatePrefLabel = computed(() => {
-  const pref = preferences.value?.climate_preference;
-  const map: Record<string, string> = {
-    warm: 'warm climate',
-    mild: 'mild climate',
-    four_seasons: 'four seasons',
-    cool: 'cool climate',
-  };
-  return pref && pref !== 'any' ? map[pref] : null;
-});
 
 const narrative = computed(() => {
   if (!result.value) return null;
@@ -180,31 +186,65 @@ const narrative = computed(() => {
           <span class="atlas-card__score-tier">{{ tier?.label }}</span>
         </div>
         <p v-if="narrative" class="atlas-card__narrative">{{ narrative }}</p>
-        <p v-if="result.isPersonalized && climatePrefLabel" class="atlas-card__climate-hint">
-          <span class="mdi mdi-weather-partly-cloudy"></span> Tuned for {{ climatePrefLabel }}
-        </p>
       </div>
 
-      <!-- Right: bars -->
-      <div class="atlas-card__bars">
-        <div v-for="dim in DIMS" :key="dim.key" class="data-card__bar-row atlas-card__bar-row">
-          <span class="atlas-card__dim-label">
-            {{ dim.label }}
+      <!-- Right: city cubes -->
+      <div class="atlas-card__cubes">
+        <div
+          v-for="dim in DIMS"
+          :key="dim.key"
+          class="atlas-card__cube"
+          :class="result.isPersonalized ? `atlas-card__cube--${dimTier(result.breakdown[dim.key])}` : ''"
+        >
+          <div class="atlas-card__cube-header">
+            <span :class="`mdi ${dim.icon} atlas-card__cube-icon`"></span>
+            <span
+              v-if="result.isPersonalized"
+              class="atlas-card__cube-dot"
+              :class="`atlas-card__cube-dot--${dimTier(result.breakdown[dim.key])}`"
+            ></span>
+          </div>
+          <div class="atlas-card__cube-category">{{ dim.label }}</div>
+          <div class="atlas-card__cube-char">{{ result.cityChars[dim.charKey] ?? '—' }}</div>
+          <div v-if="result.isPersonalized && dim.prefKey" class="atlas-card__cube-pref">
+            You: {{ PREF_LABELS[(preferences as any)[dim.prefKey!]] ?? '—' }}
+          </div>
+        </div>
+        <!-- Political lean cube: county-level data (the common case) is forced to 'below'
+             (amber/caution) regardless of match score, since a county aggregate is a poor
+             proxy for a specific city. Where a real place-level override exists (see
+             political-lean.service.ts PLACE_OVERRIDE_SOURCES), it uses politicalTier — a
+             categorical Swing/Lean/[Party]/Strong-aware tier (see politicalDimTier in
+             atlasScore.ts) so a city already labeled "Strong [opposite party]" always reads
+             as a clear 'poor' (red) mismatch, not a middling one. -->
+        <div
+          v-if="result.isPersonalized && preferences.political_lean_preference !== 'not_a_factor'"
+          class="atlas-card__cube"
+          :class="isPlaceLevelPoliticalLean ? `atlas-card__cube--${politicalTier}` : 'atlas-card__cube--below'"
+        >
+          <div class="atlas-card__cube-header">
+            <span class="mdi mdi-vote-outline atlas-card__cube-icon"></span>
+            <span
+              class="atlas-card__cube-dot"
+              :class="isPlaceLevelPoliticalLean ? `atlas-card__cube-dot--${politicalTier}` : 'atlas-card__cube-dot--below'"
+            ></span>
+          </div>
+          <div class="atlas-card__cube-category">
+            {{ isPlaceLevelPoliticalLean ? 'Political Lean' : 'County Political Lean' }}
             <span class="atlas-card__info-wrap">
               <span class="mdi mdi-information-outline atlas-card__info-icon"></span>
-              <span class="atlas-card__tooltip">{{ dim.tooltip }}</span>
+              <span class="atlas-card__tooltip">
+                <template v-if="isPlaceLevelPoliticalLean">
+                  Based on {{ politicalLean?.city ?? 'this city' }}'s own {{ politicalLean?.year }} precinct-level election results.
+                </template>
+                <template v-else>
+                  Based on {{ politicalLean?.countyName ?? 'the surrounding county' }}'s {{ politicalLean?.year }} presidential results, not this specific city — no city-by-city political data is available.
+                </template>
+              </span>
             </span>
-          </span>
-          <div class="data-card__bar">
-            <div
-              class="data-card__bar-fill"
-              :class="`atlas-card__fill--${dimTier(result.breakdown[dim.key])}`"
-              :style="{ width: result.breakdown[dim.key] != null ? `${result.breakdown[dim.key]}%` : '0%' }"
-            ></div>
           </div>
-          <span class="atlas-card__dim-value" :class="`atlas-card__dim-value--${dimTier(result.breakdown[dim.key])}`">
-            {{ result.breakdown[dim.key] != null ? Math.round(result.breakdown[dim.key]!) : '—' }}
-          </span>
+          <div class="atlas-card__cube-char">{{ result.cityChars.politicalLean ?? '—' }}</div>
+          <div class="atlas-card__cube-pref">You: {{ PREF_LABELS[preferences.political_lean_preference] ?? '—' }}</div>
         </div>
       </div>
     </div>
@@ -216,13 +256,11 @@ const narrative = computed(() => {
         <div class="skeleton-line" style="width:120px;height:12px;border-radius:4px;margin-bottom:6px"></div>
         <div class="skeleton-line" style="width:90px;height:12px;border-radius:4px"></div>
       </div>
-      <div class="atlas-card__bars">
-        <div v-for="i in 7" :key="i" class="data-card__bar-row atlas-card__bar-row">
-          <span class="atlas-card__dim-label skeleton-line" style="width:80px;height:12px;border-radius:3px"></span>
-          <div class="data-card__bar data-card__bar--placeholder">
-            <div class="data-card__bar-fill data-card__bar-fill--placeholder" :style="{ width: `${30 + i * 8}%` }"></div>
-          </div>
-          <span class="skeleton-line" style="width:48px;height:12px;border-radius:3px"></span>
+      <div class="atlas-card__cubes">
+        <div v-for="i in 8" :key="i" class="atlas-card__cube">
+          <div class="skeleton-line" style="width:22px;height:22px;border-radius:5px;margin-bottom:6px"></div>
+          <div class="skeleton-line" style="width:55px;height:9px;border-radius:3px;margin-bottom:5px"></div>
+          <div class="skeleton-line" style="width:90px;height:12px;border-radius:3px"></div>
         </div>
       </div>
     </div>
@@ -328,63 +366,88 @@ const narrative = computed(() => {
   max-width: 160px;
 }
 
-.atlas-card__climate-hint {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  font-style: italic;
+
+/* Right: city cubes */
+.atlas-card__cubes {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  align-content: start;
+  padding: 4px 0;
 }
 
-/* Right: bars */
-.atlas-card__bars {
+.atlas-card__cube {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin: 0 20px;
+  padding: 11px 12px 10px;
+  border-radius: 12px;
+  background: var(--bg-card-inner);
+  border: 1px solid var(--border-card);
+  overflow: hidden;
+  transition: border-color 0.15s;
 }
 
-.atlas-card__bar-row {
-  align-items: center;
-  margin: 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--border-color) 40%, transparent);
-}
+.atlas-card__cube--good    { border-color: color-mix(in srgb, var(--positive) 35%, var(--border-card)); }
+.atlas-card__cube--average { border-color: color-mix(in srgb, var(--accent) 35%, var(--border-card)); }
+.atlas-card__cube--below   { border-color: color-mix(in srgb, var(--caution) 30%, var(--border-card)); }
+.atlas-card__cube--poor    { border-color: color-mix(in srgb, var(--danger) 35%, var(--border-card)); }
 
-.atlas-card__bar-row:last-child {
-  border-bottom: none;
-}
-
-
-.atlas-card__dim-label {
-  font-size: 0.82rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-  white-space: nowrap;
-  min-width: 140px;
+.atlas-card__cube-header {
   display: flex;
-  align-items: center;
-  gap: 4px;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 6px;
 }
 
-/* Bar fill colors */
-.atlas-card__fill--good    { background: var(--positive); }
-.atlas-card__fill--average { background: var(--accent); }
-.atlas-card__fill--below   { background: var(--caution); }
+.atlas-card__cube-icon {
+  font-size: 1.05rem;
+  color: var(--accent);
+}
 
-/* Dim score number */
-.atlas-card__dim-value {
-  font-size: 0.92rem;
-  font-weight: 700;
-  white-space: nowrap;
-  min-width: 28px;
-  text-align: right;
+.atlas-card__cube-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
   flex-shrink: 0;
+  margin-top: 2px;
+  background: color-mix(in srgb, var(--border-color) 60%, transparent);
 }
 
-.atlas-card__dim-value--good    { color: var(--positive); }
-.atlas-card__dim-value--average { color: var(--accent); }
-.atlas-card__dim-value--below   { color: var(--caution); }
+.atlas-card__cube-dot--good    { background: var(--positive); }
+.atlas-card__cube-dot--average { background: var(--accent); }
+.atlas-card__cube-dot--below   { background: var(--caution); }
+.atlas-card__cube-dot--poor    { background: var(--danger); }
+
+.atlas-card__cube-category {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  margin-bottom: 3px;
+}
+
+.atlas-card__cube-char {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.atlas-card__cube-pref {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-top: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 700px) {
+  .atlas-card__cubes {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 
 /* Tooltip */
 .atlas-card__info-wrap {

@@ -1,0 +1,470 @@
+{
+  "addison|township": {
+    "placeName": "Addison Township",
+    "year": 2024,
+    "demPct": 29.1,
+    "repPct": 69.7,
+    "marginPct": -40.6,
+    "lean": "Strong Republican",
+    "totalVotes": 4314
+  },
+  "auburn hills|other": {
+    "placeName": "Auburn Hills",
+    "year": 2024,
+    "demPct": 56.2,
+    "repPct": 41.8,
+    "marginPct": 14.4,
+    "lean": "Democrat",
+    "totalVotes": 11568
+  },
+  "berkley|other": {
+    "placeName": "Berkley",
+    "year": 2024,
+    "demPct": 65.8,
+    "repPct": 32.5,
+    "marginPct": 33.3,
+    "lean": "Strong Democrat",
+    "totalVotes": 10632
+  },
+  "birmingham|other": {
+    "placeName": "Birmingham",
+    "year": 2024,
+    "demPct": 56.4,
+    "repPct": 42.2,
+    "marginPct": 14.2,
+    "lean": "Democrat",
+    "totalVotes": 14798
+  },
+  "bloomfield hills|other": {
+    "placeName": "Bloomfield Hills",
+    "year": 2024,
+    "demPct": 44.4,
+    "repPct": 52.1,
+    "marginPct": -7.7,
+    "lean": "Lean Republican",
+    "totalVotes": 3033
+  },
+  "bloomfield|township": {
+    "placeName": "Bloomfield Township",
+    "year": 2024,
+    "demPct": 51.9,
+    "repPct": 44.9,
+    "marginPct": 7.0,
+    "lean": "Lean Democrat",
+    "totalVotes": 30456
+  },
+  "brandon|township": {
+    "placeName": "Brandon Township",
+    "year": 2024,
+    "demPct": 33.4,
+    "repPct": 65.2,
+    "marginPct": -31.8,
+    "lean": "Strong Republican",
+    "totalVotes": 9927
+  },
+  "clarkston|other": {
+    "placeName": "Clarkston",
+    "year": 2024,
+    "demPct": 43.7,
+    "repPct": 54.3,
+    "marginPct": -10.6,
+    "lean": "Republican",
+    "totalVotes": 661
+  },
+  "clawson|other": {
+    "placeName": "Clawson",
+    "year": 2024,
+    "demPct": 57.6,
+    "repPct": 40.7,
+    "marginPct": 16.9,
+    "lean": "Democrat",
+    "totalVotes": 7619
+  },
+  "commerce|township": {
+    "placeName": "Commerce Township",
+    "year": 2024,
+    "demPct": 42.1,
+    "repPct": 56.4,
+    "marginPct": -14.3,
+    "lean": "Republican",
+    "totalVotes": 28357
+  },
+  "farmington|other": {
+    "placeName": "Farmington",
+    "year": 2024,
+    "demPct": 63.2,
+    "repPct": 35.1,
+    "marginPct": 28.1,
+    "lean": "Strong Democrat",
+    "totalVotes": 6111
+  },
+  "farmington hills|other": {
+    "placeName": "Farmington Hills",
+    "year": 2024,
+    "demPct": 62.4,
+    "repPct": 34.9,
+    "marginPct": 27.5,
+    "lean": "Strong Democrat",
+    "totalVotes": 48145
+  },
+  "fenton|other": {
+    "placeName": "Fenton",
+    "year": 2024,
+    "demPct": 42.9,
+    "repPct": 57.1,
+    "marginPct": -14.2,
+    "lean": "Republican",
+    "totalVotes": 14
+  },
+  "ferndale|other": {
+    "placeName": "Ferndale",
+    "year": 2024,
+    "demPct": 78.9,
+    "repPct": 19.1,
+    "marginPct": 59.8,
+    "lean": "Strong Democrat",
+    "totalVotes": 13125
+  },
+  "groveland|township": {
+    "placeName": "Groveland Township",
+    "year": 2024,
+    "demPct": 31.6,
+    "repPct": 66.3,
+    "marginPct": -34.7,
+    "lean": "Strong Republican",
+    "totalVotes": 3926
+  },
+  "hazel park|other": {
+    "placeName": "Hazel Park",
+    "year": 2024,
+    "demPct": 61.9,
+    "repPct": 35.6,
+    "marginPct": 26.3,
+    "lean": "Strong Democrat",
+    "totalVotes": 8114
+  },
+  "highland|township": {
+    "placeName": "Highland Township",
+    "year": 2024,
+    "demPct": 35.7,
+    "repPct": 62.8,
+    "marginPct": -27.1,
+    "lean": "Strong Republican",
+    "totalVotes": 13361
+  },
+  "holly|township": {
+    "placeName": "Holly Township",
+    "year": 2024,
+    "demPct": 37.3,
+    "repPct": 61.2,
+    "marginPct": -23.9,
+    "lean": "Strong Republican",
+    "totalVotes": 7467
+  },
+  "huntington woods|other": {
+    "placeName": "Huntington Woods",
+    "year": 2024,
+    "demPct": 80.4,
+    "repPct": 18.8,
+    "marginPct": 61.6,
+    "lean": "Strong Democrat",
+    "totalVotes": 4849
+  },
+  "independence|township": {
+    "placeName": "Independence Township",
+    "year": 2024,
+    "demPct": 40.2,
+    "repPct": 58.5,
+    "marginPct": -18.3,
+    "lean": "Republican",
+    "totalVotes": 24542
+  },
+  "keego harbor|other": {
+    "placeName": "Keego Harbor",
+    "year": 2024,
+    "demPct": 48.6,
+    "repPct": 50.4,
+    "marginPct": -1.8,
+    "lean": "Swing",
+    "totalVotes": 1575
+  },
+  "lake angelus|other": {
+    "placeName": "Lake Angelus",
+    "year": 2024,
+    "demPct": 32.3,
+    "repPct": 63.0,
+    "marginPct": -30.7,
+    "lean": "Strong Republican",
+    "totalVotes": 257
+  },
+  "lathrup village|other": {
+    "placeName": "Lathrup Village",
+    "year": 2024,
+    "demPct": 84.4,
+    "repPct": 13.6,
+    "marginPct": 70.8,
+    "lean": "Strong Democrat",
+    "totalVotes": 3099
+  },
+  "lyon|township": {
+    "placeName": "Lyon Township",
+    "year": 2024,
+    "demPct": 42.2,
+    "repPct": 56.6,
+    "marginPct": -14.4,
+    "lean": "Republican",
+    "totalVotes": 14894
+  },
+  "madison heights|other": {
+    "placeName": "Madison Heights",
+    "year": 2024,
+    "demPct": 54.6,
+    "repPct": 43.7,
+    "marginPct": 10.9,
+    "lean": "Democrat",
+    "totalVotes": 15249
+  },
+  "milford|township": {
+    "placeName": "Milford Township",
+    "year": 2024,
+    "demPct": 43.0,
+    "repPct": 55.7,
+    "marginPct": -12.7,
+    "lean": "Republican",
+    "totalVotes": 11839
+  },
+  "northville|other": {
+    "placeName": "Northville",
+    "year": 2024,
+    "demPct": 54.0,
+    "repPct": 44.4,
+    "marginPct": 9.6,
+    "lean": "Lean Democrat",
+    "totalVotes": 2223
+  },
+  "novi|other": {
+    "placeName": "Novi",
+    "year": 2024,
+    "demPct": 55.8,
+    "repPct": 42.1,
+    "marginPct": 13.7,
+    "lean": "Democrat",
+    "totalVotes": 35429
+  },
+  "novi|township": {
+    "placeName": "Novi Township",
+    "year": 2024,
+    "demPct": 54.0,
+    "repPct": 40.3,
+    "marginPct": 13.7,
+    "lean": "Democrat",
+    "totalVotes": 124
+  },
+  "oak park|other": {
+    "placeName": "Oak Park",
+    "year": 2024,
+    "demPct": 77.6,
+    "repPct": 20.9,
+    "marginPct": 56.7,
+    "lean": "Strong Democrat",
+    "totalVotes": 17782
+  },
+  "oakland|township": {
+    "placeName": "Oakland Township",
+    "year": 2024,
+    "demPct": 39.8,
+    "repPct": 58.7,
+    "marginPct": -18.9,
+    "lean": "Republican",
+    "totalVotes": 13516
+  },
+  "orchard lake|other": {
+    "placeName": "Orchard Lake",
+    "year": 2024,
+    "demPct": 38.6,
+    "repPct": 59.7,
+    "marginPct": -21.1,
+    "lean": "Strong Republican",
+    "totalVotes": 1659
+  },
+  "orion|township": {
+    "placeName": "Orion Township",
+    "year": 2024,
+    "demPct": 43.8,
+    "repPct": 54.8,
+    "marginPct": -11.0,
+    "lean": "Republican",
+    "totalVotes": 24403
+  },
+  "oxford|township": {
+    "placeName": "Oxford Township",
+    "year": 2024,
+    "demPct": 38.4,
+    "repPct": 60.0,
+    "marginPct": -21.6,
+    "lean": "Strong Republican",
+    "totalVotes": 14353
+  },
+  "pleasant ridge|other": {
+    "placeName": "Pleasant Ridge",
+    "year": 2024,
+    "demPct": 79.9,
+    "repPct": 18.7,
+    "marginPct": 61.2,
+    "lean": "Strong Democrat",
+    "totalVotes": 2071
+  },
+  "pontiac|other": {
+    "placeName": "Pontiac",
+    "year": 2024,
+    "demPct": 77.2,
+    "repPct": 21.1,
+    "marginPct": 56.1,
+    "lean": "Strong Democrat",
+    "totalVotes": 21959
+  },
+  "rochester|other": {
+    "placeName": "Rochester",
+    "year": 2024,
+    "demPct": 48.2,
+    "repPct": 50.2,
+    "marginPct": -2.0,
+    "lean": "Swing",
+    "totalVotes": 8345
+  },
+  "rochester hills|other": {
+    "placeName": "Rochester Hills",
+    "year": 2024,
+    "demPct": 48.9,
+    "repPct": 48.8,
+    "marginPct": 0.1,
+    "lean": "Swing",
+    "totalVotes": 45635
+  },
+  "rose|township": {
+    "placeName": "Rose Township",
+    "year": 2024,
+    "demPct": 32.9,
+    "repPct": 65.6,
+    "marginPct": -32.7,
+    "lean": "Strong Republican",
+    "totalVotes": 4261
+  },
+  "royal oak|other": {
+    "placeName": "Royal Oak",
+    "year": 2024,
+    "demPct": 65.3,
+    "repPct": 33.0,
+    "marginPct": 32.3,
+    "lean": "Strong Democrat",
+    "totalVotes": 39400
+  },
+  "royal oak|township": {
+    "placeName": "Royal Oak Township",
+    "year": 2024,
+    "demPct": 93.4,
+    "repPct": 5.1,
+    "marginPct": 88.3,
+    "lean": "Strong Democrat",
+    "totalVotes": 1228
+  },
+  "south lyon|other": {
+    "placeName": "South Lyon",
+    "year": 2024,
+    "demPct": 47.4,
+    "repPct": 51.4,
+    "marginPct": -4.0,
+    "lean": "Swing",
+    "totalVotes": 7682
+  },
+  "southfield|other": {
+    "placeName": "Southfield",
+    "year": 2024,
+    "demPct": 84.3,
+    "repPct": 14.3,
+    "marginPct": 70.0,
+    "lean": "Strong Democrat",
+    "totalVotes": 44356
+  },
+  "southfield|township": {
+    "placeName": "Southfield Township",
+    "year": 2024,
+    "demPct": 61.5,
+    "repPct": 36.4,
+    "marginPct": 25.1,
+    "lean": "Strong Democrat",
+    "totalVotes": 10594
+  },
+  "springfield|township": {
+    "placeName": "Springfield Township",
+    "year": 2024,
+    "demPct": 36.0,
+    "repPct": 62.8,
+    "marginPct": -26.8,
+    "lean": "Strong Republican",
+    "totalVotes": 9744
+  },
+  "sylvan lake|other": {
+    "placeName": "Sylvan Lake",
+    "year": 2024,
+    "demPct": 50.2,
+    "repPct": 48.2,
+    "marginPct": 2.0,
+    "lean": "Swing",
+    "totalVotes": 1254
+  },
+  "troy|other": {
+    "placeName": "Troy",
+    "year": 2024,
+    "demPct": 52.0,
+    "repPct": 45.0,
+    "marginPct": 7.0,
+    "lean": "Lean Democrat",
+    "totalVotes": 48866
+  },
+  "walled lake|other": {
+    "placeName": "Walled Lake",
+    "year": 2024,
+    "demPct": 47.3,
+    "repPct": 51.3,
+    "marginPct": -4.0,
+    "lean": "Swing",
+    "totalVotes": 4183
+  },
+  "waterford|township": {
+    "placeName": "Waterford Township",
+    "year": 2024,
+    "demPct": 44.5,
+    "repPct": 54.1,
+    "marginPct": -9.6,
+    "lean": "Lean Republican",
+    "totalVotes": 42512
+  },
+  "west bloomfield|township": {
+    "placeName": "West Bloomfield Township",
+    "year": 2024,
+    "demPct": 54.2,
+    "repPct": 43.3,
+    "marginPct": 10.9,
+    "lean": "Democrat",
+    "totalVotes": 44098
+  },
+  "white lake|township": {
+    "placeName": "White Lake Township",
+    "year": 2024,
+    "demPct": 39.3,
+    "repPct": 59.4,
+    "marginPct": -20.1,
+    "lean": "Strong Republican",
+    "totalVotes": 20217
+  },
+  "wixom|other": {
+    "placeName": "Wixom",
+    "year": 2024,
+    "demPct": 50.7,
+    "repPct": 47.5,
+    "marginPct": 3.2,
+    "lean": "Swing",
+    "totalVotes": 8113
+  }
+}

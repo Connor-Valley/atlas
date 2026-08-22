@@ -4,10 +4,10 @@ import { useAuth } from './useAuth';
 
 export interface UserPreferences {
   // Quiz answers — drive both weights and sub-preference signals
-  climate_preference:      'warm' | 'mild' | 'four_seasons' | 'cool' | 'any';
+  climate_preference:      'warm' | 'hot_dry' | 'mild' | 'four_seasons' | 'cool' | 'any';
   affordability_preference: 'budget' | 'value' | 'flexible' | 'any';
   job_market_preference:   'high_earning' | 'stable' | 'growth' | 'remote' | 'any';
-  lifestyle_preference:    'urban' | 'suburban' | 'nature' | 'any';
+  lifestyle_preference:    'urban' | 'urban_edge' | 'suburban' | 'nature' | 'any';
   opportunity_preference:  'education' | 'growth' | 'diverse' | 'mobility' | 'any';
   air_quality_priority:    'high' | 'medium' | 'low';
   connectivity_preference: 'walkable' | 'balanced' | 'car' | 'airport' | 'any';
@@ -62,13 +62,13 @@ export function deriveWeightsFromQuiz(prefs: UserPreferences): UserPreferences {
     high_earning: 35, stable: 30, growth: 28, remote: 10, any: 20,
   };
   const CLIMATE: Record<string, number> = {
-    warm: 30, cool: 30, mild: 25, four_seasons: 25, any: 15,
+    warm: 30, hot_dry: 28, cool: 30, mild: 25, four_seasons: 25, any: 15,
   };
   const OPPORTUNITY: Record<string, number> = {
     education: 30, growth: 28, diverse: 26, mobility: 28, any: 15,
   };
   const LIFESTYLE: Record<string, number> = {
-    urban: 35, suburban: 10, nature: 15, any: 15,
+    urban: 35, urban_edge: 22, suburban: 10, nature: 15, any: 15,
   };
   const AIR_QUALITY: Record<string, number> = {
     high: 25, medium: 12, low: 4,
@@ -77,8 +77,8 @@ export function deriveWeightsFromQuiz(prefs: UserPreferences): UserPreferences {
     walkable: 30, balanced: 22, airport: 25, car: 8, any: 15,
   };
   const POLITICAL: Record<string, { enabled: boolean; value: number; weight: number }> = {
-    progressive:  { enabled: true,  value: -100, weight: 20 },
-    conservative: { enabled: true,  value: 100,  weight: 20 },
+    progressive:  { enabled: true,  value:  100, weight: 20 },
+    conservative: { enabled: true,  value: -100, weight: 20 },
     open:         { enabled: true,  value: 0,    weight: 5  },
     not_a_factor: { enabled: false, value: 0,    weight: 0  },
   };
@@ -99,18 +99,21 @@ export function deriveWeightsFromQuiz(prefs: UserPreferences): UserPreferences {
   };
 }
 
-const preferences = ref<UserPreferences>({ ...DEFAULT_PREFERENCES });
-const loaded = ref(false);
+const preferences    = ref<UserPreferences>({ ...DEFAULT_PREFERENCES });
+const loaded         = ref(false);
+const loadedForUser  = ref<string | null>(null); // tracks which user's prefs are currently loaded
 
 export function usePreferences() {
   const { user } = useAuth();
 
   async function fetchPreferences() {
     if (!user.value) {
-      preferences.value = { ...DEFAULT_PREFERENCES };
-      loaded.value = true;
+      preferences.value  = { ...DEFAULT_PREFERENCES };
+      loaded.value       = true;
+      loadedForUser.value = null;
       return;
     }
+    const userId = user.value.id;
     const { data, error } = await supabase
       .from('user_preferences')
       .select([
@@ -123,13 +126,14 @@ export function usePreferences() {
         'weight_safety', 'weight_connectivity',
         'political_preference_enabled', 'political_preference',
       ].join(', '))
-      .eq('user_id', user.value.id)
+      .eq('user_id', userId)
       .maybeSingle();
 
     if (!error && data) {
       preferences.value = { ...DEFAULT_PREFERENCES, ...data };
     }
-    loaded.value = true;
+    loaded.value        = true;
+    loadedForUser.value = userId;
   }
 
   async function savePreferences(updates: UserPreferences) {
@@ -147,5 +151,5 @@ export function usePreferences() {
     }
   }
 
-  return { preferences, loaded, fetchPreferences, savePreferences };
+  return { preferences, loaded, loadedForUser, fetchPreferences, savePreferences };
 }
