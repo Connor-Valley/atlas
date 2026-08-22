@@ -93,9 +93,9 @@ export async function getResolvedPlacesForState(
 export async function getListedPlacesForState(
   state: string,
   year: number,
-): Promise<Array<{ name: string; slug: string }>> {
+): Promise<Array<{ name: string; slug: string; population: number }>> {
   const listed = await getListedResolvedPlacesForState(state, year);
-  return listed.map(({ name, slug }) => ({ name, slug }));
+  return listed.map(({ name, slug, place }) => ({ name, slug, population: place.population }));
 }
 
 export async function resolvePlace(
@@ -104,8 +104,14 @@ export async function resolvePlace(
   year: number,
 ): Promise<ResolvedPlace> {
   const places = await getResolvedPlacesForState(state, year);
-  const direct = places.find((place) => place.slug === citySlug);
-  if (direct) return direct;
+  // Multiple same-named places across counties (e.g. three "Caledonia township"s
+  // in three different MI counties) can share this exact slug — rank the same
+  // way getListedPlacesForState does so we resolve to the same place it lists
+  // as canonical, not just whichever the Census API happened to return first.
+  const directMatches = places.filter((place) => place.slug === citySlug);
+  if (directMatches.length > 0) {
+    return [...directMatches].sort(comparePlaces)[0]!;
+  }
 
   const normalizedSlug = slugify(citySlug.replace(/-/g, " "));
   const aliasMatches = places.filter((place) => place.aliases.includes(normalizedSlug));

@@ -13,7 +13,7 @@ export async function getStates(): Promise<StateOption[]> {
     return response.json();
 }
 
-export async function getCitiesForState(stateCode: string): Promise<{ name: string; slug: string }[]> {
+export async function getCitiesForState(stateCode: string): Promise<{ name: string; slug: string; population: number }[]> {
     const response = await fetch(`${API_BASE}/states/${stateCode}/cities`);
     if (!response.ok) {
         throw new Error(`failed to fetch cities for state: ${stateCode}`);

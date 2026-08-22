@@ -8,11 +8,14 @@ import { useAuth } from '../composables/useAuth';
 import { useFavorites } from '../composables/useFavorites';
 import { useComparisons } from '../composables/useComparisons';
 import { useFriends } from '../composables/useFriends';
+import { useRecentSearches } from '../composables/useRecentSearches';
 import { PROFILE_VISIBILITY_OPTIONS, getProfileVisibilityMeta, type ProfileVisibility } from '../lib/profilePrivacy';
 
 const router = useRouter();
+const { recordRecentSearch } = useRecentSearches();
 
 function onHeaderSearch(payload: { city: string; state: string }) {
+  void recordRecentSearch(payload.city, payload.state);
   router.push(`/city/${payload.state}/${payload.city}`);
 }
 
@@ -296,7 +299,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="profile-page">
     <div class="container container--header-only">
-      <DashboardHeader page-label="Profile" @logo-click="router.push({ name: 'home' })" @search="onHeaderSearch" />
+      <DashboardHeader page-label="Profile" @logo-click="router.push({ name: 'search' })" @search="onHeaderSearch" />
     </div>
 
     <div class="profile-page__heading">
