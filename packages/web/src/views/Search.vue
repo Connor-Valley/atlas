@@ -75,11 +75,9 @@ onMounted(async () => {
 });
 
 const heroRef = ref<HTMLElement | null>(null);
-const browseStateCode = ref<string | undefined>(undefined);
 
 function browseByState(code: string) {
-  browseStateCode.value = code;
-  heroRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  router.push({ name: 'state-browse', params: { code: code.toUpperCase() } });
 }
 </script>
 
@@ -93,7 +91,7 @@ function browseByState(code: string) {
       <div ref="heroRef" class="search-page__heading">
         <span class="search-page__heading-icon"><span class="mdi mdi-magnify"></span></span>
         <div class="search-page__search">
-          <CitySearch :initial-state="browseStateCode" @search="onSearch" />
+          <CitySearch @search="onSearch" />
         </div>
         <button class="breadcrumb" @click="router.back()">
           <span class="breadcrumb__arr breadcrumb__arr--1 mdi mdi-arrow-left"></span>

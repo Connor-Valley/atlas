@@ -93,9 +93,9 @@ export async function getResolvedPlacesForState(
 export async function getListedPlacesForState(
   state: string,
   year: number,
-): Promise<Array<{ name: string; slug: string }>> {
+): Promise<Array<{ name: string; slug: string; population: number }>> {
   const listed = await getListedResolvedPlacesForState(state, year);
-  return listed.map(({ name, slug }) => ({ name, slug }));
+  return listed.map(({ name, slug, place }) => ({ name, slug, population: place.population }));
 }
 
 export async function resolvePlace(
