@@ -6,14 +6,17 @@ import { useAuth } from '../composables/useAuth';
 import { useFriends } from '../composables/useFriends';
 import { fetchCity } from '../api/cities';
 import DashboardHeader from '../components/DashboardHeader.vue';
+import { useRecentSearches } from '../composables/useRecentSearches';
 import { supabase } from '../lib/supabase';
 import { canViewerAccessProfileContent, getProfileVisibilityNotice, type ProfileVisibility } from '../lib/profilePrivacy';
 
 const props = defineProps<{ username?: string }>();
 
 const router = useRouter();
+const { recordRecentSearch } = useRecentSearches();
 
 function onHeaderSearch(payload: { city: string; state: string }) {
+  void recordRecentSearch(payload.city, payload.state);
   router.push(`/city/${payload.state}/${payload.city}`);
 }
 
@@ -223,7 +226,7 @@ function onMouseLeave(el: HTMLElement) {
   <div class="fav-page">
 
     <div class="container container--header-only">
-      <DashboardHeader page-label="Favorites" @logo-click="router.push({ name: 'home' })" @search="onHeaderSearch" />
+      <DashboardHeader page-label="Favorites" @logo-click="router.push({ name: 'search' })" @search="onHeaderSearch" />
     </div>
 
     <div class="fav-page__heading">

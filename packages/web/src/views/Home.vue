@@ -20,6 +20,7 @@ import AuthModal from "../components/AuthModal.vue";
 import DashboardHeader from "../components/DashboardHeader.vue";
 import ThemeToggle from "../components/ThemeToggle.vue";
 import { useAuth } from "../composables/useAuth";
+import { useRecentSearches } from "../composables/useRecentSearches";
 import AtlasScoreCard from "../components/AtlasScoreCard.vue";
 import { prefetchDetailedHousing } from "../api/housing";
 import { prefetchDetailedCityProfile } from "../api/cityProfile";
@@ -50,6 +51,7 @@ const props = defineProps<{
 
 const router = useRouter();
 const { user, displayName, signOut } = useAuth();
+const { recordRecentSearch } = useRecentSearches();
 const showAuthModal  = ref(false);
 const authModalMode  = ref<'login' | 'register'>('register');
 const userMenuOpen   = ref(false);
@@ -457,6 +459,8 @@ function onSearch(payload: { city: string; state: string }) {
   openedSections.lifestyle = false;
 
   router.push(`/city/${payload.state}/${payload.city}`);
+
+  void recordRecentSearch(payload.city, payload.state);
 
   if (shouldAnimateLandingTransition) {
     void animateLandingToDashboard();
@@ -1311,7 +1315,7 @@ async function closeExpandedSection() {
 
   <!-- After search: city data view -->
   <div v-if="showDashboard" ref="dashboardStage" class="container">
-    <DashboardHeader :city="city" :state="state" @logo-click="resetSearch" @search="onSearch">
+    <DashboardHeader :city="city" :state="state" @logo-click="router.push({ name: 'search' })" @search="onSearch">
       <template v-if="!cityNotFound && !sectionExpanded" #actions>
         <div ref="cityShareMenuRef" class="score-pills__share-wrap">
           <button

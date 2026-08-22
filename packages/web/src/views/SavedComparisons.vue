@@ -5,6 +5,7 @@ import DashboardHeader from '../components/DashboardHeader.vue';
 import { useAuth } from '../composables/useAuth';
 import { useFriends } from '../composables/useFriends';
 import { useComparisons, type SavedComparison } from '../composables/useComparisons';
+import { useRecentSearches } from '../composables/useRecentSearches';
 import { fetchCityPhoto } from '../lib/cityPhotos';
 import { fetchCity } from '../api/cities';
 import { supabase } from '../lib/supabase';
@@ -13,8 +14,10 @@ import { canViewerAccessProfileContent, getProfileVisibilityNotice, type Profile
 const props = defineProps<{ username?: string }>();
 
 const router = useRouter();
+const { recordRecentSearch } = useRecentSearches();
 
 function onHeaderSearch(payload: { city: string; state: string }) {
+  void recordRecentSearch(payload.city, payload.state);
   router.push(`/city/${payload.state}/${payload.city}`);
 }
 
@@ -162,7 +165,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="cmp-page">
     <div class="container container--header-only">
-      <DashboardHeader page-label="Saved Comparisons" @logo-click="router.push({ name: 'home' })" @search="onHeaderSearch" />
+      <DashboardHeader page-label="Saved Comparisons" @logo-click="router.push({ name: 'search' })" @search="onHeaderSearch" />
     </div>
 
     <div class="cmp-page__heading">

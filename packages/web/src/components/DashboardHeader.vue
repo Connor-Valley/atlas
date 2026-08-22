@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useAuth } from "../composables/useAuth";
 import ThemeToggle from "./ThemeToggle.vue";
 import AuthModal from "./AuthModal.vue";
@@ -17,8 +17,11 @@ defineEmits<{
   search: [payload: { city: string; state: string }];
 }>();
 
+const route = useRoute();
 const router = useRouter();
 const { user, displayName, signOut } = useAuth();
+
+const showSearch = computed(() => route.name !== "search");
 
 const userMenuOpen = ref(false);
 const userMenuRef = ref<HTMLElement | null>(null);
@@ -65,8 +68,10 @@ function openAuth(mode: "login" | "register") {
 <template>
   <header class="dashboard-hdr">
     <div class="dashboard-hdr__left">
+      <button class="dashboard-hdr__home-btn" @click="router.push({ name: 'home' })" aria-label="Go to landing page">
+        <span class="dashboard-hdr__home-slash">/</span>
+      </button>
       <div class="dashboard-hdr__logo-wrap" @click="$emit('logo-click')">
-        <img src="/favicon.svg" class="dashboard-hdr__favicon" alt="Atlas" />
         <span class="dashboard-hdr__logo">Atlas</span>
       </div>
       <template v-if="pageLabel || (cityDisplayName && state)">
@@ -75,7 +80,7 @@ function openAuth(mode: "login" | "register") {
       </template>
     </div>
 
-    <div class="dashboard-hdr__search" :class="{ 'dashboard-hdr__search--wide': !$slots.actions }">
+    <div v-if="showSearch" class="dashboard-hdr__search" :class="{ 'dashboard-hdr__search--wide': !$slots.actions }">
       <CitySearch
         compact
         :initial-city="city"
@@ -83,6 +88,7 @@ function openAuth(mode: "login" | "register") {
         @search="payload => $emit('search', payload)"
       />
     </div>
+    <div v-else class="dashboard-hdr__search-spacer"></div>
 
     <div class="dashboard-hdr__end">
     <div v-if="$slots.actions" class="dashboard-hdr__actions">
@@ -168,7 +174,7 @@ function openAuth(mode: "login" | "register") {
 .dashboard-hdr__left {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 2px;
   flex-shrink: 0;
 }
 
@@ -180,15 +186,41 @@ function openAuth(mode: "login" | "register") {
   flex-shrink: 0;
 }
 
-.dashboard-hdr__favicon {
-  width: 22px;
-  height: 22px;
-  opacity: 0.8;
-  filter: brightness(0) opacity(0.75);
+.dashboard-hdr__home-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 30px;
+  margin-right: -6px;
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: transform 0.15s ease;
 }
 
-html.dark .dashboard-hdr__favicon {
-  filter: brightness(1) opacity(0.75);
+.dashboard-hdr__home-btn:hover .dashboard-hdr__home-slash {
+  color: var(--accent-hover, var(--accent));
+  text-shadow: 0 0 20px color-mix(in srgb, var(--accent) 75%, transparent);
+  transform: translateY(-1px) scale(1.08);
+}
+
+.dashboard-hdr__home-btn:active .dashboard-hdr__home-slash {
+  transform: translateY(0) scale(0.94);
+}
+
+.dashboard-hdr__home-slash {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-weight: 900;
+  font-size: 1.7rem;
+  line-height: 1;
+  color: var(--accent);
+  -webkit-text-stroke: 1.6px var(--accent);
+  text-shadow: 0 0 14px color-mix(in srgb, var(--accent) 55%, transparent);
+  transform: translateY(-1px);
+  transition: color 0.18s ease, transform 0.15s ease, text-shadow 0.18s ease;
 }
 
 .dashboard-hdr__logo {
@@ -226,6 +258,10 @@ html.dark .dashboard-hdr__favicon {
   flex: 0 1 680px;
   min-width: 220px;
   margin-right: auto;
+}
+
+.dashboard-hdr__search-spacer {
+  flex: 1;
 }
 
 /* No action buttons on this page (e.g. Profile, Favorites) — the search bar

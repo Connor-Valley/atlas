@@ -1,5 +1,6 @@
 import {STATE_FIPS, SUPPORTED_STATES, SupportedState} from './states.types.js';
 import { getListedPlacesForState } from "../places/place-resolver.js";
+import { getCached } from "../common/cache.js";
 
 export function getStates() {
     return SUPPORTED_STATES.map(state => ({
@@ -68,7 +69,7 @@ function getStateName(code: string): string {
 export async function getCitiesForState(
     state: string,
     year: number = 2024
-): Promise<{ name: string; slug: string }[]> {
+): Promise<{ name: string; slug: string; population: number }[]> {
     const stateCode = state.toUpperCase() as SupportedState;
     const stateFips = STATE_FIPS[stateCode];
 
@@ -76,5 +77,5 @@ export async function getCitiesForState(
         throw new Error(`Unsupported state: ${stateCode}`);
     }
 
-    return getListedPlacesForState(stateCode, year);
+    return getCached(`state-cities:${year}:${stateCode}`, () => getListedPlacesForState(stateCode, year));
 }
