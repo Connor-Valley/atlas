@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { useAuth } from '../composables/useAuth';
-import { usePreferences, DEFAULT_PREFERENCES, type UserPreferences } from '../composables/usePreferences';
+import { usePreferences, DEFAULT_PREFERENCES, hasRealPreferences, type UserPreferences } from '../composables/usePreferences';
 
 const props = defineProps<{ flat?: boolean }>();
 const emit = defineEmits<{ (e: 'saved'): void }>();
@@ -171,7 +171,7 @@ watch(loaded, (isLoaded) => {
     const p = preferences.value;
     draft.value = { ...p };
     initialized.value = true;
-    const hasExisting = QUIZ_KEYS.some(k => p[k] !== DEFAULT_PREFERENCES[k]);
+    const hasExisting = hasRealPreferences(p);
     if (hasExisting) {
       touchedKeys.value = new Set(QUIZ_KEYS);
     }

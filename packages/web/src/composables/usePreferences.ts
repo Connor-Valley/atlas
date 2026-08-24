@@ -56,6 +56,24 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   political_preference: 0,
 };
 
+// The 8 actual quiz answer fields — everything else on UserPreferences is either derived
+// (weights) or legacy/compat, so it shouldn't count toward "has this user set anything."
+const QUIZ_ANSWER_KEYS: Array<keyof UserPreferences> = [
+  'climate_preference', 'affordability_preference', 'job_market_preference',
+  'lifestyle_preference', 'opportunity_preference', 'air_quality_priority',
+  'connectivity_preference', 'political_lean_preference',
+];
+
+// A preferences object that merely EXISTS (e.g. `{ ...DEFAULT_PREFERENCES }` after a reset, or
+// the fallback used before any row has loaded) isn't the same as a user having actually chosen
+// anything — every quiz answer being left at its default is indistinguishable from "no
+// preferences at all" and should be treated that way everywhere personalization is decided
+// (the Atlas Score card, the "Personalized" badge, etc.), not just on the profile quiz itself.
+export function hasRealPreferences(prefs: UserPreferences | null | undefined): boolean {
+  if (!prefs) return false;
+  return QUIZ_ANSWER_KEYS.some((k) => prefs[k] !== DEFAULT_PREFERENCES[k]);
+}
+
 /** Derive weights and political settings from quiz answers. */
 export function deriveWeightsFromQuiz(prefs: UserPreferences): UserPreferences {
   const AFFORDABILITY: Record<string, number> = {

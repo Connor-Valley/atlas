@@ -12,7 +12,7 @@ import { fetchLifestyle } from '../api/lifestyle';
 import { fetchPoliticalLean } from '../api/politicalLean';
 import { fetchCostOfLiving } from '../api/costOfLiving';
 import { useAuth } from '../composables/useAuth';
-import { usePreferences } from '../composables/usePreferences';
+import { usePreferences, hasRealPreferences } from '../composables/usePreferences';
 import { computeAtlasScore, scoreTier, politicalDimTier, evaluateOpportunityMatch } from '../lib/atlasScore';
 import { DIMS, PREF_LABELS } from '../lib/atlasScoreDims';
 
@@ -98,6 +98,11 @@ const result = computed(() => {
   const currentUser = user.value;
   const prefs = preferences.value;
   if (!income.value && !affordability.value && !profile.value && !qol.value) return null;
+  // A preferences object always exists once loaded (real saved data, or just the untouched
+  // DEFAULT_PREFERENCES fallback) — checking truthiness alone treated "logged in" the same as
+  // "personalized," so someone who reset every quiz answer (or never set any) still saw the
+  // full personalized UI (colored dots, "You: No preference" on every cube, "Personalized"
+  // badge) with nothing real behind it. Only pass prefs through when something was actually set.
   return computeAtlasScore({
     income:         income.value,
     affordability:  affordability.value,
@@ -109,7 +114,7 @@ const result = computed(() => {
     lifestyle:      lifestyle.value,
     politicalLean:  politicalLean.value,
     housing:        housing.value,
-  }, currentUser ? prefs : null);
+  }, currentUser && hasRealPreferences(prefs) ? prefs : null);
 });
 
 const tier = computed(() => result.value ? scoreTier(result.value.score) : null);
@@ -168,24 +173,33 @@ const narrative = computed(() => {
 </script>
 
 <template>
-  <div class="data-card atlas-card">
+  <!-- Unpersonalized: just the bar, full stop — no "Atlas Score" header, no card chrome around
+       it, since there's no base score worth framing right now (due for a rework). -->
+  <router-link
+    v-if="result && !result.isPersonalized"
+    to="/profile"
+    class="atlas-card__personalize-bar atlas-card__personalize-bar--standalone"
+  >
+    <span class="mdi mdi-tune-variant"></span>
+    <span class="atlas-card__personalize-bar-text">Personalize your experience — get a score tailored to you</span>
+    <span class="mdi mdi-arrow-right atlas-card__personalize-bar-arrow"></span>
+  </router-link>
+
+  <div v-else class="data-card atlas-card">
     <div class="data-card__header atlas-card__header">
       <div class="data-card__title">
         <span class="mdi mdi-map-marker-star-outline data-card__icon"></span>
         <span class="data-card__name">Atlas Score</span>
       </div>
-      <p v-if="result && !result.isPersonalized" class="atlas-card__prefs-nudge">
-        <router-link to="/profile" class="atlas-card__prefs-link">
-          <span class="mdi mdi-tune-variant"></span> Personalize
-        </router-link>
-      </p>
-      <p v-else-if="result" class="atlas-card__prefs-personalized">
+      <p v-if="result && result.isPersonalized" class="atlas-card__prefs-personalized">
         <span class="mdi mdi-check-circle-outline"></span> Personalized
       </p>
     </div>
 
-    <!-- Loaded state -->
-    <div v-if="result" class="atlas-card__body">
+    <!-- Loaded + personalized state — the raw/objective score (no preferences) isn't something
+         worth showing on its own right now (due for a rework), so an unpersonalized visit just
+         gets the bar above and nothing else here. -->
+    <div v-if="result && result.isPersonalized" class="atlas-card__body">
       <!-- Left: score number + tier + narrative -->
       <div class="atlas-card__left">
         <div class="atlas-card__score-wrap" :data-tier="tier?.tier">
@@ -295,20 +309,45 @@ const narrative = computed(() => {
   padding-bottom: 0;
 }
 
-.atlas-card__prefs-nudge {
-  font-size: 0.72rem;
-  color: var(--text-muted);
+.atlas-card__personalize-bar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.atlas-card__prefs-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--accent);
-  text-decoration: none;
-  font-weight: 600;
+.atlas-card__personalize-bar--standalone {
+  /* stands alone in place of the whole Atlas Score card now. The dashboard grid's normal gap
+     above and below reads as much bigger next to a thin bar than it does next to a full card
+     (and margins don't collapse between grid items), so pull it in on both sides rather than
+     leaving the same gap every other panel uses. */
+  margin: -20px 0 4px;
 }
-.atlas-card__prefs-link:hover { text-decoration: underline; }
+.atlas-card__personalize-bar:hover {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.atlas-card__personalize-bar-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atlas-card__personalize-bar-arrow {
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
 
 .atlas-card__prefs-personalized {
   font-size: 0.72rem;
