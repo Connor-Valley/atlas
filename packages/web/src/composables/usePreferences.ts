@@ -8,7 +8,10 @@ export interface UserPreferences {
   affordability_preference: 'budget' | 'value' | 'flexible' | 'any';
   job_market_preference:   'high_earning' | 'stable' | 'growth' | 'remote' | 'any';
   lifestyle_preference:    'urban' | 'urban_edge' | 'suburban' | 'nature' | 'any';
-  opportunity_preference:  'education' | 'growth' | 'diverse' | 'mobility' | 'any';
+  opportunity_preference:
+    | 'tech_media_pro' | 'corporate_finance' | 'manufacturing' | 'construction_trades'
+    | 'transportation_logistics' | 'education_healthcare' | 'government_services' | 'retail'
+    | 'hospitality_arts' | 'agriculture' | 'nonprofit' | 'any';
   air_quality_priority:    'high' | 'medium' | 'low';
   connectivity_preference: 'walkable' | 'balanced' | 'car' | 'airport' | 'any';
   political_lean_preference: 'progressive' | 'conservative' | 'open' | 'not_a_factor';
@@ -42,7 +45,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   weight_affordability:      20,
   weight_job_market:         20,
   weight_climate:            20,
-  weight_opportunity:        15,
+  weight_opportunity:        5,
   weight_lifestyle_vibrancy: 15,
   weight_air_quality:        10,
   weight_safety:             0,
@@ -64,8 +67,17 @@ export function deriveWeightsFromQuiz(prefs: UserPreferences): UserPreferences {
   const CLIMATE: Record<string, number> = {
     warm: 30, hot_dry: 28, cool: 30, mild: 25, four_seasons: 25, any: 15,
   };
+  // Modest, uniform weight for every real field — this is a soft "does the local industry
+  // match your field" signal, not a hard requirement, so it shouldn't swing the overall score
+  // as much as core dimensions do. Lowered from 18 after evaluateOpportunityMatch (atlasScore.ts)
+  // started scoring genuinely low ranks (7+) as real red-zone misses down to a floor of 20,
+  // instead of never going below a 70 "no bonus" floor — the score range this weight applies to
+  // got much wider (20–100 vs. 70–100), so the same weight was pulling harder on the overall
+  // score than it used to for the exact same "one field in a city with a dozen industries" case.
   const OPPORTUNITY: Record<string, number> = {
-    education: 30, growth: 28, diverse: 26, mobility: 28, any: 15,
+    tech_media_pro: 10, corporate_finance: 10, manufacturing: 10, construction_trades: 10,
+    transportation_logistics: 10, education_healthcare: 10, government_services: 10, retail: 10,
+    hospitality_arts: 10, agriculture: 10, nonprofit: 10, any: 5,
   };
   const LIFESTYLE: Record<string, number> = {
     urban: 35, urban_edge: 22, suburban: 10, nature: 15, any: 15,

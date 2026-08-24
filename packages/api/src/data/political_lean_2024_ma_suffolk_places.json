@@ -1,0 +1,11 @@
+{
+  "boston|other": {
+    "placeName": "Boston",
+    "year": 2024,
+    "demPct": 77.3,
+    "repPct": 19.9,
+    "marginPct": 57.4,
+    "lean": "Strong Democrat",
+    "totalVotes": 260859
+  }
+}

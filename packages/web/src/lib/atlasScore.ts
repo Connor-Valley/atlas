@@ -195,22 +195,22 @@ export function politicalDimTier(
 const MATCH_SCORES: Record<string, Record<string, Record<string, number>>> = {
   affordability: {
     budget: {
-      'Affordability is a must': 100,
-      'Reasonable is enough':    70,
-      'Higher cost of living':   35,
-      'Premium city':            15,
+      'Affordable': 100,
+      'Moderate':    70,
+      'Pricey':      35,
+      'Expensive':   15,
     },
     value: {
-      'Affordability is a must': 90,
-      'Reasonable is enough':    100,
-      'Higher cost of living':   60,
-      'Premium city':            30,
+      'Affordable': 90,
+      'Moderate':    100,
+      'Pricey':      60,
+      'Expensive':   30,
     },
     flexible: {
-      'Affordability is a must': 100,
-      'Reasonable is enough':    100,
-      'Higher cost of living':   100,
-      'Premium city':            100,
+      'Affordable': 100,
+      'Moderate':    100,
+      'Pricey':      100,
+      'Expensive':   100,
     },
   },
 
@@ -257,103 +257,10 @@ const MATCH_SCORES: Record<string, Record<string, Record<string, number>>> = {
     },
   },
 
-  // Opportunity: the area's actual dominant employment industry (see cityOpportunityChar /
-  // INDUSTRY_LABELS below), not educational attainment — a well-educated bedroom suburb with
-  // no local employer base isn't a "knowledge economy," it just has residents who commute
-  // elsewhere or work remotely. "Diverse economy" is a real, distinct outcome for places with
-  // no single dominant sector.
-  opportunity: {
-    education: {
-      'Tech & Professional Services':     100,
-      'Media & Telecom':                   85,
-      'Finance & Real Estate':             85,
-      'Corporate Headquarters':            75,
-      'Education & Healthcare':            80,
-      'Diverse economy':                   70,
-      'Government & Public Sector':        60,
-      'Manufacturing':                     45,
-      'Transportation & Logistics':        40,
-      'Wholesale & Distribution':          40,
-      'Local Services':                    40,
-      'Construction & Trades':             35,
-      'Administrative & Support Services': 30,
-      'Hospitality & Entertainment':       30,
-      'Retail':                            30,
-      'Agriculture & Natural Resources':   25,
-    },
-    growth: {
-      'Tech & Professional Services':     85,
-      'Media & Telecom':                  75,
-      'Education & Healthcare':           75,
-      'Finance & Real Estate':             70,
-      'Corporate Headquarters':            60,
-      'Diverse economy':                  65,
-      'Construction & Trades':             65,
-      'Transportation & Logistics':        60,
-      'Government & Public Sector':        55,
-      'Wholesale & Distribution':          55,
-      'Local Services':                    55,
-      'Administrative & Support Services': 45,
-      'Hospitality & Entertainment':       50,
-      'Retail':                            50,
-      'Manufacturing':                     50,
-      'Agriculture & Natural Resources':   40,
-    },
-    diverse: {
-      'Diverse economy':                  100,
-      'Tech & Professional Services':      55,
-      'Media & Telecom':                   55,
-      'Finance & Real Estate':             55,
-      'Education & Healthcare':            55,
-      'Government & Public Sector':        55,
-      'Corporate Headquarters':            55,
-      'Administrative & Support Services': 55,
-      'Manufacturing':                     55,
-      'Transportation & Logistics':        55,
-      'Wholesale & Distribution':          55,
-      'Local Services':                    55,
-      'Construction & Trades':             55,
-      'Hospitality & Entertainment':       55,
-      'Retail':                            55,
-      'Agriculture & Natural Resources':   55,
-    },
-    mobility: {
-      'Manufacturing':                    75,
-      'Construction & Trades':            75,
-      'Transportation & Logistics':       65,
-      'Diverse economy':                  65,
-      'Government & Public Sector':       65,
-      'Education & Healthcare':           60,
-      'Wholesale & Distribution':         60,
-      'Administrative & Support Services': 50,
-      'Agriculture & Natural Resources':  55,
-      'Local Services':                   55,
-      'Tech & Professional Services':     55,
-      'Corporate Headquarters':           55,
-      'Finance & Real Estate':            50,
-      'Media & Telecom':                  50,
-      'Retail':                           45,
-      'Hospitality & Entertainment':      45,
-    },
-    any: {
-      'Tech & Professional Services':     100,
-      'Media & Telecom':                  100,
-      'Finance & Real Estate':            100,
-      'Corporate Headquarters':           100,
-      'Administrative & Support Services': 100,
-      'Education & Healthcare':           100,
-      'Diverse economy':                  100,
-      'Government & Public Sector':       100,
-      'Manufacturing':                    100,
-      'Transportation & Logistics':       100,
-      'Wholesale & Distribution':         100,
-      'Local Services':                   100,
-      'Construction & Trades':            100,
-      'Hospitality & Entertainment':      100,
-      'Retail':                           100,
-      'Agriculture & Natural Resources':  100,
-    },
-  },
+  // Opportunity is scored separately by opportunityMatchScore() below, not via this generic
+  // lookup table — it's a bonus-only match against the user's own field (opportunity_preference)
+  // vs. the city's actual dominant industry (cityOpportunityChar / INDUSTRY_LABELS), where a
+  // mismatch never scores below a neutral baseline. See OPPORTUNITY_FIELD_MATCHES.
 
   climate: {
     warm: {
@@ -482,16 +389,16 @@ function lookupMatchScore(
 function cityAffordabilityChar(costOfLiving: any, affordability: any): string | null {
   const rpp = costOfLiving?.rppIndex;
   if (rpp != null) {
-    if (rpp < 95)  return 'Affordability is a must';
-    if (rpp < 108) return 'Reasonable is enough';
-    if (rpp < 125) return 'Higher cost of living';
-    return 'Premium city';
+    if (rpp < 95)  return 'Affordable';
+    if (rpp < 108) return 'Moderate';
+    if (rpp < 125) return 'Pricey';
+    return 'Expensive';
   }
   const rti = affordability?.rentToIncomeRatio;
   if (rti == null) return null;
-  if (rti < 0.25) return 'Affordability is a must';
-  if (rti < 0.35) return 'Reasonable is enough';
-  return 'Premium city';
+  if (rti < 0.25) return 'Affordable';
+  if (rti < 0.35) return 'Moderate';
+  return 'Expensive';
 }
 
 function cityClimateChar(climate: any): string | null {
@@ -559,6 +466,115 @@ function cityOpportunityChar(income: any): string | null {
   return INDUSTRY_LABELS[top.name] ?? top.name;
 }
 
+// Maps each "what industry are you in?" quiz answer to the INDUSTRY_LABELS value(s) that count
+// as a match. Deliberately does NOT cover every possible city industry per preference — anything
+// not listed here just doesn't get the match bonus, it isn't penalized (see opportunityMatchScore).
+const OPPORTUNITY_FIELD_MATCHES: Record<string, string[]> = {
+  tech_media_pro:           ['Tech & Professional Services', 'Media & Telecom'],
+  corporate_finance:        ['Corporate Headquarters', 'Finance & Real Estate'],
+  manufacturing:            ['Manufacturing'],
+  construction_trades:      ['Construction & Trades'],
+  transportation_logistics: ['Transportation & Logistics', 'Wholesale & Distribution'],
+  education_healthcare:     ['Education & Healthcare'],
+  // Merged from separate "Government" and "Administrative & Local Services" options — they
+  // were confusingly hard to tell apart (both sound bureaucratic/office-y) even though they're
+  // different NAICS sectors under the hood; combining them into one recognizable option freed
+  // a slot for a dedicated Nonprofit option below.
+  government_services:      ['Government & Public Sector', 'Administrative & Support Services', 'Local Services'],
+  retail:                   ['Retail'],
+  hospitality_arts:         ['Hospitality & Entertainment'],
+  agriculture:              ['Agriculture & Natural Resources'],
+  // Census's ACS industry table has no dedicated nonprofit code — religious orgs, foundations,
+  // and advocacy/civic groups (NAICS 813) are bundled into the same flat "Other services" leaf
+  // as repair shops and personal-care businesses, with no further breakdown available. This is
+  // the closest real bucket to "nonprofit," so it's what's used, but it's shared with those other
+  // businesses too — not a distinct signal the way most other options are.
+  nonprofit:                ['Local Services'],
+};
+
+// Whether jobs are actually available somewhere is Job Market's job (regional job availability);
+// this dimension is about whether the city's own local economy actually includes your field, and
+// how prominently. Ranks 1–3 are a real, credible match (green). Ranks 4–6 still count for
+// something but visibly less (amber). Rank 7 or lower means the field barely registers here at
+// all, and that's shown as a genuine miss (red) — not just "no bonus" the way earlier versions of
+// this dimension treated it. The rank and city's-#1-for-context are always surfaced regardless of
+// color, so the number backing the tier is never hidden.
+const OPPORTUNITY_NEUTRAL = 70; // only used when the field can't be located in the data at all (a data gap, not a real "barely exists" signal)
+
+function opportunityScoreForRank(rank: number, share: number): number {
+  if (rank === 1) return 100;
+  if (rank === 2) return share >= 0.15 ? 90 : 82;
+  if (rank === 3) return share >= 0.12 ? 78 : 72;
+  if (rank <= 6) return Math.max(55, 65 - (rank - 4) * 5); // 4→65, 5→60, 6→55
+  return Math.max(20, 50 - (rank - 7) * 6); // 7→50, 8→44, 9→38, ...
+}
+
+function opportunityTierForRank(rank: number): 'good' | 'average' | 'poor' {
+  if (rank <= 3) return 'good';
+  if (rank <= 6) return 'average';
+  return 'poor';
+}
+
+export type OpportunityMatchDetail = {
+  score: number;
+  tier: 'good' | 'average' | 'poor';
+  // The industry that actually earned the score, plus its rank among this city's sectors — null
+  // for both when the field couldn't be located in the data at all. The tile's headline value
+  // should show matchedLabel instead of the city's raw #1 industry whenever this is set, since a
+  // match via a lower rank would otherwise look inexplicable next to an unrelated headline.
+  matchedLabel: string | null;
+  matchedRank: number | null;
+  matchedSharePct: number | null;
+  // The city's own #1 industry, shown only when matchedRank is outside the top 3 — otherwise the
+  // headline itself (buried at #5, say) gives no sense of what actually dominates locally.
+  cityTopLabel: string | null;
+  cityTopSharePct: number | null;
+};
+
+const NO_OPPORTUNITY_MATCH = {
+  matchedLabel: null, matchedRank: null, matchedSharePct: null, cityTopLabel: null, cityTopSharePct: null,
+} as const;
+
+// Looks past just the single dominant sector — finds wherever the user's field actually ranks
+// among this city's sectors, however far down that is, rather than giving up after the top 3.
+export function evaluateOpportunityMatch(preference: string, income: any): OpportunityMatchDetail | null {
+  const sectors = income?.industryBreakdown as Array<{ name: string; share: number }> | undefined;
+  if (!sectors?.length) return null;
+  if (preference === 'any') return { score: 100, tier: 'good', ...NO_OPPORTUNITY_MATCH };
+
+  const matches = OPPORTUNITY_FIELD_MATCHES[preference];
+  if (!matches) return { score: 100, tier: 'good', ...NO_OPPORTUNITY_MATCH }; // unrecognized value — don't penalize
+
+  const label = (sectorName: string) => INDUSTRY_LABELS[sectorName] ?? sectorName;
+  const isMatch = (sectorName: string) => matches.includes(label(sectorName));
+  const ranked = [...sectors].sort((a, b) => b.share - a.share);
+  const top = ranked[0];
+  const cityTopLabel = top ? label(top.name) : null;
+  const cityTopSharePct = top ? Math.round(top.share * 100) : null;
+
+  const idx = ranked.findIndex((s) => isMatch(s.name));
+  if (idx === -1) {
+    return { score: OPPORTUNITY_NEUTRAL, tier: 'average', ...NO_OPPORTUNITY_MATCH, cityTopLabel, cityTopSharePct };
+  }
+
+  const rank = idx + 1;
+  const matchedSector = ranked[idx]!;
+  const outsideTop3 = rank > 3;
+  return {
+    score: opportunityScoreForRank(rank, matchedSector.share),
+    tier: opportunityTierForRank(rank),
+    matchedLabel: label(matchedSector.name),
+    matchedRank: rank,
+    matchedSharePct: Math.round(matchedSector.share * 100),
+    cityTopLabel: outsideTop3 ? cityTopLabel : null,
+    cityTopSharePct: outsideTop3 ? cityTopSharePct : null,
+  };
+}
+
+function opportunityMatchScore(preference: string, income: any): number | null {
+  return evaluateOpportunityMatch(preference, income)?.score ?? null;
+}
+
 function cityLifestyleChar(lifestyle: any, profile: any): string | null {
   const restaurants = lifestyle?.restaurants?.perTenThousandResidents;
   if (restaurants == null) return null;
@@ -569,8 +585,14 @@ function cityLifestyleChar(lifestyle: any, profile: any): string | null {
   // Oakland/SF) inherits that county's high density without being a real urban center itself.
   // Require an actual city-level urban signal — not just density-per-sq-mile, which favors
   // compact suburbs over sprawling major metros — before crediting county-level density.
+  // 150,000 was originally too low a bar for this: it's meant to catch genuinely major sprawling
+  // metros like Tampa (384k), Phoenix (1.6M), Houston (2.3M), but an ordinary six-figure suburb
+  // (Hayward, CA — 158,801 people, density only 3,466/sq mi, Census-classified as "City" not
+  // "Urban Core") cleared it too and got mislabeled the same way San Leandro originally did.
+  // Raised well below Tampa's population so it still catches genuine major metros without
+  // sweeping in mid-size suburbs that just happen to cross six figures.
   const population = profile?.population ?? 0;
-  const isMajorCity = population > 150_000 || profile?.urbanCharacter === 'Urban Core';
+  const isMajorCity = population > 300_000 || profile?.urbanCharacter === 'Urban Core';
   // Dense walkable cores (NYC, SF, Chicago) — high transit + high restaurant density
   if (restaurants > 35 && transit > 0.12) return 'City energy';
   // Large car-dependent metros (Tampa, Phoenix, Houston) — high restaurant density, but only
@@ -630,7 +652,7 @@ export function computeAtlasScore(inputs: ScoreInputs, prefs?: UserPreferences |
       affordability:     lookupMatchScore('affordability', p.affordability_preference, cityChars.affordability),
       jobMarket:         lookupMatchScore('jobMarket',     p.job_market_preference,    cityChars.jobMarket),
       climate:           lookupMatchScore('climate',       p.climate_preference,       cityChars.climate),
-      opportunity:       lookupMatchScore('opportunity',   p.opportunity_preference,   cityChars.opportunity),
+      opportunity:       opportunityMatchScore(p.opportunity_preference, inputs.income),
       lifestyleVibrancy: lookupMatchScore('lifestyle',     p.lifestyle_preference,     cityChars.lifestyleVibrancy),
       airQuality:        lookupMatchScore('airQuality',    p.air_quality_priority,     cityChars.airQuality),
       safety:            null,

@@ -1,0 +1,65 @@
+{
+  "american canyon|other": {
+    "placeName": "American Canyon",
+    "year": 2024,
+    "demPct": 64.8,
+    "repPct": 32.3,
+    "marginPct": 32.5,
+    "lean": "Strong Democrat",
+    "totalVotes": 9708
+  },
+  "angwin|other": {
+    "placeName": "Angwin",
+    "year": 2024,
+    "demPct": 59.2,
+    "repPct": 35.5,
+    "marginPct": 23.7,
+    "lean": "Strong Democrat",
+    "totalVotes": 1269
+  },
+  "calistoga|other": {
+    "placeName": "Calistoga",
+    "year": 2024,
+    "demPct": 70.8,
+    "repPct": 26.2,
+    "marginPct": 44.6,
+    "lean": "Strong Democrat",
+    "totalVotes": 2664
+  },
+  "napa|other": {
+    "placeName": "Napa",
+    "year": 2024,
+    "demPct": 65.7,
+    "repPct": 31.3,
+    "marginPct": 34.4,
+    "lean": "Strong Democrat",
+    "totalVotes": 45650
+  },
+  "pope valley|other": {
+    "placeName": "Pope Valley",
+    "year": 2024,
+    "demPct": 45.3,
+    "repPct": 50.2,
+    "marginPct": -4.9,
+    "lean": "Swing",
+    "totalVotes": 252
+  },
+  "saint helena|other": {
+    "placeName": "Saint Helena",
+    "year": 2024,
+    "demPct": 70.7,
+    "repPct": 26.4,
+    "marginPct": 44.3,
+    "lean": "Strong Democrat",
+    "totalVotes": 4056
+  },
+  "yountville|other": {
+    "placeName": "Yountville",
+    "year": 2024,
+    "demPct": 70.9,
+    "repPct": 27.1,
+    "marginPct": 43.8,
+    "lean": "Strong Democrat",
+    "totalVotes": 1441
+  }
+}

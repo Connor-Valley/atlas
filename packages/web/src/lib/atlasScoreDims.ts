@@ -33,7 +33,12 @@ export const PREF_LABELS: Record<string, string> = {
   urban: 'City energy', urban_edge: 'Urban edge',
   suburban: 'Suburban', nature: 'Outdoors & nature',
   // opportunity
-  education: 'Education hub', diverse: 'Diverse economy', mobility: 'Economic mobility',
+  tech_media_pro: 'Tech & Professional Services', corporate_finance: 'Corporate & Finance',
+  manufacturing: 'Manufacturing & Industrial', construction_trades: 'Construction & Trades',
+  transportation_logistics: 'Transportation & Logistics', education_healthcare: 'Education & Healthcare',
+  government_services: 'Government & Public Services', retail: 'Retail & Consumer Services',
+  hospitality_arts: 'Hospitality, Arts & Entertainment', agriculture: 'Agriculture & Natural Resources',
+  nonprofit: 'Nonprofit & Community Organizations',
   // air quality
   high: 'Clean air priority', medium: 'Balanced', low: 'Not a priority',
   // connectivity

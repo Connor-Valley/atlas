@@ -1,0 +1,317 @@
+{
+  "alamo|other": {
+    "placeName": "Alamo",
+    "year": 2024,
+    "demPct": 57.3,
+    "repPct": 39.7,
+    "marginPct": 17.6,
+    "lean": "Democrat",
+    "totalVotes": 9801
+  },
+  "antioch|other": {
+    "placeName": "Antioch",
+    "year": 2024,
+    "demPct": 64.4,
+    "repPct": 32.3,
+    "marginPct": 32.1,
+    "lean": "Strong Democrat",
+    "totalVotes": 43327
+  },
+  "bay point|other": {
+    "placeName": "Bay Point",
+    "year": 2024,
+    "demPct": 67.1,
+    "repPct": 30.0,
+    "marginPct": 37.1,
+    "lean": "Strong Democrat",
+    "totalVotes": 5734
+  },
+  "bethel island|other": {
+    "placeName": "Bethel Island",
+    "year": 2024,
+    "demPct": 45.8,
+    "repPct": 51.9,
+    "marginPct": -6.1,
+    "lean": "Lean Republican",
+    "totalVotes": 1020
+  },
+  "brentwood|other": {
+    "placeName": "Brentwood",
+    "year": 2024,
+    "demPct": 53.9,
+    "repPct": 43.1,
+    "marginPct": 10.8,
+    "lean": "Democrat",
+    "totalVotes": 33784
+  },
+  "byron|other": {
+    "placeName": "Byron",
+    "year": 2024,
+    "demPct": 38.4,
+    "repPct": 58.6,
+    "marginPct": -20.2,
+    "lean": "Strong Republican",
+    "totalVotes": 431
+  },
+  "canyon|other": {
+    "placeName": "Canyon",
+    "year": 2024,
+    "demPct": 87.6,
+    "repPct": 7.0,
+    "marginPct": 80.6,
+    "lean": "Strong Democrat",
+    "totalVotes": 129
+  },
+  "clayton|other": {
+    "placeName": "Clayton",
+    "year": 2024,
+    "demPct": 56.2,
+    "repPct": 40.7,
+    "marginPct": 15.5,
+    "lean": "Democrat",
+    "totalVotes": 7845
+  },
+  "concord|other": {
+    "placeName": "Concord",
+    "year": 2024,
+    "demPct": 65.9,
+    "repPct": 31.0,
+    "marginPct": 34.9,
+    "lean": "Strong Democrat",
+    "totalVotes": 54383
+  },
+  "crockett|other": {
+    "placeName": "Crockett",
+    "year": 2024,
+    "demPct": 72.3,
+    "repPct": 23.6,
+    "marginPct": 48.7,
+    "lean": "Strong Democrat",
+    "totalVotes": 1820
+  },
+  "danville|other": {
+    "placeName": "Danville",
+    "year": 2024,
+    "demPct": 60.7,
+    "repPct": 35.8,
+    "marginPct": 24.9,
+    "lean": "Strong Democrat",
+    "totalVotes": 34500
+  },
+  "diablo|other": {
+    "placeName": "Diablo",
+    "year": 2024,
+    "demPct": 44.8,
+    "repPct": 52.7,
+    "marginPct": -7.9,
+    "lean": "Lean Republican",
+    "totalVotes": 660
+  },
+  "discovery bay|other": {
+    "placeName": "Discovery Bay",
+    "year": 2024,
+    "demPct": 41.6,
+    "repPct": 56.0,
+    "marginPct": -14.4,
+    "lean": "Republican",
+    "totalVotes": 8172
+  },
+  "el cerrito|other": {
+    "placeName": "El Cerrito",
+    "year": 2024,
+    "demPct": 85.8,
+    "repPct": 10.2,
+    "marginPct": 75.6,
+    "lean": "Strong Democrat",
+    "totalVotes": 14357
+  },
+  "el sobrante|other": {
+    "placeName": "El Sobrante",
+    "year": 2024,
+    "demPct": 71.6,
+    "repPct": 24.3,
+    "marginPct": 47.3,
+    "lean": "Strong Democrat",
+    "totalVotes": 6059
+  },
+  "hercules|other": {
+    "placeName": "Hercules",
+    "year": 2024,
+    "demPct": 73.4,
+    "repPct": 23.7,
+    "marginPct": 49.7,
+    "lean": "Strong Democrat",
+    "totalVotes": 12385
+  },
+  "kensington|other": {
+    "placeName": "Kensington",
+    "year": 2024,
+    "demPct": 91.1,
+    "repPct": 5.4,
+    "marginPct": 85.7,
+    "lean": "Strong Democrat",
+    "totalVotes": 3724
+  },
+  "knightsen|other": {
+    "placeName": "Knightsen",
+    "year": 2024,
+    "demPct": 24.2,
+    "repPct": 75.8,
+    "marginPct": -51.6,
+    "lean": "Strong Republican",
+    "totalVotes": 93
+  },
+  "lafayette|other": {
+    "placeName": "Lafayette",
+    "year": 2024,
+    "demPct": 75.2,
+    "repPct": 21.5,
+    "marginPct": 53.7,
+    "lean": "Strong Democrat",
+    "totalVotes": 17814
+  },
+  "livermore|other": {
+    "placeName": "Livermore",
+    "year": 2024,
+    "demPct": 47.2,
+    "repPct": 50.0,
+    "marginPct": -2.8,
+    "lean": "Swing",
+    "totalVotes": 142
+  },
+  "martinez|other": {
+    "placeName": "Martinez",
+    "year": 2024,
+    "demPct": 65.4,
+    "repPct": 31.3,
+    "marginPct": 34.1,
+    "lean": "Strong Democrat",
+    "totalVotes": 24651
+  },
+  "moraga|other": {
+    "placeName": "Moraga",
+    "year": 2024,
+    "demPct": 74.7,
+    "repPct": 21.9,
+    "marginPct": 52.8,
+    "lean": "Strong Democrat",
+    "totalVotes": 9490
+  },
+  "oakley|other": {
+    "placeName": "Oakley",
+    "year": 2024,
+    "demPct": 51.8,
+    "repPct": 45.5,
+    "marginPct": 6.3,
+    "lean": "Lean Democrat",
+    "totalVotes": 19915
+  },
+  "orinda|other": {
+    "placeName": "Orinda",
+    "year": 2024,
+    "demPct": 77.4,
+    "repPct": 19.7,
+    "marginPct": 57.7,
+    "lean": "Strong Democrat",
+    "totalVotes": 12424
+  },
+  "pacheco|other": {
+    "placeName": "Pacheco",
+    "year": 2024,
+    "demPct": 63.0,
+    "repPct": 33.3,
+    "marginPct": 29.7,
+    "lean": "Strong Democrat",
+    "totalVotes": 1802
+  },
+  "pinole|other": {
+    "placeName": "Pinole",
+    "year": 2024,
+    "demPct": 70.6,
+    "repPct": 26.0,
+    "marginPct": 44.6,
+    "lean": "Strong Democrat",
+    "totalVotes": 8931
+  },
+  "pittsburg|other": {
+    "placeName": "Pittsburg",
+    "year": 2024,
+    "demPct": 68.1,
+    "repPct": 29.1,
+    "marginPct": 39.0,
+    "lean": "Strong Democrat",
+    "totalVotes": 25535
+  },
+  "pleasant hill|other": {
+    "placeName": "Pleasant Hill",
+    "year": 2024,
+    "demPct": 70.8,
+    "repPct": 25.7,
+    "marginPct": 45.1,
+    "lean": "Strong Democrat",
+    "totalVotes": 18940
+  },
+  "pleasanton|other": {
+    "placeName": "Pleasanton",
+    "year": 2024,
+    "demPct": 42.3,
+    "repPct": 55.2,
+    "marginPct": -12.9,
+    "lean": "Republican",
+    "totalVotes": 330
+  },
+  "port costa|other": {
+    "placeName": "Port Costa",
+    "year": 2024,
+    "demPct": 75.0,
+    "repPct": 18.4,
+    "marginPct": 56.6,
+    "lean": "Strong Democrat",
+    "totalVotes": 136
+  },
+  "richmond|other": {
+    "placeName": "Richmond",
+    "year": 2024,
+    "demPct": 80.2,
+    "repPct": 16.1,
+    "marginPct": 64.1,
+    "lean": "Strong Democrat",
+    "totalVotes": 41260
+  },
+  "rodeo|other": {
+    "placeName": "Rodeo",
+    "year": 2024,
+    "demPct": 67.5,
+    "repPct": 29.0,
+    "marginPct": 38.5,
+    "lean": "Strong Democrat",
+    "totalVotes": 3765
+  },
+  "san pablo|other": {
+    "placeName": "San Pablo",
+    "year": 2024,
+    "demPct": 72.5,
+    "repPct": 24.0,
+    "marginPct": 48.5,
+    "lean": "Strong Democrat",
+    "totalVotes": 12653
+  },
+  "san ramon|other": {
+    "placeName": "San Ramon",
+    "year": 2024,
+    "demPct": 64.5,
+    "repPct": 31.0,
+    "marginPct": 33.5,
+    "lean": "Strong Democrat",
+    "totalVotes": 39378
+  },
+  "walnut creek|other": {
+    "placeName": "Walnut Creek",
+    "year": 2024,
+    "demPct": 73.5,
+    "repPct": 23.5,
+    "marginPct": 50.0,
+    "lean": "Strong Democrat",
+    "totalVotes": 51791
+  }
+}

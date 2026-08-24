@@ -1,0 +1,83 @@
+{
+  "benicia|other": {
+    "placeName": "Benicia",
+    "year": 2024,
+    "demPct": 67.3,
+    "repPct": 29.6,
+    "marginPct": 37.7,
+    "lean": "Strong Democrat",
+    "totalVotes": 16408
+  },
+  "dixon|other": {
+    "placeName": "Dixon",
+    "year": 2024,
+    "demPct": 45.7,
+    "repPct": 51.4,
+    "marginPct": -5.7,
+    "lean": "Lean Republican",
+    "totalVotes": 10051
+  },
+  "elmira|other": {
+    "placeName": "Elmira",
+    "year": 2024,
+    "demPct": 36.2,
+    "repPct": 60.3,
+    "marginPct": -24.1,
+    "lean": "Strong Republican",
+    "totalVotes": 80
+  },
+  "fairfield|other": {
+    "placeName": "Fairfield",
+    "year": 2024,
+    "demPct": 60.8,
+    "repPct": 36.0,
+    "marginPct": 24.8,
+    "lean": "Strong Democrat",
+    "totalVotes": 47798
+  },
+  "rio vista|other": {
+    "placeName": "Rio Vista",
+    "year": 2024,
+    "demPct": 59.6,
+    "repPct": 38.1,
+    "marginPct": 21.5,
+    "lean": "Strong Democrat",
+    "totalVotes": 6721
+  },
+  "suisun city|other": {
+    "placeName": "Suisun City",
+    "year": 2024,
+    "demPct": 64.2,
+    "repPct": 33.0,
+    "marginPct": 31.2,
+    "lean": "Strong Democrat",
+    "totalVotes": 11297
+  },
+  "vacaville|other": {
+    "placeName": "Vacaville",
+    "year": 2024,
+    "demPct": 48.6,
+    "repPct": 48.9,
+    "marginPct": -0.3,
+    "lean": "Swing",
+    "totalVotes": 48557
+  },
+  "vallejo|other": {
+    "placeName": "Vallejo",
+    "year": 2024,
+    "demPct": 71.3,
+    "repPct": 25.8,
+    "marginPct": 45.5,
+    "lean": "Strong Democrat",
+    "totalVotes": 46792
+  },
+  "winters|other": {
+    "placeName": "Winters",
+    "year": 2024,
+    "demPct": 43.7,
+    "repPct": 53.8,
+    "marginPct": -10.1,
+    "lean": "Republican",
+    "totalVotes": 632
+  }
+}

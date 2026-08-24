@@ -56,9 +56,9 @@ const STEPS: QuizStep[] = [
     shortTitle: 'Cost of Living',
     subtitle: 'Affects how much rent, expenses, and cost trends influence your score.',
     options: [
-      { value: 'budget',   icon: 'mdi-piggy-bank-outline',  label: 'Affordability is a must',   description: 'Keeping rent and daily costs low is a priority' },
-      { value: 'value',    icon: 'mdi-scale-balance',        label: 'Reasonable is enough',      description: 'Not the cheapest, but shouldn\'t feel expensive' },
-      { value: 'flexible', icon: 'mdi-credit-card-outline',  label: 'I\'ll pay for the right city', description: 'Cost won\'t hold me back from the right fit' },
+      { value: 'budget',   icon: 'mdi-piggy-bank-outline',  label: 'Affordable',   description: 'Keeping rent and daily costs low is a priority' },
+      { value: 'value',    icon: 'mdi-scale-balance',        label: 'Moderate',      description: 'Not the cheapest, but shouldn\'t feel expensive' },
+      { value: 'flexible', icon: 'mdi-credit-card-outline',  label: 'Flexible', description: 'Cost won\'t hold me back from the right fit' },
     ],
   },
   {
@@ -88,15 +88,22 @@ const STEPS: QuizStep[] = [
   },
   {
     key: 'opportunity_preference',
-    title: 'What kind of opportunity are you looking for?',
+    title: 'What industry are you in?',
     shortTitle: 'Opportunity',
-    subtitle: "Shapes how the area's dominant job industry is scored.",
+    subtitle: "A bonus when a city's dominant industry matches your field — never a penalty if it doesn't.",
     options: [
-      { value: 'education', icon: 'mdi-school-outline',        label: 'Knowledge economy',   description: 'Tech, professional services, and other degree-heavy industries' },
-      { value: 'growth',    icon: 'mdi-chart-line',            label: 'Fast-growing market',  description: 'Industries that tend to be expanding' },
-      { value: 'diverse',   icon: 'mdi-view-grid-outline',     label: 'Diverse economy',      description: 'Not dependent on one industry — resilient and varied' },
-      { value: 'mobility',  icon: 'mdi-stairs-up',             label: 'Economic mobility',    description: 'Manufacturing, trades, and other upward-mobility industries' },
-      { value: 'any',       icon: 'mdi-equal-box',             label: 'No strong preference', description: 'All opportunity signals weighted equally' },
+      { value: 'tech_media_pro',           icon: 'mdi-laptop',                    label: 'Tech, Media & Professional Services', description: 'Software, engineering, consulting, publishing, telecom' },
+      { value: 'corporate_finance',        icon: 'mdi-domain',                    label: 'Corporate & Finance',                 description: 'Banking, real estate, corporate HQ & management' },
+      { value: 'manufacturing',            icon: 'mdi-factory',                   label: 'Manufacturing & Industrial',          description: 'Production, assembly, and industrial work' },
+      { value: 'construction_trades',      icon: 'mdi-hammer-wrench',             label: 'Construction & Trades',               description: 'Skilled trades and contracting' },
+      { value: 'transportation_logistics', icon: 'mdi-truck-outline',             label: 'Transportation, Logistics & Distribution', description: 'Trucking, warehousing, wholesale' },
+      { value: 'education_healthcare',     icon: 'mdi-hospital-box-outline',      label: 'Education & Healthcare',              description: 'Schools, hospitals, and social services' },
+      { value: 'government_services',      icon: 'mdi-bank-outline',              label: 'Government & Public Services',        description: 'Government agencies, public administration & support services' },
+      { value: 'retail',                   icon: 'mdi-cart-outline',              label: 'Retail & Consumer Services',          description: 'Consumer-facing retail and sales' },
+      { value: 'hospitality_arts',         icon: 'mdi-palette-outline',           label: 'Hospitality, Arts & Entertainment',   description: 'Food service, arts, recreation, tourism' },
+      { value: 'agriculture',              icon: 'mdi-tractor-variant',           label: 'Agriculture & Natural Resources',     description: 'Farming, forestry, mining' },
+      { value: 'nonprofit',                icon: 'mdi-hand-heart-outline',        label: 'Nonprofit & Community Organizations', description: 'Nonprofits, religious orgs, foundations & civic groups' },
+      { value: 'any',                      icon: 'mdi-equal-box',                 label: "Doesn't matter to me",                description: 'Open to any industry — no bonus applied' },
     ],
   },
   {
@@ -588,6 +595,10 @@ defineExpose({ save, saving, saved });
   grid-template-columns: 1fr 1fr;
 }
 
+.quiz__options--count-12 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
 .quiz__option {
   display: flex;
   flex-direction: column;
@@ -631,13 +642,17 @@ defineExpose({ save, saving, saved });
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
+  width: 100%;
 }
 
 .quiz__option-label {
   font-size: 0.82rem;
   font-weight: 700;
   color: var(--text-primary);
-  line-height: 1.2;
+  line-height: 1.25;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 .quiz__option-example {
@@ -815,6 +830,9 @@ defineExpose({ save, saving, saved });
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .quiz__flat-card-value--unset {
@@ -1004,7 +1022,7 @@ html:not(.dark) .quiz__flat-save {
 }
 
 .quiz__flat-popup {
-  width: min(720px, calc(100vw - 48px));
+  width: min(960px, calc(100vw - 48px));
   background: var(--bg-card);
   border-radius: 20px;
   border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border-card));
@@ -1108,7 +1126,8 @@ html:not(.dark) .quiz__flat-save {
 
   .quiz__options,
   .quiz__options--count-3,
-  .quiz__options--count-5 {
+  .quiz__options--count-5,
+  .quiz__options--count-12 {
     grid-template-columns: 1fr;
   }
 }
