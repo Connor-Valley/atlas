@@ -1,0 +1,191 @@
+{
+  "belvedere|other": {
+    "placeName": "Belvedere",
+    "year": 2024,
+    "demPct": 73.6,
+    "repPct": 23.7,
+    "marginPct": 49.9,
+    "lean": "Strong Democrat",
+    "totalVotes": 1289
+  },
+  "bolinas|other": {
+    "placeName": "Bolinas",
+    "year": 2024,
+    "demPct": 86.9,
+    "repPct": 7.1,
+    "marginPct": 79.8,
+    "lean": "Strong Democrat",
+    "totalVotes": 848
+  },
+  "corte madera|other": {
+    "placeName": "Corte Madera",
+    "year": 2024,
+    "demPct": 83.0,
+    "repPct": 14.5,
+    "marginPct": 68.5,
+    "lean": "Strong Democrat",
+    "totalVotes": 6060
+  },
+  "fairfax|other": {
+    "placeName": "Fairfax",
+    "year": 2024,
+    "demPct": 86.8,
+    "repPct": 9.4,
+    "marginPct": 77.4,
+    "lean": "Strong Democrat",
+    "totalVotes": 5103
+  },
+  "greenbrae|other": {
+    "placeName": "Greenbrae",
+    "year": 2024,
+    "demPct": 82.3,
+    "repPct": 15.7,
+    "marginPct": 66.6,
+    "lean": "Strong Democrat",
+    "totalVotes": 3140
+  },
+  "inverness|other": {
+    "placeName": "Inverness",
+    "year": 2024,
+    "demPct": 88.1,
+    "repPct": 7.9,
+    "marginPct": 80.2,
+    "lean": "Strong Democrat",
+    "totalVotes": 725
+  },
+  "kentfield|other": {
+    "placeName": "Kentfield",
+    "year": 2024,
+    "demPct": 79.8,
+    "repPct": 17.8,
+    "marginPct": 62.0,
+    "lean": "Strong Democrat",
+    "totalVotes": 3289
+  },
+  "larkspur|other": {
+    "placeName": "Larkspur",
+    "year": 2024,
+    "demPct": 82.3,
+    "repPct": 15.0,
+    "marginPct": 67.3,
+    "lean": "Strong Democrat",
+    "totalVotes": 4562
+  },
+  "marin city|other": {
+    "placeName": "Marin City",
+    "year": 2024,
+    "demPct": 77.0,
+    "repPct": 18.4,
+    "marginPct": 58.6,
+    "lean": "Strong Democrat",
+    "totalVotes": 1044
+  },
+  "mill valley|other": {
+    "placeName": "Mill Valley",
+    "year": 2024,
+    "demPct": 86.8,
+    "repPct": 10.7,
+    "marginPct": 76.1,
+    "lean": "Strong Democrat",
+    "totalVotes": 19857
+  },
+  "novato|other": {
+    "placeName": "Novato",
+    "year": 2024,
+    "demPct": 73.1,
+    "repPct": 24.3,
+    "marginPct": 48.8,
+    "lean": "Strong Democrat",
+    "totalVotes": 32787
+  },
+  "petaluma|other": {
+    "placeName": "Petaluma",
+    "year": 2024,
+    "demPct": 50.3,
+    "repPct": 44.1,
+    "marginPct": 6.2,
+    "lean": "Lean Democrat",
+    "totalVotes": 206
+  },
+  "ross|other": {
+    "placeName": "Ross",
+    "year": 2024,
+    "demPct": 78.0,
+    "repPct": 19.1,
+    "marginPct": 58.9,
+    "lean": "Strong Democrat",
+    "totalVotes": 1338
+  },
+  "san anselmo|other": {
+    "placeName": "San Anselmo",
+    "year": 2024,
+    "demPct": 86.3,
+    "repPct": 11.1,
+    "marginPct": 75.2,
+    "lean": "Strong Democrat",
+    "totalVotes": 9962
+  },
+  "san quentin|other": {
+    "placeName": "San Quentin",
+    "year": 2024,
+    "demPct": 75.0,
+    "repPct": 24.1,
+    "marginPct": 50.9,
+    "lean": "Strong Democrat",
+    "totalVotes": 116
+  },
+  "san rafael|other": {
+    "placeName": "San Rafael",
+    "year": 2024,
+    "demPct": 80.9,
+    "repPct": 16.4,
+    "marginPct": 64.5,
+    "lean": "Strong Democrat",
+    "totalVotes": 34752
+  },
+  "sausalito|other": {
+    "placeName": "Sausalito",
+    "year": 2024,
+    "demPct": 83.9,
+    "repPct": 13.6,
+    "marginPct": 70.3,
+    "lean": "Strong Democrat",
+    "totalVotes": 5293
+  },
+  "stinson beach|other": {
+    "placeName": "Stinson Beach",
+    "year": 2024,
+    "demPct": 91.3,
+    "repPct": 6.7,
+    "marginPct": 84.6,
+    "lean": "Strong Democrat",
+    "totalVotes": 343
+  },
+  "tiburon|other": {
+    "placeName": "Tiburon",
+    "year": 2024,
+    "demPct": 77.4,
+    "repPct": 20.2,
+    "marginPct": 57.2,
+    "lean": "Strong Democrat",
+    "totalVotes": 6254
+  },
+  "tomales|other": {
+    "placeName": "Tomales",
+    "year": 2024,
+    "demPct": 63.8,
+    "repPct": 32.1,
+    "marginPct": 31.7,
+    "lean": "Strong Democrat",
+    "totalVotes": 176
+  },
+  "woodacre|other": {
+    "placeName": "Woodacre",
+    "year": 2024,
+    "demPct": 83.8,
+    "repPct": 11.7,
+    "marginPct": 72.1,
+    "lean": "Strong Democrat",
+    "totalVotes": 1014
+  }
+}

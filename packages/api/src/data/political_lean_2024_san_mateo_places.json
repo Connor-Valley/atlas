@@ -1,0 +1,236 @@
+{
+  "atherton|other": {
+    "placeName": "Atherton",
+    "year": 2024,
+    "demPct": 70.6,
+    "repPct": 27.0,
+    "marginPct": 43.6,
+    "lean": "Strong Democrat",
+    "totalVotes": 3880
+  },
+  "belmont|other": {
+    "placeName": "Belmont",
+    "year": 2024,
+    "demPct": 76.1,
+    "repPct": 20.6,
+    "marginPct": 55.5,
+    "lean": "Strong Democrat",
+    "totalVotes": 13990
+  },
+  "brisbane|other": {
+    "placeName": "Brisbane",
+    "year": 2024,
+    "demPct": 76.0,
+    "repPct": 19.7,
+    "marginPct": 56.3,
+    "lean": "Strong Democrat",
+    "totalVotes": 2366
+  },
+  "burlingame|other": {
+    "placeName": "Burlingame",
+    "year": 2024,
+    "demPct": 73.7,
+    "repPct": 23.0,
+    "marginPct": 50.7,
+    "lean": "Strong Democrat",
+    "totalVotes": 16018
+  },
+  "colma|other": {
+    "placeName": "Colma",
+    "year": 2024,
+    "demPct": 70.8,
+    "repPct": 24.5,
+    "marginPct": 46.3,
+    "lean": "Strong Democrat",
+    "totalVotes": 709
+  },
+  "daly city|other": {
+    "placeName": "Daly City",
+    "year": 2024,
+    "demPct": 69.4,
+    "repPct": 27.3,
+    "marginPct": 42.1,
+    "lean": "Strong Democrat",
+    "totalVotes": 35967
+  },
+  "east palo alto|other": {
+    "placeName": "East Palo Alto",
+    "year": 2024,
+    "demPct": 77.1,
+    "repPct": 19.4,
+    "marginPct": 57.7,
+    "lean": "Strong Democrat",
+    "totalVotes": 6606
+  },
+  "el granada|other": {
+    "placeName": "El Granada",
+    "year": 2024,
+    "demPct": 77.2,
+    "repPct": 20.2,
+    "marginPct": 57.0,
+    "lean": "Strong Democrat",
+    "totalVotes": 3497
+  },
+  "foster city|other": {
+    "placeName": "Foster City",
+    "year": 2024,
+    "demPct": 71.7,
+    "repPct": 24.3,
+    "marginPct": 47.4,
+    "lean": "Strong Democrat",
+    "totalVotes": 14129
+  },
+  "half moon bay|other": {
+    "placeName": "Half Moon Bay",
+    "year": 2024,
+    "demPct": 72.9,
+    "repPct": 24.2,
+    "marginPct": 48.7,
+    "lean": "Strong Democrat",
+    "totalVotes": 6877
+  },
+  "hillsborough|other": {
+    "placeName": "Hillsborough",
+    "year": 2024,
+    "demPct": 65.6,
+    "repPct": 31.1,
+    "marginPct": 34.5,
+    "lean": "Strong Democrat",
+    "totalVotes": 6366
+  },
+  "la honda|other": {
+    "placeName": "La Honda",
+    "year": 2024,
+    "demPct": 73.9,
+    "repPct": 23.1,
+    "marginPct": 50.8,
+    "lean": "Strong Democrat",
+    "totalVotes": 856
+  },
+  "menlo park|other": {
+    "placeName": "Menlo Park",
+    "year": 2024,
+    "demPct": 81.5,
+    "repPct": 15.4,
+    "marginPct": 66.1,
+    "lean": "Strong Democrat",
+    "totalVotes": 21061
+  },
+  "millbrae|other": {
+    "placeName": "Millbrae",
+    "year": 2024,
+    "demPct": 63.0,
+    "repPct": 32.6,
+    "marginPct": 30.4,
+    "lean": "Strong Democrat",
+    "totalVotes": 10665
+  },
+  "montara|other": {
+    "placeName": "Montara",
+    "year": 2024,
+    "demPct": 79.5,
+    "repPct": 17.9,
+    "marginPct": 61.6,
+    "lean": "Strong Democrat",
+    "totalVotes": 1830
+  },
+  "moss beach|other": {
+    "placeName": "Moss Beach",
+    "year": 2024,
+    "demPct": 77.0,
+    "repPct": 19.8,
+    "marginPct": 57.2,
+    "lean": "Strong Democrat",
+    "totalVotes": 1493
+  },
+  "pacifica|other": {
+    "placeName": "Pacifica",
+    "year": 2024,
+    "demPct": 72.8,
+    "repPct": 23.9,
+    "marginPct": 48.9,
+    "lean": "Strong Democrat",
+    "totalVotes": 20955
+  },
+  "pescadero|other": {
+    "placeName": "Pescadero",
+    "year": 2024,
+    "demPct": 70.0,
+    "repPct": 26.3,
+    "marginPct": 43.7,
+    "lean": "Strong Democrat",
+    "totalVotes": 571
+  },
+  "portola valley|other": {
+    "placeName": "Portola Valley",
+    "year": 2024,
+    "demPct": 81.0,
+    "repPct": 16.2,
+    "marginPct": 64.8,
+    "lean": "Strong Democrat",
+    "totalVotes": 4469
+  },
+  "princeton|other": {
+    "placeName": "Princeton",
+    "year": 2024,
+    "demPct": 81.1,
+    "repPct": 13.2,
+    "marginPct": 67.9,
+    "lean": "Strong Democrat",
+    "totalVotes": 52
+  },
+  "redwood city|other": {
+    "placeName": "Redwood City",
+    "year": 2024,
+    "demPct": 76.3,
+    "repPct": 20.4,
+    "marginPct": 55.9,
+    "lean": "Strong Democrat",
+    "totalVotes": 42567
+  },
+  "san bruno|other": {
+    "placeName": "San Bruno",
+    "year": 2024,
+    "demPct": 68.1,
+    "repPct": 28.0,
+    "marginPct": 40.1,
+    "lean": "Strong Democrat",
+    "totalVotes": 18426
+  },
+  "san carlos|other": {
+    "placeName": "San Carlos",
+    "year": 2024,
+    "demPct": 78.1,
+    "repPct": 19.1,
+    "marginPct": 59.0,
+    "lean": "Strong Democrat",
+    "totalVotes": 18149
+  },
+  "san mateo|other": {
+    "placeName": "San Mateo",
+    "year": 2024,
+    "demPct": 74.8,
+    "repPct": 22.0,
+    "marginPct": 52.8,
+    "lean": "Strong Democrat",
+    "totalVotes": 47503
+  },
+  "south san francisco|other": {
+    "placeName": "South San Francisco",
+    "year": 2024,
+    "demPct": 70.0,
+    "repPct": 26.6,
+    "marginPct": 43.4,
+    "lean": "Strong Democrat",
+    "totalVotes": 26126
+  },
+  "woodside|other": {
+    "placeName": "Woodside",
+    "year": 2024,
+    "demPct": 72.9,
+    "repPct": 23.9,
+    "marginPct": 49.0,
+    "lean": "Strong Democrat",
+    "totalVotes": 4352
+  }
+}

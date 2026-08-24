@@ -278,7 +278,12 @@ function cleanPlaceName(localName: string): string {
 function buildDisplayName(localName: string, placeType: PlaceType, baseName: string): string {
   const trimmed = localName.replace(/\s+/g, " ").trim();
 
-  if (placeType === "city" || placeType === "cdp") {
+  // Suffix-style "X town" (California's convention: Danville, Los Gatos, Yountville, etc.
+  // are legally "towns") should behave like "city"/"cdp" — the suffix isn't part of how
+  // anyone refers to the place. This is distinct from prefix-style "Town of X" (New England
+  // convention, handled below), which intentionally keeps "Town" in the display name.
+  const isSuffixStyleTown = placeType === "town" && !/^town of\s+/i.test(trimmed);
+  if (placeType === "city" || placeType === "cdp" || isSuffixStyleTown) {
     // "CDP" (Census Designated Place) is a Census Bureau technical designation
     // for unincorporated communities, never part of the place's actual name —
     // unlike "Township"/"Village"/etc., which are often genuinely part of it.

@@ -1,0 +1,245 @@
+{
+  "bodega bay|other": {
+    "placeName": "Bodega Bay",
+    "year": 2024,
+    "demPct": 75.4,
+    "repPct": 21.4,
+    "marginPct": 54.0,
+    "lean": "Strong Democrat",
+    "totalVotes": 820
+  },
+  "calistoga|other": {
+    "placeName": "Calistoga",
+    "year": 2024,
+    "demPct": 64.4,
+    "repPct": 32.4,
+    "marginPct": 32.0,
+    "lean": "Strong Democrat",
+    "totalVotes": 249
+  },
+  "camp meeker|other": {
+    "placeName": "Camp Meeker",
+    "year": 2024,
+    "demPct": 79.1,
+    "repPct": 15.6,
+    "marginPct": 63.5,
+    "lean": "Strong Democrat",
+    "totalVotes": 307
+  },
+  "cazadero|other": {
+    "placeName": "Cazadero",
+    "year": 2024,
+    "demPct": 70.4,
+    "repPct": 25.3,
+    "marginPct": 45.1,
+    "lean": "Strong Democrat",
+    "totalVotes": 764
+  },
+  "cloverdale|other": {
+    "placeName": "Cloverdale",
+    "year": 2024,
+    "demPct": 63.6,
+    "repPct": 33.4,
+    "marginPct": 30.2,
+    "lean": "Strong Democrat",
+    "totalVotes": 5185
+  },
+  "cotati|other": {
+    "placeName": "Cotati",
+    "year": 2024,
+    "demPct": 68.9,
+    "repPct": 26.9,
+    "marginPct": 42.0,
+    "lean": "Strong Democrat",
+    "totalVotes": 4772
+  },
+  "duncans mills|other": {
+    "placeName": "Duncans Mills",
+    "year": 2024,
+    "demPct": 65.9,
+    "repPct": 27.5,
+    "marginPct": 38.4,
+    "lean": "Strong Democrat",
+    "totalVotes": 74
+  },
+  "forestville|other": {
+    "placeName": "Forestville",
+    "year": 2024,
+    "demPct": 72.4,
+    "repPct": 23.2,
+    "marginPct": 49.2,
+    "lean": "Strong Democrat",
+    "totalVotes": 3319
+  },
+  "fulton|other": {
+    "placeName": "Fulton",
+    "year": 2024,
+    "demPct": 61.8,
+    "repPct": 35.3,
+    "marginPct": 26.5,
+    "lean": "Strong Democrat",
+    "totalVotes": 209
+  },
+  "geyserville|other": {
+    "placeName": "Geyserville",
+    "year": 2024,
+    "demPct": 69.0,
+    "repPct": 28.1,
+    "marginPct": 40.9,
+    "lean": "Strong Democrat",
+    "totalVotes": 798
+  },
+  "glen ellen|other": {
+    "placeName": "Glen Ellen",
+    "year": 2024,
+    "demPct": 78.0,
+    "repPct": 18.7,
+    "marginPct": 59.3,
+    "lean": "Strong Democrat",
+    "totalVotes": 1591
+  },
+  "graton|other": {
+    "placeName": "Graton",
+    "year": 2024,
+    "demPct": 80.3,
+    "repPct": 15.9,
+    "marginPct": 64.4,
+    "lean": "Strong Democrat",
+    "totalVotes": 459
+  },
+  "guerneville|other": {
+    "placeName": "Guerneville",
+    "year": 2024,
+    "demPct": 80.2,
+    "repPct": 16.4,
+    "marginPct": 63.8,
+    "lean": "Strong Democrat",
+    "totalVotes": 2729
+  },
+  "healdsburg|other": {
+    "placeName": "Healdsburg",
+    "year": 2024,
+    "demPct": 74.5,
+    "repPct": 22.5,
+    "marginPct": 52.0,
+    "lean": "Strong Democrat",
+    "totalVotes": 8849
+  },
+  "jenner|other": {
+    "placeName": "Jenner",
+    "year": 2024,
+    "demPct": 81.5,
+    "repPct": 14.5,
+    "marginPct": 67.0,
+    "lean": "Strong Democrat",
+    "totalVotes": 268
+  },
+  "kenwood|other": {
+    "placeName": "Kenwood",
+    "year": 2024,
+    "demPct": 73.5,
+    "repPct": 23.0,
+    "marginPct": 50.5,
+    "lean": "Strong Democrat",
+    "totalVotes": 901
+  },
+  "monte rio|other": {
+    "placeName": "Monte Rio",
+    "year": 2024,
+    "demPct": 81.6,
+    "repPct": 15.0,
+    "marginPct": 66.6,
+    "lean": "Strong Democrat",
+    "totalVotes": 606
+  },
+  "occidental|other": {
+    "placeName": "Occidental",
+    "year": 2024,
+    "demPct": 76.7,
+    "repPct": 19.3,
+    "marginPct": 57.4,
+    "lean": "Strong Democrat",
+    "totalVotes": 1020
+  },
+  "penngrove|other": {
+    "placeName": "Penngrove",
+    "year": 2024,
+    "demPct": 64.0,
+    "repPct": 32.3,
+    "marginPct": 31.7,
+    "lean": "Strong Democrat",
+    "totalVotes": 2474
+  },
+  "petaluma|other": {
+    "placeName": "Petaluma",
+    "year": 2024,
+    "demPct": 71.5,
+    "repPct": 25.1,
+    "marginPct": 46.4,
+    "lean": "Strong Democrat",
+    "totalVotes": 40695
+  },
+  "rohnert park|other": {
+    "placeName": "Rohnert Park",
+    "year": 2024,
+    "demPct": 66.8,
+    "repPct": 29.9,
+    "marginPct": 36.9,
+    "lean": "Strong Democrat",
+    "totalVotes": 21512
+  },
+  "santa rosa|other": {
+    "placeName": "Santa Rosa",
+    "year": 2024,
+    "demPct": 71.7,
+    "repPct": 25.0,
+    "marginPct": 46.7,
+    "lean": "Strong Democrat",
+    "totalVotes": 97911
+  },
+  "sebastopol|other": {
+    "placeName": "Sebastopol",
+    "year": 2024,
+    "demPct": 78.1,
+    "repPct": 17.9,
+    "marginPct": 60.2,
+    "lean": "Strong Democrat",
+    "totalVotes": 16818
+  },
+  "sonoma|other": {
+    "placeName": "Sonoma",
+    "year": 2024,
+    "demPct": 74.6,
+    "repPct": 22.9,
+    "marginPct": 51.7,
+    "lean": "Strong Democrat",
+    "totalVotes": 18449
+  },
+  "the sea ranch|other": {
+    "placeName": "The Sea Ranch",
+    "year": 2024,
+    "demPct": 79.6,
+    "repPct": 18.8,
+    "marginPct": 60.8,
+    "lean": "Strong Democrat",
+    "totalVotes": 694
+  },
+  "valley ford|other": {
+    "placeName": "Valley Ford",
+    "year": 2024,
+    "demPct": 55.0,
+    "repPct": 41.1,
+    "marginPct": 13.9,
+    "lean": "Democrat",
+    "totalVotes": 108
+  },
+  "windsor|other": {
+    "placeName": "Windsor",
+    "year": 2024,
+    "demPct": 63.8,
+    "repPct": 33.1,
+    "marginPct": 30.7,
+    "lean": "Strong Democrat",
+    "totalVotes": 14331
+  }
+}

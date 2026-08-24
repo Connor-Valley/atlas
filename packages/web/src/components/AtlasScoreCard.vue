@@ -12,16 +12,23 @@ import { fetchLifestyle } from '../api/lifestyle';
 import { fetchPoliticalLean } from '../api/politicalLean';
 import { fetchCostOfLiving } from '../api/costOfLiving';
 import { useAuth } from '../composables/useAuth';
-import { usePreferences } from '../composables/usePreferences';
-import { computeAtlasScore, scoreTier } from '../lib/atlasScore';
-import { DIMS } from '../lib/atlasScoreDims';
+import { usePreferences, hasRealPreferences } from '../composables/usePreferences';
+import { computeAtlasScore, scoreTier, politicalDimTier, evaluateOpportunityMatch } from '../lib/atlasScore';
+import { DIMS, PREF_LABELS } from '../lib/atlasScoreDims';
 
 const props = defineProps<{ city: string; state: string }>();
+const emit = defineEmits<{ (e: 'auth-required'): void }>();
 
-const { user } = useAuth();
-const { preferences, loaded: prefsLoaded, fetchPreferences } = usePreferences();
+const { user, loading: authLoading } = useAuth();
+const { preferences, fetchPreferences } = usePreferences();
 
-watch(() => user.value, () => fetchPreferences(), { immediate: true });
+// Wait for auth to finish restoring the session before treating `user.value === null` as
+// "not logged in" — on a fresh page load it starts null while the Supabase session is still
+// being read from storage, and firing fetchPreferences() on that transient null permanently
+// locks preferences to defaults before the real session (and real user) ever resolves.
+watch([user, authLoading], ([, isAuthLoading]) => {
+  if (!isAuthLoading) fetchPreferences();
+}, { immediate: true });
 
 const profile        = ref<any>(null);
 const qol            = ref<any>(null);
@@ -49,41 +56,54 @@ async function load() {
   politicalLean.value = null;
   costOfLiving.value  = null;
 
-  const results = await Promise.allSettled([
-    fetchDetailedCityProfile(props.state, props.city),
-    fetchDetailedQualityOfLife(props.state, props.city),
-    fetchDetailedIncome(props.state, props.city),
-    fetchAffordability(props.state, props.city),
-    fetchDetailedHousing(props.state, props.city),
-    fetchClimate(props.state, props.city),
-    fetchAirQuality(props.state, props.city),
-    fetchLifestyle(props.state, props.city),
-    fetchPoliticalLean(props.state, props.city),
-    fetchCostOfLiving(props.state, props.city),
-  ]);
+  function timed<T>(p: Promise<T>): Promise<T> {
+    return Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error('timeout')), 12_000))]);
+  }
 
-  const vals = results.map(r => r.status === 'fulfilled' ? r.value : null);
-  [
-    profile.value,
-    qol.value,
-    income.value,
-    affordability.value,
-    housing.value,
-    climate.value,
-    airQuality.value,
-    lifestyle.value,
-    politicalLean.value,
-    costOfLiving.value,
-  ] = vals;
+  try {
+    const results = await Promise.allSettled([
+      timed(fetchDetailedCityProfile(props.state, props.city)),
+      timed(fetchDetailedQualityOfLife(props.state, props.city)),
+      timed(fetchDetailedIncome(props.state, props.city)),
+      timed(fetchAffordability(props.state, props.city)),
+      timed(fetchDetailedHousing(props.state, props.city)),
+      timed(fetchClimate(props.state, props.city)),
+      timed(fetchAirQuality(props.state, props.city)),
+      timed(fetchLifestyle(props.state, props.city)),
+      timed(fetchPoliticalLean(props.state, props.city)),
+      timed(fetchCostOfLiving(props.state, props.city)),
+    ]);
 
-  loading.value = false;
+    const vals = results.map(r => r.status === 'fulfilled' ? r.value : null);
+    [
+      profile.value,
+      qol.value,
+      income.value,
+      affordability.value,
+      housing.value,
+      climate.value,
+      airQuality.value,
+      lifestyle.value,
+      politicalLean.value,
+      costOfLiving.value,
+    ] = vals;
+  } finally {
+    loading.value = false;
+  }
 }
 
 watch(() => [props.city, props.state], load, { immediate: true });
 
 const result = computed(() => {
+  // Always read both so Vue tracks them as reactive deps (avoids race with auth/prefs loading)
+  const currentUser = user.value;
+  const prefs = preferences.value;
   if (!income.value && !affordability.value && !profile.value && !qol.value) return null;
-  const prefs = user.value && prefsLoaded.value ? preferences.value : null;
+  // A preferences object always exists once loaded (real saved data, or just the untouched
+  // DEFAULT_PREFERENCES fallback) — checking truthiness alone treated "logged in" the same as
+  // "personalized," so someone who reset every quiz answer (or never set any) still saw the
+  // full personalized UI (colored dots, "You: No preference" on every cube, "Personalized"
+  // badge) with nothing real behind it. Only pass prefs through when something was actually set.
   return computeAtlasScore({
     income:         income.value,
     affordability:  affordability.value,
@@ -95,10 +115,19 @@ const result = computed(() => {
     lifestyle:      lifestyle.value,
     politicalLean:  politicalLean.value,
     housing:        housing.value,
-  }, prefs);
+  }, currentUser && hasRealPreferences(prefs) ? prefs : null);
 });
 
 const tier = computed(() => result.value ? scoreTier(result.value.score) : null);
+const isPlaceLevelPoliticalLean = computed(() => politicalLean.value?.source?.geographyLevel === 'place');
+// A county aggregate that isn't already a landslide (Swing, Lean, or plain [Party]) is the
+// risky case — those margins are the ones that can plausibly flip at the city level (see
+// Oxford Township). Once a county reads "Strong [Party]" (|margin| >= 20), that's unlikely to
+// flip for any city inside it, so it's safe to show the real match color instead of hedging.
+const isStrongCountyLean = computed(() => politicalLean.value?.lean === 'Strong Democrat' || politicalLean.value?.lean === 'Strong Republican');
+const showRealPoliticalTier = computed(() => isPlaceLevelPoliticalLean.value || isStrongCountyLean.value);
+const politicalTier = computed(() => politicalDimTier(politicalLean.value, preferences.value.political_lean_preference));
+const opportunityMatch = computed(() => evaluateOpportunityMatch(preferences.value.opportunity_preference, income.value));
 
 function dimTier(value: number | null | undefined): 'good' | 'average' | 'below' | null {
   if (value == null) return null;
@@ -115,16 +144,6 @@ function dimTierLabel(value: number | null | undefined): string {
   return '—';
 }
 
-const climatePrefLabel = computed(() => {
-  const pref = preferences.value?.climate_preference;
-  const map: Record<string, string> = {
-    warm: 'warm climate',
-    mild: 'mild climate',
-    four_seasons: 'four seasons',
-    cool: 'cool climate',
-  };
-  return pref && pref !== 'any' ? map[pref] : null;
-});
 
 const narrative = computed(() => {
   if (!result.value) return null;
@@ -152,27 +171,43 @@ const narrative = computed(() => {
   return `${worst.label} and ${scored[scored.length - 2].label.toLowerCase()} are significant weak spots holding this score back.`;
 });
 
+function handlePersonalizeClick(e: MouseEvent) {
+  if (!user.value) {
+    e.preventDefault();
+    emit('auth-required');
+  }
+}
 </script>
 
 <template>
-  <div class="data-card atlas-card">
+  <!-- Unpersonalized: just the bar, full stop — no "Atlas Score" header, no card chrome around
+       it, since there's no base score worth framing right now (due for a rework). -->
+  <router-link
+    v-if="result && !result.isPersonalized"
+    to="/profile"
+    class="atlas-card__personalize-bar atlas-card__personalize-bar--standalone"
+    @click="handlePersonalizeClick"
+  >
+    <span class="mdi mdi-tune-variant"></span>
+    <span class="atlas-card__personalize-bar-text">Personalize your experience — get a score tailored to you</span>
+    <span class="mdi mdi-arrow-right atlas-card__personalize-bar-arrow"></span>
+  </router-link>
+
+  <div v-else class="data-card atlas-card">
     <div class="data-card__header atlas-card__header">
       <div class="data-card__title">
         <span class="mdi mdi-map-marker-star-outline data-card__icon"></span>
         <span class="data-card__name">Atlas Score</span>
       </div>
-      <p v-if="result && !result.isPersonalized" class="atlas-card__prefs-nudge">
-        <router-link to="/profile" class="atlas-card__prefs-link">
-          <span class="mdi mdi-tune-variant"></span> Personalize
-        </router-link>
-      </p>
-      <p v-else-if="result" class="atlas-card__prefs-personalized">
+      <p v-if="result && result.isPersonalized" class="atlas-card__prefs-personalized">
         <span class="mdi mdi-check-circle-outline"></span> Personalized
       </p>
     </div>
 
-    <!-- Loaded state -->
-    <div v-if="result" class="atlas-card__body">
+    <!-- Loaded + personalized state — the raw/objective score (no preferences) isn't something
+         worth showing on its own right now (due for a rework), so an unpersonalized visit just
+         gets the bar above and nothing else here. -->
+    <div v-if="result && result.isPersonalized" class="atlas-card__body">
       <!-- Left: score number + tier + narrative -->
       <div class="atlas-card__left">
         <div class="atlas-card__score-wrap" :data-tier="tier?.tier">
@@ -180,31 +215,77 @@ const narrative = computed(() => {
           <span class="atlas-card__score-tier">{{ tier?.label }}</span>
         </div>
         <p v-if="narrative" class="atlas-card__narrative">{{ narrative }}</p>
-        <p v-if="result.isPersonalized && climatePrefLabel" class="atlas-card__climate-hint">
-          <span class="mdi mdi-weather-partly-cloudy"></span> Tuned for {{ climatePrefLabel }}
-        </p>
       </div>
 
-      <!-- Right: bars -->
-      <div class="atlas-card__bars">
-        <div v-for="dim in DIMS" :key="dim.key" class="data-card__bar-row atlas-card__bar-row">
-          <span class="atlas-card__dim-label">
-            {{ dim.label }}
-            <span class="atlas-card__info-wrap">
-              <span class="mdi mdi-information-outline atlas-card__info-icon"></span>
-              <span class="atlas-card__tooltip">{{ dim.tooltip }}</span>
-            </span>
-          </span>
-          <div class="data-card__bar">
-            <div
-              class="data-card__bar-fill"
-              :class="`atlas-card__fill--${dimTier(result.breakdown[dim.key])}`"
-              :style="{ width: result.breakdown[dim.key] != null ? `${result.breakdown[dim.key]}%` : '0%' }"
-            ></div>
+      <!-- Right: city cubes -->
+      <div class="atlas-card__cubes">
+        <div
+          v-for="dim in DIMS"
+          :key="dim.key"
+          class="atlas-card__cube"
+          :class="result.isPersonalized ? `atlas-card__cube--${dim.key === 'opportunity' && opportunityMatch ? opportunityMatch.tier : dimTier(result.breakdown[dim.key])}` : ''"
+        >
+          <div class="atlas-card__cube-header">
+            <span :class="`mdi ${dim.icon} atlas-card__cube-icon`"></span>
+            <span
+              v-if="result.isPersonalized"
+              class="atlas-card__cube-dot"
+              :class="`atlas-card__cube-dot--${dim.key === 'opportunity' && opportunityMatch ? opportunityMatch.tier : dimTier(result.breakdown[dim.key])}`"
+            ></span>
           </div>
-          <span class="atlas-card__dim-value" :class="`atlas-card__dim-value--${dimTier(result.breakdown[dim.key])}`">
-            {{ result.breakdown[dim.key] != null ? Math.round(result.breakdown[dim.key]!) : '—' }}
-          </span>
+          <div class="atlas-card__cube-category">{{ dim.label }}</div>
+          <!-- Opportunity's headline shows the user's OWN preference label, not the raw Census
+               sector name that actually matched — several preferences (nonprofit, government
+               services) alias onto a shared generic bucket like "Local Services", which reads as
+               a disconnected, unrelated label next to a rank badge if shown verbatim. Showing
+               what they picked instead of what the data literally calls it keeps the headline
+               tied to their selection; the rank badge still reflects wherever that raw sector
+               actually landed among the city's industries. -->
+          <div v-if="dim.key === 'opportunity' && result.isPersonalized && opportunityMatch?.matchedLabel" class="atlas-card__cube-char atlas-card__cube-char--with-badge">
+            <span class="atlas-card__cube-char-text">{{ PREF_LABELS[preferences.opportunity_preference] ?? opportunityMatch.matchedLabel }}</span>
+            <span class="atlas-card__rank-badge">#{{ opportunityMatch.matchedRank }}</span>
+          </div>
+          <div v-else class="atlas-card__cube-char">{{ result.cityChars[dim.charKey] ?? '—' }}</div>
+          <!-- Opportunity gets one second-line slot, not two: when there's a real match, the
+               headline already shows the matched industry (which is just the user's own stated
+               preference, restated), so "You: X" there is pure duplication — swap it for the
+               city's #1 industry instead of stacking a third line and inflating every cube in
+               the row (cubes share a grid row height). Shown whenever the city's #1 differs from
+               the match (ranks 2 and 3 included, not just "outside top 3"). Falls back to the
+               normal "You:" line when the match itself IS the city's #1 (would just repeat the
+               headline) or when there's no match at all (e.g. preference is "any"). -->
+          <div v-if="dim.key === 'opportunity' && result.isPersonalized && opportunityMatch?.cityTopLabel" class="atlas-card__cube-pref">
+            City's #1: {{ opportunityMatch.cityTopLabel }}
+          </div>
+          <div v-else-if="result.isPersonalized && dim.prefKey" class="atlas-card__cube-pref">
+            You: {{ PREF_LABELS[(preferences as any)[dim.prefKey!]] ?? '—' }}
+          </div>
+        </div>
+        <!-- Political lean cube: a county-level result that ISN'T already a landslide is forced
+             to 'below' (amber/caution) regardless of match score, since a county aggregate is a
+             poor proxy for a specific city and a close county margin is exactly the kind that
+             can flip city-to-city (see Oxford Township). A county already at "Strong [Party]"
+             is treated the same as a real place-level override — it uses politicalTier, a
+             categorical Swing/Lean/[Party]/Strong-aware tier (see politicalDimTier in
+             atlasScore.ts) so a city already labeled "Strong [opposite party]" always reads
+             as a clear 'poor' (red) mismatch, not a middling one. -->
+        <div
+          v-if="result.isPersonalized && preferences.political_lean_preference !== 'not_a_factor'"
+          class="atlas-card__cube"
+          :class="showRealPoliticalTier ? `atlas-card__cube--${politicalTier}` : 'atlas-card__cube--below'"
+        >
+          <div class="atlas-card__cube-header">
+            <span class="mdi mdi-vote-outline atlas-card__cube-icon"></span>
+            <span
+              class="atlas-card__cube-dot"
+              :class="showRealPoliticalTier ? `atlas-card__cube-dot--${politicalTier}` : 'atlas-card__cube-dot--below'"
+            ></span>
+          </div>
+          <div class="atlas-card__cube-category">
+            {{ isPlaceLevelPoliticalLean ? 'Political Lean' : 'County Political Lean' }}
+          </div>
+          <div class="atlas-card__cube-char">{{ result.cityChars.politicalLean ?? '—' }}</div>
+          <div class="atlas-card__cube-pref">You: {{ PREF_LABELS[preferences.political_lean_preference] ?? '—' }}</div>
         </div>
       </div>
     </div>
@@ -216,13 +297,11 @@ const narrative = computed(() => {
         <div class="skeleton-line" style="width:120px;height:12px;border-radius:4px;margin-bottom:6px"></div>
         <div class="skeleton-line" style="width:90px;height:12px;border-radius:4px"></div>
       </div>
-      <div class="atlas-card__bars">
-        <div v-for="i in 7" :key="i" class="data-card__bar-row atlas-card__bar-row">
-          <span class="atlas-card__dim-label skeleton-line" style="width:80px;height:12px;border-radius:3px"></span>
-          <div class="data-card__bar data-card__bar--placeholder">
-            <div class="data-card__bar-fill data-card__bar-fill--placeholder" :style="{ width: `${30 + i * 8}%` }"></div>
-          </div>
-          <span class="skeleton-line" style="width:48px;height:12px;border-radius:3px"></span>
+      <div class="atlas-card__cubes">
+        <div v-for="i in 8" :key="i" class="atlas-card__cube">
+          <div class="skeleton-line" style="width:22px;height:22px;border-radius:5px;margin-bottom:6px"></div>
+          <div class="skeleton-line" style="width:55px;height:9px;border-radius:3px;margin-bottom:5px"></div>
+          <div class="skeleton-line" style="width:90px;height:12px;border-radius:3px"></div>
         </div>
       </div>
     </div>
@@ -240,20 +319,45 @@ const narrative = computed(() => {
   padding-bottom: 0;
 }
 
-.atlas-card__prefs-nudge {
-  font-size: 0.72rem;
-  color: var(--text-muted);
+.atlas-card__personalize-bar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.atlas-card__prefs-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--accent);
-  text-decoration: none;
-  font-weight: 600;
+.atlas-card__personalize-bar--standalone {
+  /* stands alone in place of the whole Atlas Score card now. The dashboard grid's normal gap
+     above and below reads as much bigger next to a thin bar than it does next to a full card
+     (and margins don't collapse between grid items), so pull it in on both sides rather than
+     leaving the same gap every other panel uses. */
+  margin: -20px 0 4px;
 }
-.atlas-card__prefs-link:hover { text-decoration: underline; }
+.atlas-card__personalize-bar:hover {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.atlas-card__personalize-bar-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atlas-card__personalize-bar-arrow {
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
 
 .atlas-card__prefs-personalized {
   font-size: 0.72rem;
@@ -315,9 +419,9 @@ const narrative = computed(() => {
 [data-tier="good"]      .atlas-card__score-number,
 [data-tier="good"]      .atlas-card__score-tier { color: var(--positive); }
 [data-tier="average"]   .atlas-card__score-number,
-[data-tier="average"]   .atlas-card__score-tier { color: var(--accent); }
+[data-tier="average"]   .atlas-card__score-tier { color: var(--caution); }
 [data-tier="below"]     .atlas-card__score-number,
-[data-tier="below"]     .atlas-card__score-tier { color: var(--caution); }
+[data-tier="below"]     .atlas-card__score-tier { color: var(--warning); }
 [data-tier="poor"]      .atlas-card__score-number,
 [data-tier="poor"]      .atlas-card__score-tier { color: var(--danger); }
 
@@ -328,63 +432,123 @@ const narrative = computed(() => {
   max-width: 160px;
 }
 
-.atlas-card__climate-hint {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  font-style: italic;
+
+/* Right: city cubes */
+.atlas-card__cubes {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  align-content: start;
+  padding: 4px 0;
 }
 
-/* Right: bars */
-.atlas-card__bars {
+.atlas-card__cube {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin: 0 20px;
+  padding: 11px 12px 10px;
+  border-radius: 12px;
+  background: var(--bg-card-inner);
+  border: 1px solid var(--border-card);
+  overflow: hidden;
+  transition: border-color 0.15s;
 }
 
-.atlas-card__bar-row {
-  align-items: center;
-  margin: 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--border-color) 40%, transparent);
+.atlas-card__cube--good    { border-color: color-mix(in srgb, var(--positive) 35%, var(--border-card)); }
+.atlas-card__cube--average { border-color: color-mix(in srgb, var(--caution) 30%, var(--border-card)); }
+.atlas-card__cube--below   { border-color: color-mix(in srgb, var(--warning) 35%, var(--border-card)); }
+.atlas-card__cube--poor    { border-color: color-mix(in srgb, var(--danger) 35%, var(--border-card)); }
+
+.atlas-card__cube-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 6px;
 }
 
-.atlas-card__bar-row:last-child {
-  border-bottom: none;
+.atlas-card__cube-icon {
+  font-size: 1.05rem;
+  color: var(--accent);
 }
 
+.atlas-card__cube-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 2px;
+  background: color-mix(in srgb, var(--border-color) 60%, transparent);
+}
 
-.atlas-card__dim-label {
-  font-size: 0.82rem;
-  font-weight: 500;
-  color: var(--text-secondary);
+.atlas-card__cube-dot--good    { background: var(--positive); }
+.atlas-card__cube-dot--average { background: var(--caution); }
+.atlas-card__cube-dot--below   { background: var(--warning); }
+.atlas-card__cube-dot--poor    { background: var(--danger); }
+
+.atlas-card__cube-category {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  margin-bottom: 3px;
+}
+
+.atlas-card__cube-char {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.25;
+  /* No headline value should ever grow the cube — cubes share a grid row height, so one long
+     label (any dimension, not just Opportunity) would stretch every cube in that row. Truncate
+     instead of wrapping. */
   white-space: nowrap;
-  min-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.atlas-card__cube-char--with-badge {
   display: flex;
   align-items: center;
   gap: 4px;
+  /* overrides the base rule above — ellipsis has to live on the text child, not this flex
+     container, and the container needs its own min-width:0 so the child is actually allowed
+     to shrink below its natural content width instead of overflowing. */
+  min-width: 0;
 }
 
-/* Bar fill colors */
-.atlas-card__fill--good    { background: var(--positive); }
-.atlas-card__fill--average { background: var(--accent); }
-.atlas-card__fill--below   { background: var(--caution); }
-
-/* Dim score number */
-.atlas-card__dim-value {
-  font-size: 0.92rem;
-  font-weight: 700;
+.atlas-card__cube-char-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
-  min-width: 28px;
-  text-align: right;
-  flex-shrink: 0;
+  min-width: 0;
 }
 
-.atlas-card__dim-value--good    { color: var(--positive); }
-.atlas-card__dim-value--average { color: var(--accent); }
-.atlas-card__dim-value--below   { color: var(--caution); }
+.atlas-card__rank-badge {
+  display: inline-block;
+  flex-shrink: 0;
+  padding: 1px 5px;
+  border-radius: 6px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  vertical-align: middle;
+}
+
+.atlas-card__cube-pref {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-top: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 700px) {
+  .atlas-card__cubes {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 
 /* Tooltip */
 .atlas-card__info-wrap {

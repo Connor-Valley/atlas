@@ -2,9 +2,10 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import DashboardHeader from '../components/DashboardHeader.vue';
-import PreferencesModal from '../components/PreferencesModal.vue';
+import PreferencesSetup from '../components/PreferencesSetup.vue';
 import { usePreferences } from '../composables/usePreferences';
 import { useAuth } from '../composables/useAuth';
+import { useAuthModal } from '../composables/useAuthModal';
 import { useFavorites } from '../composables/useFavorites';
 import { useComparisons } from '../composables/useComparisons';
 import { useFriends } from '../composables/useFriends';
@@ -19,38 +20,28 @@ function onHeaderSearch(payload: { city: string; state: string }) {
   router.push(`/city/${payload.state}/${payload.city}`);
 }
 
-const { user, profile, displayName, signOut, reauthenticate, updateDisplayName, updatePassword, updateUsername, updateProfileVisibility, checkUsernameAvailable } = useAuth();
+const { user, profile, loading: authLoading, displayName, signOut, reauthenticate, updateDisplayName, updatePassword, updateUsername, updateProfileVisibility, checkUsernameAvailable } = useAuth();
 const { favorites, fetchFavorites } = useFavorites();
 const { savedComparisons, fetchComparisons } = useComparisons();
 const { friends, fetchAll: fetchFriends } = useFriends();
-const { preferences, loaded: prefsLoaded, fetchPreferences } = usePreferences();
+const { fetchPreferences } = usePreferences();
 
-watch(() => user.value, () => fetchPreferences(), { immediate: true });
+// Wait for auth to finish restoring the session before treating `user.value === null` as
+// "not logged in" — on a fresh page load it starts null while the Supabase session is still
+// being read from storage, and firing fetchPreferences() on that transient null permanently
+// locks preferences to defaults before the real session (and real user) ever resolves.
+watch([user, authLoading], ([, isAuthLoading]) => {
+  if (!isAuthLoading) fetchPreferences();
+}, { immediate: true });
 
-const prefsModalOpen = ref(false);
+const { openAuthModal } = useAuthModal();
 
-const PERSONA_LABELS: Record<string, { label: string; description: string }> = {
-  balanced:           { label: 'Balanced',           description: 'Equal weight across all factors' },
-  young_professional: { label: 'Young Professional', description: 'Career growth with a cost-effective lifestyle' },
-  family_buying:      { label: 'Family Buying',       description: 'Safe neighborhoods and long-term value' },
-  remote_worker:      { label: 'Remote Worker',       description: 'Low cost of living, high quality of life' },
-  career_climber:     { label: 'Career Climber',      description: 'Opportunity-dense, high-earning cities' },
-  tight_budget:       { label: 'Tight Budget',        description: 'Stretching every dollar as far as it goes' },
-};
-
-const SCORE_DIMS = [
-  { key: 'weight_affordability'      as const, label: 'Affordability' },
-  { key: 'weight_job_market'         as const, label: 'Job Market' },
-  { key: 'weight_climate'            as const, label: 'Climate' },
-  { key: 'weight_opportunity'        as const, label: 'Opportunity' },
-  { key: 'weight_lifestyle_vibrancy' as const, label: 'Lifestyle & Vibrancy' },
-  { key: 'weight_air_quality'        as const, label: 'Air Quality' },
-  { key: 'weight_connectivity'       as const, label: 'Connectivity' },
-];
-
-const currentPersona = computed(() =>
-  PERSONA_LABELS[preferences.value.persona_id] ?? PERSONA_LABELS['balanced']
-);
+// The router guard already keeps signed-out visitors from ever landing here (it cancels the
+// navigation and pops the shared sign-in modal on whatever page they were on). This only fires
+// if a session drops out from under someone already sitting on this page.
+watch([user, authLoading], ([currentUser, isAuthLoading]) => {
+  if (!isAuthLoading && !currentUser) openAuthModal('login');
+});
 
 type SettingsActionId = 'name' | 'password' | 'username';
 
@@ -334,10 +325,7 @@ onBeforeUnmount(() => {
       </button>
     </div>
 
-    <div v-if="!user" class="profile-empty">
-      <span class="mdi mdi-account-lock-outline profile-empty__icon"></span>
-      <p class="profile-empty__text">Sign in to open your profile.</p>
-    </div>
+    <div v-if="!user" class="profile-empty"></div>
 
     <div v-else class="profile-layout">
       <section class="profile-card profile-card--hero">
@@ -439,8 +427,6 @@ onBeforeUnmount(() => {
         </div>
       </section>
 
-      <PreferencesModal v-if="prefsModalOpen" @close="prefsModalOpen = false" />
-
       <!-- Atlas Score feature card -->
       <section class="profile-card profile-card--atlas">
         <div class="atlas-feature__inner">
@@ -455,41 +441,10 @@ onBeforeUnmount(() => {
             <p class="atlas-feature__desc">
               Every city gets a 0–100 match score tailored to your priorities — so you can instantly see which cities fit your life.
             </p>
-            <div v-if="prefsLoaded" class="atlas-feature__persona-row">
-              <span class="atlas-feature__persona-pill">{{ currentPersona.label }}</span>
-              <span class="atlas-feature__persona-desc">{{ currentPersona.description }}</span>
-            </div>
           </div>
 
-          <div class="atlas-feature__bars">
-            <div class="atlas-feature__bars-header">
-              <p class="atlas-feature__bars-label">Current weights</p>
-              <button class="atlas-feature__cta" @click="prefsModalOpen = true">
-                <span class="mdi mdi-tune-variant"></span>
-                Customize
-              </button>
-            </div>
-            <div v-if="prefsLoaded" class="atlas-feature__bar-list">
-              <div v-for="dim in SCORE_DIMS" :key="dim.key" class="atlas-feature__bar-row">
-                <span class="atlas-feature__bar-name">{{ dim.label }}</span>
-                <div class="atlas-feature__bar-track">
-                  <div
-                    class="atlas-feature__bar-fill"
-                    :style="{ width: `${preferences[dim.key]}%` }"
-                  ></div>
-                </div>
-                <span class="atlas-feature__bar-val">{{ preferences[dim.key] }}</span>
-              </div>
-            </div>
-            <div v-else class="atlas-feature__bar-list">
-              <div v-for="i in 8" :key="i" class="atlas-feature__bar-row">
-                <span class="atlas-feature__bar-name skeleton-line" style="width:80px;height:11px;border-radius:3px"></span>
-                <div class="atlas-feature__bar-track">
-                  <div class="atlas-feature__bar-fill skeleton-line" :style="{ width: `${20 + i * 8}%` }"></div>
-                </div>
-                <span class="skeleton-line" style="width:22px;height:11px;border-radius:3px"></span>
-              </div>
-            </div>
+          <div class="atlas-feature__prefs">
+            <PreferencesSetup :flat="true" />
           </div>
         </div>
       </section>
@@ -830,25 +785,6 @@ onBeforeUnmount(() => {
 
 .profile-empty {
   min-height: 60vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  text-align: center;
-}
-
-.profile-empty__icon {
-  font-size: 3rem;
-  color: var(--accent);
-  opacity: 0.35;
-}
-
-.profile-empty__text {
-  margin: 0;
-  font-size: 1rem;
-  color: var(--text-secondary);
-  font-weight: 600;
 }
 
 .profile-layout {
@@ -1678,8 +1614,8 @@ html:not(.dark) .profile-card__avatar {
 
 .atlas-feature__inner {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 32px;
+  grid-template-columns: minmax(0, 240px) 1fr;
+  gap: 28px;
   align-items: stretch;
 }
 
@@ -1737,124 +1673,14 @@ html:not(.dark) .profile-card__avatar {
   line-height: 1.6;
 }
 
-.atlas-feature__persona-row {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  flex-wrap: wrap;
-  margin-top: 2px;
-}
-
-.atlas-feature__persona-pill {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 11px;
-  background: color-mix(in srgb, var(--accent) 15%, transparent);
-  border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--accent);
-  white-space: nowrap;
-}
-
-.atlas-feature__persona-desc {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-}
-
-.atlas-feature__bars {
+.atlas-feature__prefs {
   background: color-mix(in srgb, var(--bg-card-inner) 60%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent) 10%, var(--border-card));
   border-radius: 16px;
-  padding: 18px 20px;
-  display: flex;
-  flex-direction: column;
-}
-
-.atlas-feature__bars-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
-}
-
-.atlas-feature__bars-label {
-  margin: 0;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.atlas-feature__cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 9px;
-  font: inherit;
-  font-size: 0.8rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: opacity 0.15s, transform 0.15s;
-  box-shadow: 0 3px 10px color-mix(in srgb, var(--accent) 30%, transparent);
-}
-
-html:not(.dark) .atlas-feature__cta {
-  color: var(--bg-main);
-}
-
-.atlas-feature__cta:hover {
-  opacity: 0.88;
-  transform: translateY(-1px);
-}
-
-.atlas-feature__bar-list {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  flex: 1;
-  justify-content: space-between;
-}
-
-.atlas-feature__bar-row {
-  display: grid;
-  grid-template-columns: 100px 1fr 26px;
-  align-items: center;
-  gap: 10px;
-}
-
-.atlas-feature__bar-name {
-  font-size: 0.76rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-  white-space: nowrap;
-}
-
-.atlas-feature__bar-track {
-  height: 5px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--accent) 10%, var(--bg-card));
   overflow: hidden;
-}
-
-.atlas-feature__bar-fill {
-  height: 100%;
-  border-radius: 999px;
-  background: var(--accent);
-  transition: width 0.4s ease;
-}
-
-.atlas-feature__bar-val {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: color-mix(in srgb, var(--accent) 85%, var(--text-muted));
-  text-align: right;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 @media (max-width: 860px) {
