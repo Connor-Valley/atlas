@@ -17,6 +17,7 @@ import { computeAtlasScore, scoreTier, politicalDimTier, evaluateOpportunityMatc
 import { DIMS, PREF_LABELS } from '../lib/atlasScoreDims';
 
 const props = defineProps<{ city: string; state: string }>();
+const emit = defineEmits<{ (e: 'auth-required'): void }>();
 
 const { user, loading: authLoading } = useAuth();
 const { preferences, fetchPreferences } = usePreferences();
@@ -170,6 +171,12 @@ const narrative = computed(() => {
   return `${worst.label} and ${scored[scored.length - 2].label.toLowerCase()} are significant weak spots holding this score back.`;
 });
 
+function handlePersonalizeClick(e: MouseEvent) {
+  if (!user.value) {
+    e.preventDefault();
+    emit('auth-required');
+  }
+}
 </script>
 
 <template>
@@ -179,6 +186,7 @@ const narrative = computed(() => {
     v-if="result && !result.isPersonalized"
     to="/profile"
     class="atlas-card__personalize-bar atlas-card__personalize-bar--standalone"
+    @click="handlePersonalizeClick"
   >
     <span class="mdi mdi-tune-variant"></span>
     <span class="atlas-card__personalize-bar-text">Personalize your experience — get a score tailored to you</span>
@@ -242,8 +250,10 @@ const narrative = computed(() => {
                headline already shows the matched industry (which is just the user's own stated
                preference, restated), so "You: X" there is pure duplication — swap it for the
                city's #1 industry instead of stacking a third line and inflating every cube in
-               the row (cubes share a grid row height). Falls back to the normal "You:" line
-               whenever there's nothing useful to swap in (rank in the top 3, or no match at all). -->
+               the row (cubes share a grid row height). Shown whenever the city's #1 differs from
+               the match (ranks 2 and 3 included, not just "outside top 3"). Falls back to the
+               normal "You:" line when the match itself IS the city's #1 (would just repeat the
+               headline) or when there's no match at all (e.g. preference is "any"). -->
           <div v-if="dim.key === 'opportunity' && result.isPersonalized && opportunityMatch?.cityTopLabel" class="atlas-card__cube-pref">
             City's #1: {{ opportunityMatch.cityTopLabel }}
           </div>

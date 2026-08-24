@@ -525,8 +525,9 @@ export type OpportunityMatchDetail = {
   matchedLabel: string | null;
   matchedRank: number | null;
   matchedSharePct: number | null;
-  // The city's own #1 industry, shown only when matchedRank is outside the top 3 — otherwise the
-  // headline itself (buried at #5, say) gives no sense of what actually dominates locally.
+  // The city's own #1 industry — populated whenever it differs from matchedLabel. Null exactly
+  // when the match itself is the city's #1 (matchedRank === 1), since showing it there would
+  // just repeat the headline verbatim.
   cityTopLabel: string | null;
   cityTopSharePct: number | null;
 };
@@ -559,15 +560,18 @@ export function evaluateOpportunityMatch(preference: string, income: any): Oppor
 
   const rank = idx + 1;
   const matchedSector = ranked[idx]!;
-  const outsideTop3 = rank > 3;
+  // rank 1 means the match IS the city's #1 sector — cityTopLabel would just repeat the headline
+  // (which already carries a "#1" badge), so null it out there and let the template fall back to
+  // "You: <preference>" instead of printing the same industry name twice.
+  const isCityTop = rank === 1;
   return {
     score: opportunityScoreForRank(rank, matchedSector.share),
     tier: opportunityTierForRank(rank),
     matchedLabel: label(matchedSector.name),
     matchedRank: rank,
     matchedSharePct: Math.round(matchedSector.share * 100),
-    cityTopLabel: outsideTop3 ? cityTopLabel : null,
-    cityTopSharePct: outsideTop3 ? cityTopSharePct : null,
+    cityTopLabel: isCityTop ? null : cityTopLabel,
+    cityTopSharePct: isCityTop ? null : cityTopSharePct,
   };
 }
 

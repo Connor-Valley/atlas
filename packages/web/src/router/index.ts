@@ -1,4 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import { watch } from 'vue';
+import { useAuth } from '../composables/useAuth';
+import { useAuthModal } from '../composables/useAuthModal';
 import Home from '../views/Home.vue';
 import Search from '../views/Search.vue';
 import StateBrowse from '../views/StateBrowse.vue';
@@ -132,6 +135,36 @@ const router = createRouter({
       props: true
     }
   ]
+});
+
+// Signed-out visitors hitting /profile directly (bookmark, typed URL, back button) should never
+// see the profile shell — cancel the navigation, stay on whatever page they were already on, and
+// pop the sign-in modal there instead. Waits out the transient `loading === true` window while
+// the Supabase session is still being restored, so a real signed-in user refreshing on /profile
+// isn't bounced before their session has a chance to resolve.
+router.beforeEach(async (to, from) => {
+  if (to.name !== 'profile') return true;
+
+  const { user, loading } = useAuth();
+  if (loading.value) {
+    await new Promise<void>((resolve) => {
+      const stop = watch(loading, (isLoading) => {
+        if (!isLoading) {
+          stop();
+          resolve();
+        }
+      });
+    });
+  }
+
+  if (!user.value) {
+    useAuthModal().openAuthModal('login');
+    // Cancelling leaves you on whatever page you were already viewing. But on a cold load
+    // straight to /profile there's no "from" page to fall back to, so send that case home
+    // instead of cancelling into a blank router-view.
+    return from.matched.length ? false : { name: 'home' };
+  }
+  return true;
 });
 
 export default router;

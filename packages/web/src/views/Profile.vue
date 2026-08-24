@@ -5,6 +5,7 @@ import DashboardHeader from '../components/DashboardHeader.vue';
 import PreferencesSetup from '../components/PreferencesSetup.vue';
 import { usePreferences } from '../composables/usePreferences';
 import { useAuth } from '../composables/useAuth';
+import { useAuthModal } from '../composables/useAuthModal';
 import { useFavorites } from '../composables/useFavorites';
 import { useComparisons } from '../composables/useComparisons';
 import { useFriends } from '../composables/useFriends';
@@ -32,6 +33,15 @@ const { fetchPreferences } = usePreferences();
 watch([user, authLoading], ([, isAuthLoading]) => {
   if (!isAuthLoading) fetchPreferences();
 }, { immediate: true });
+
+const { openAuthModal } = useAuthModal();
+
+// The router guard already keeps signed-out visitors from ever landing here (it cancels the
+// navigation and pops the shared sign-in modal on whatever page they were on). This only fires
+// if a session drops out from under someone already sitting on this page.
+watch([user, authLoading], ([currentUser, isAuthLoading]) => {
+  if (!isAuthLoading && !currentUser) openAuthModal('login');
+});
 
 type SettingsActionId = 'name' | 'password' | 'username';
 
@@ -315,10 +325,7 @@ onBeforeUnmount(() => {
       </button>
     </div>
 
-    <div v-if="!user" class="profile-empty">
-      <span class="mdi mdi-account-lock-outline profile-empty__icon"></span>
-      <p class="profile-empty__text">Sign in to open your profile.</p>
-    </div>
+    <div v-if="!user" class="profile-empty"></div>
 
     <div v-else class="profile-layout">
       <section class="profile-card profile-card--hero">
@@ -778,25 +785,6 @@ onBeforeUnmount(() => {
 
 .profile-empty {
   min-height: 60vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  text-align: center;
-}
-
-.profile-empty__icon {
-  font-size: 3rem;
-  color: var(--accent);
-  opacity: 0.35;
-}
-
-.profile-empty__text {
-  margin: 0;
-  font-size: 1rem;
-  color: var(--text-secondary);
-  font-weight: 600;
 }
 
 .profile-layout {

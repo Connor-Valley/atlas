@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import DashboardHeader from '../components/DashboardHeader.vue';
 import CitySearch from '../components/CitySearch.vue';
 import UsStateMap from '../components/UsStateMap.vue';
+import AuthModal from '../components/AuthModal.vue';
 import { useAuth } from '../composables/useAuth';
 import { useRecentSearches } from '../composables/useRecentSearches';
 import { useFavorites } from '../composables/useFavorites';
@@ -79,6 +80,14 @@ const heroRef = ref<HTMLElement | null>(null);
 function browseByState(code: string) {
   router.push({ name: 'state-browse', params: { code: code.toUpperCase() } });
 }
+
+const showAuthModal = ref(false);
+const authModalMode = ref<'login' | 'register'>('login');
+
+function openAuth(mode: 'login' | 'register') {
+  authModalMode.value = mode;
+  showAuthModal.value = true;
+}
 </script>
 
 <template>
@@ -116,7 +125,7 @@ function browseByState(code: string) {
           </button>
         </div>
 
-        <div v-if="!user" class="search-page__empty">
+        <div v-if="!user" class="search-page__empty search-page__empty--clickable" @click="openAuth('login')">
           <span class="mdi mdi-account-lock-outline search-page__empty-icon"></span>
           <p class="search-page__empty-text">Sign in to keep track of cities you've looked up</p>
         </div>
@@ -156,8 +165,8 @@ function browseByState(code: string) {
             </span>
           </div>
 
-          <div v-if="!user" class="search-page__empty search-page__empty--compact">
-            <p class="search-page__empty-text">Sign in to save favorite cities</p>
+          <div v-if="!user" class="search-page__empty search-page__empty--compact search-page__empty--lock-only search-page__empty--clickable" @click="openAuth('login')">
+            <span class="mdi mdi-lock-outline search-page__empty-icon"></span>
           </div>
           <div v-else-if="favLoaded && favorites.length === 0" class="search-page__empty search-page__empty--compact">
             <p class="search-page__empty-text">No favorites yet — star a city to save it here</p>
@@ -185,8 +194,8 @@ function browseByState(code: string) {
             </span>
           </div>
 
-          <div v-if="!user" class="search-page__empty search-page__empty--compact">
-            <p class="search-page__empty-text">Sign in to save comparisons</p>
+          <div v-if="!user" class="search-page__empty search-page__empty--compact search-page__empty--lock-only search-page__empty--clickable" @click="openAuth('login')">
+            <span class="mdi mdi-lock-outline search-page__empty-icon"></span>
           </div>
           <div v-else-if="comparisonsLoaded && savedComparisons.length === 0" class="search-page__empty search-page__empty--compact">
             <p class="search-page__empty-text">No saved comparisons yet</p>
@@ -203,7 +212,7 @@ function browseByState(code: string) {
               <span class="search-page__row-name">{{ cmp.city_name_b }}, {{ cmp.state_b }}</span>
             </button>
           </template>
-          <button class="search-page__panel-link" @click="router.push({ name: 'compare-empty' })">
+          <button v-if="user" class="search-page__panel-link" @click="router.push({ name: 'compare-empty' })">
             <span class="mdi mdi-plus"></span> New Comparison
           </button>
         </section>
@@ -244,6 +253,8 @@ function browseByState(code: string) {
         </div>
       </section>
     </div>
+
+    <AuthModal v-if="showAuthModal" :mode="authModalMode" @close="showAuthModal = false" />
   </div>
 </template>
 
@@ -403,6 +414,20 @@ function browseByState(code: string) {
   align-items: flex-start;
   padding: 16px;
   text-align: left;
+}
+
+.search-page__empty--lock-only {
+  align-items: center;
+  justify-content: center;
+}
+
+.search-page__empty--clickable {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.search-page__empty--clickable:hover {
+  background: var(--bg-card-inner);
 }
 
 .search-page__empty-icon {
