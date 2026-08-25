@@ -137,25 +137,29 @@ const router = createRouter({
   ]
 });
 
+// Waits out the transient `loading === true` window while the Supabase session is still being
+// restored, so a real signed-in user isn't treated as signed-out before their session resolves.
+async function waitForAuthResolved() {
+  const { loading } = useAuth();
+  if (!loading.value) return;
+  await new Promise<void>((resolve) => {
+    const stop = watch(loading, (isLoading) => {
+      if (!isLoading) {
+        stop();
+        resolve();
+      }
+    });
+  });
+}
+
 // Signed-out visitors hitting /profile directly (bookmark, typed URL, back button) should never
 // see the profile shell — cancel the navigation, stay on whatever page they were already on, and
-// pop the sign-in modal there instead. Waits out the transient `loading === true` window while
-// the Supabase session is still being restored, so a real signed-in user refreshing on /profile
-// isn't bounced before their session has a chance to resolve.
+// pop the sign-in modal there instead.
 router.beforeEach(async (to, from) => {
   if (to.name !== 'profile') return true;
 
-  const { user, loading } = useAuth();
-  if (loading.value) {
-    await new Promise<void>((resolve) => {
-      const stop = watch(loading, (isLoading) => {
-        if (!isLoading) {
-          stop();
-          resolve();
-        }
-      });
-    });
-  }
+  await waitForAuthResolved();
+  const { user } = useAuth();
 
   if (!user.value) {
     useAuthModal().openAuthModal('login');
@@ -163,6 +167,20 @@ router.beforeEach(async (to, from) => {
     // straight to /profile there's no "from" page to fall back to, so send that case home
     // instead of cancelling into a blank router-view.
     return from.matched.length ? false : { name: 'home' };
+  }
+  return true;
+});
+
+// Signed-in users hitting the bare landing route ("/") should skip the marketing hero and go
+// straight to /search — the hero's sign-up pitch has nothing to offer someone already logged in.
+router.beforeEach(async (to) => {
+  if (to.name !== 'home') return true;
+
+  await waitForAuthResolved();
+  const { user } = useAuth();
+
+  if (user.value) {
+    return { name: 'search' };
   }
   return true;
 });
