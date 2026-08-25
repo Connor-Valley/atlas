@@ -68,7 +68,7 @@ function openAuth(mode: "login" | "register") {
 <template>
   <header class="dashboard-hdr">
     <div class="dashboard-hdr__left">
-      <button class="dashboard-hdr__home-btn" @click="router.push({ name: 'home' })" aria-label="Go to landing page">
+      <button class="dashboard-hdr__home-btn" @click="router.push({ name: 'home', query: { view: 'landing' } })" aria-label="Go to landing page">
         <span class="dashboard-hdr__home-slash">/</span>
       </button>
       <div class="dashboard-hdr__logo-wrap" @click="$emit('logo-click')">
