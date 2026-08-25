@@ -1,6 +1,6 @@
 import type { City } from "../cities/cities.types.js";
 import type { CityHousing, DetailedCityHousing, HousingStructure, FhfaData } from "./housing.types.js";
-import { buildCensusGeoQuery } from "../common/census.js";
+import { buildCensusGeoQuery, toNumber } from "../common/census.js";
 import { getCached } from "../common/cache.js";
 import fs from "fs";
 import path from "path";
@@ -394,16 +394,14 @@ async function fetchCensusData(url: string): Promise<string[]> {
  * Safely parses numeric values from Census API responses
  */
 function parseNumeric(value: string | undefined): number {
-  const num = Number(value);
-  return Number.isFinite(num) ? num : 0;
+  return toNumber(value);
 }
 
 /**
  * Parses optional numeric values that can be undefined
  */
 function parseOptionalNumeric(value: string | undefined): number | undefined {
-  const num = Number(value);
-  return Number.isFinite(num) ? num : undefined;
+  return toNumber(value, undefined);
 }
 
 /**

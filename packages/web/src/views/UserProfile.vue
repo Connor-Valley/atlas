@@ -5,13 +5,16 @@ import DashboardHeader from '../components/DashboardHeader.vue';
 import { useAuth } from '../composables/useAuth';
 import { useFriends } from '../composables/useFriends';
 import { useToast } from '../composables/useToast';
+import { useRecentSearches } from '../composables/useRecentSearches';
 import { supabase } from '../lib/supabase';
 import { canViewerAccessProfileContent, getProfileVisibilityNotice, type ProfileVisibility } from '../lib/profilePrivacy';
 
 const route  = useRoute();
 const router = useRouter();
+const { recordRecentSearch } = useRecentSearches();
 
 function onHeaderSearch(payload: { city: string; state: string }) {
+  void recordRecentSearch(payload.city, payload.state);
   router.push(`/city/${payload.state}/${payload.city}`);
 }
 
@@ -249,7 +252,7 @@ watch(() => user.value?.id, loadProfile);
     <div class="container container--header-only">
       <DashboardHeader
         :page-label="targetProfile?.display_name || targetProfile?.username || 'Profile'"
-        @logo-click="router.push({ name: 'home' })"
+        @logo-click="router.push({ name: 'search' })"
         @search="onHeaderSearch"
       />
     </div>

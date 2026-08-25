@@ -1,4 +1,5 @@
 import { STATE_FIPS, type SupportedState } from "../states/states.types.js";
+import { toNumber } from "../common/census.js";
 
 export type PlaceType =
   | "city"
@@ -25,6 +26,10 @@ export type ResolvedPlace = {
   countyFips: string;
   placeCode: string;
   population: number;
+  // County Census bakes into the NAME field itself to disambiguate two
+  // same-named places in the state, e.g. "Kailua CDP (Hawaii County)" — set
+  // only when present, so it can be used for our own disambiguation display.
+  countyHint: string | null;
 };
 
 type ListedPlace = {
@@ -88,9 +93,9 @@ export async function getResolvedPlacesForState(
 export async function getListedPlacesForState(
   state: string,
   year: number,
-): Promise<Array<{ name: string; slug: string }>> {
+): Promise<Array<{ name: string; slug: string; population: number }>> {
   const listed = await getListedResolvedPlacesForState(state, year);
-  return listed.map(({ name, slug }) => ({ name, slug }));
+  return listed.map(({ name, slug, place }) => ({ name, slug, population: place.population }));
 }
 
 export async function resolvePlace(
@@ -99,8 +104,14 @@ export async function resolvePlace(
   year: number,
 ): Promise<ResolvedPlace> {
   const places = await getResolvedPlacesForState(state, year);
-  const direct = places.find((place) => place.slug === citySlug);
-  if (direct) return direct;
+  // Multiple same-named places across counties (e.g. three "Caledonia township"s
+  // in three different MI counties) can share this exact slug — rank the same
+  // way getListedPlacesForState does so we resolve to the same place it lists
+  // as canonical, not just whichever the Census API happened to return first.
+  const directMatches = places.filter((place) => place.slug === citySlug);
+  if (directMatches.length > 0) {
+    return [...directMatches].sort(comparePlaces)[0]!;
+  }
 
   const normalizedSlug = slugify(citySlug.replace(/-/g, " "));
   const aliasMatches = places.filter((place) => place.aliases.includes(normalizedSlug));
@@ -148,7 +159,7 @@ async function getListedResolvedPlacesForState(
       seen.add(slug);
 
       listed.push({
-        name: `${place.displayName} (${normalizeCountyName(place.fullName.split(",")[1] ?? "")})`,
+        name: `${place.displayName} (${normalizeCountyName(place.countyHint ?? place.fullName.split(",")[1] ?? "")})`,
         slug,
         place,
       });
@@ -203,7 +214,8 @@ function buildResolvedPlace(
   geographyType: "place" | "county-subdivision",
 ): ResolvedPlace {
   const [fullName, populationRaw, stateFips, countyOrPlaceCode, maybePlaceCode] = row;
-  const localName = extractLocalName(fullName);
+  const rawLocalName = extractLocalName(fullName);
+  const { base: localName, countyHint } = stripEmbeddedCounty(rawLocalName);
   const placeType = detectPlaceType(localName);
   const baseName = cleanPlaceName(localName);
   const displayName = buildDisplayName(localName, placeType, baseName);
@@ -228,11 +240,24 @@ function buildResolvedPlace(
     countyFips: geographyType === "county-subdivision" ? `${stateFips}${countyCode}` : "",
     placeCode,
     population: toNumber(populationRaw),
+    countyHint,
   };
 }
 
 function extractLocalName(fullName: string): string {
   return fullName.split(",")[0]?.trim() ?? fullName.trim();
+}
+
+// Strips a trailing "(X County)" that Census bakes directly into the NAME
+// field to disambiguate two same-named places within a state — it sits
+// before any place-type suffix (e.g. "Kailua CDP (Hawaii County)"), so
+// without this, "CDP" is no longer at the end of the string and none of our
+// suffix patterns match, leaving it to leak through into the display name.
+function stripEmbeddedCounty(localName: string): { base: string; countyHint: string | null } {
+  // "counties" plural covers cross-county CDPs, e.g. "(Kemper and Neshoba Counties)".
+  const match = localName.match(/^(.*?)\s*\(([^()]*\bcount(?:y|ies)\b[^()]*)\)\s*$/i);
+  if (!match) return { base: localName, countyHint: null };
+  return { base: match[1]!.trim(), countyHint: match[2]!.trim() };
 }
 
 function cleanPlaceName(localName: string): string {
@@ -253,7 +278,15 @@ function cleanPlaceName(localName: string): string {
 function buildDisplayName(localName: string, placeType: PlaceType, baseName: string): string {
   const trimmed = localName.replace(/\s+/g, " ").trim();
 
-  if (placeType === "city") {
+  // Suffix-style "X town" (California's convention: Danville, Los Gatos, Yountville, etc.
+  // are legally "towns") should behave like "city"/"cdp" — the suffix isn't part of how
+  // anyone refers to the place. This is distinct from prefix-style "Town of X" (New England
+  // convention, handled below), which intentionally keeps "Town" in the display name.
+  const isSuffixStyleTown = placeType === "town" && !/^town of\s+/i.test(trimmed);
+  if (placeType === "city" || placeType === "cdp" || isSuffixStyleTown) {
+    // "CDP" (Census Designated Place) is a Census Bureau technical designation
+    // for unincorporated communities, never part of the place's actual name —
+    // unlike "Township"/"Village"/etc., which are often genuinely part of it.
     return toTitleCase(baseName);
   }
   if (/^village of\s+/i.test(trimmed)) {
@@ -320,13 +353,9 @@ function slugify(value: string): string {
     .replace(/\s+/g, "-");
 }
 
-function toNumber(value: string | undefined): number {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
 
 function normalizeCountyName(value: string): string {
-  return value.replace(/\bCounty\b/i, "").trim();
+  return value.replace(/\bCount(?:y|ies)\b/i, "").trim();
 }
 
 function toTitleCase(value: string): string {
@@ -334,11 +363,13 @@ function toTitleCase(value: string): string {
     .split(" ")
     .filter(Boolean)
     .map((word) => {
-      const lower = word.toLowerCase();
-      if (lower.length <= 2 && word === word.toUpperCase()) {
+      if (word.length <= 2 && word === word.toUpperCase()) {
         return word;
       }
-      return lower.charAt(0).toUpperCase() + lower.slice(1);
+      // Capitalize after hyphens/parens/slashes too, not just at the start of
+      // the space-separated token — otherwise "Athens-Clarke" title-cases to
+      // "Athens-clarke" and "(Honolulu" (mid-parenthetical) stays "(honolulu".
+      return word.toLowerCase().replace(/(^|[-(/])([a-z])/g, (_m, boundary, letter) => boundary + letter.toUpperCase());
     })
     .join(" ");
 }

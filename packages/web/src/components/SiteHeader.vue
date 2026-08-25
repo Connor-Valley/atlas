@@ -71,7 +71,7 @@ function navigateTo(routeName: 'profile' | 'favorites' | 'saved-comparisons' | '
 
 function handleLogoClick() {
   emit('logo-click');
-  if (!emit) router.push({ name: 'home' });
+  if (!emit) router.push({ name: 'search' });
 }
 </script>
 

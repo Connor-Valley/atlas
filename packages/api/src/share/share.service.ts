@@ -116,7 +116,9 @@ export async function getShareComparison(
     population: resolvedA.population,
     medianIncome: incomeA.medianHouseholdIncome,
     medianRent: housingA.medianRent,
-    rentToIncomeRatio: affordabilityA.rentToIncomeRatio * 100,
+    // rentToIncomeRatio can be null when Census suppresses the renter-income sample;
+    // the share card has no "unavailable" state, so fall back to 0 for display purposes.
+    rentToIncomeRatio: (affordabilityA.rentToIncomeRatio ?? 0) * 100,
   };
 
   const shareCityB: ShareCity = {
@@ -125,7 +127,7 @@ export async function getShareComparison(
     population: resolvedB.population,
     medianIncome: incomeB.medianHouseholdIncome,
     medianRent: housingB.medianRent,
-    rentToIncomeRatio: affordabilityB.rentToIncomeRatio * 100,
+    rentToIncomeRatio: (affordabilityB.rentToIncomeRatio ?? 0) * 100,
   };
 
   const comparePath = `/compare/${stateA}/${cityA}/${stateB}/${cityB}`;

@@ -4,7 +4,6 @@ import PreferencesSetup from './PreferencesSetup.vue';
 
 defineEmits<{ (e: 'close'): void }>();
 
-const setupRef = ref<InstanceType<typeof PreferencesSetup> | null>(null);
 </script>
 
 <template>
@@ -17,22 +16,11 @@ const setupRef = ref<InstanceType<typeof PreferencesSetup> | null>(null);
               <span class="mdi mdi-map-marker-star-outline prefs-modal-title__icon"></span>
               Atlas Score Preferences
             </span>
-            <div class="prefs-modal-actions">
-              <span class="prefs-modal-hint">Weights are relative — they don't need to sum to 100.</span>
-              <button class="prefs-modal-reset" @click="setupRef?.resetToPersonaDefaults()">
-                <span class="mdi mdi-refresh"></span> Reset
-              </button>
-              <button class="prefs-modal-save" :disabled="setupRef?.saving" @click="setupRef?.save()">
-                <span v-if="setupRef?.saving" class="mdi mdi-loading prefs-modal-spin"></span>
-                <span v-else-if="setupRef?.saved" class="mdi mdi-check"></span>
-                {{ setupRef?.saving ? 'Saving…' : setupRef?.saved ? 'Saved!' : 'Save preferences' }}
-              </button>
-            </div>
             <button class="prefs-modal-close" @click="$emit('close')">
               <span class="mdi mdi-close"></span>
             </button>
           </div>
-          <PreferencesSetup ref="setupRef" @saved="$emit('close')" />
+          <PreferencesSetup @saved="$emit('close')" />
         </div>
       </div>
     </Transition>

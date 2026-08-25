@@ -23,6 +23,13 @@ Still no frontend panel:
 
 **Atlas Algorithm scoring logic** is live client-side (`packages/web/src/lib/atlasScore.ts`), computed per-dashboard-load in `AtlasScoreCard.vue`. No backend `/atlas-algorithm` domain exists — all scoring is frontend-only.
 
+**`/search` page (`Search.vue`)** — a dedicated city-search page (separate from the `/` landing hero); the app logo now routes here instead of `/`. Built from a Claude Design mockup; sections that need backend support the app doesn't have yet were deliberately left out of the initial build:
+- **Suggested for You** — personalized city recommendations ("Great Match" score + one-line reason) scored against the user's saved persona/preferences. Would need either a backend endpoint that batch-scores candidate cities server-side, or a client-side job that runs `atlasScore.ts` against a curated candidate list — the per-city score currently only gets computed on-demand for one dashboard-loaded city at a time.
+- **Trending Now** — "most searched this week" leaderboard with population/rent/% change. Needs site-wide search analytics aggregated across all users; `recent_searches` (added for the Recent Searches panel) is per-user and RLS-scoped, not a basis for this.
+- **Quick filter chips** ("Affordable", "High score", "Warm climate") on the search bar — needs a city-attribute query endpoint (filter by score range, climate, etc.); no such search/filter API exists, only lookup-by-slug.
+
+What *did* ship on `/search`: search bar, Recent Searches (per-user, with median rent pulled from `/housing/:state/:city`), Saved Favorites and Recent Comparisons previews, and Browse by State.
+
 ---
 
 ## Commands

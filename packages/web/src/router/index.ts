@@ -1,5 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import { watch } from 'vue';
+import { useAuth } from '../composables/useAuth';
+import { useAuthModal } from '../composables/useAuthModal';
 import Home from '../views/Home.vue';
+import Search from '../views/Search.vue';
+import StateBrowse from '../views/StateBrowse.vue';
 import Housing from '../views/Housing.vue';
 import Favorites from '../views/Favorites.vue';
 import Compare from '../views/Compare.vue';
@@ -17,6 +22,17 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: Home
+    },
+    {
+      path: '/search',
+      name: 'search',
+      component: Search
+    },
+    {
+      path: '/state/:code',
+      name: 'state-browse',
+      component: StateBrowse,
+      props: true
     },
     {
       path: '/city/:state/:city',
@@ -135,6 +151,54 @@ const router = createRouter({
     if (savedPosition) return savedPosition;
     return { top: 0 };
   }
+});
+
+// Waits out the transient `loading === true` window while the Supabase session is still being
+// restored, so a real signed-in user isn't treated as signed-out before their session resolves.
+async function waitForAuthResolved() {
+  const { loading } = useAuth();
+  if (!loading.value) return;
+  await new Promise<void>((resolve) => {
+    const stop = watch(loading, (isLoading) => {
+      if (!isLoading) {
+        stop();
+        resolve();
+      }
+    });
+  });
+}
+
+// Signed-out visitors hitting /profile directly (bookmark, typed URL, back button) should never
+// see the profile shell — cancel the navigation, stay on whatever page they were already on, and
+// pop the sign-in modal there instead.
+router.beforeEach(async (to, from) => {
+  if (to.name !== 'profile') return true;
+
+  await waitForAuthResolved();
+  const { user } = useAuth();
+
+  if (!user.value) {
+    useAuthModal().openAuthModal('login');
+    // Cancelling leaves you on whatever page you were already viewing. But on a cold load
+    // straight to /profile there's no "from" page to fall back to, so send that case home
+    // instead of cancelling into a blank router-view.
+    return from.matched.length ? false : { name: 'home' };
+  }
+  return true;
+});
+
+// Signed-in users hitting the bare landing route ("/") should skip the marketing hero and go
+// straight to /search — the hero's sign-up pitch has nothing to offer someone already logged in.
+router.beforeEach(async (to) => {
+  if (to.name !== 'home') return true;
+
+  await waitForAuthResolved();
+  const { user } = useAuth();
+
+  if (user.value) {
+    return { name: 'search' };
+  }
+  return true;
 });
 
 export default router;

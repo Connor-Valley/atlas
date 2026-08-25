@@ -1,0 +1,182 @@
+{
+  "alameda|other": {
+    "placeName": "Alameda",
+    "year": 2024,
+    "demPct": 80.0,
+    "repPct": 16.3,
+    "marginPct": 63.7,
+    "lean": "Strong Democrat",
+    "totalVotes": 39794
+  },
+  "albany|other": {
+    "placeName": "Albany",
+    "year": 2024,
+    "demPct": 87.0,
+    "repPct": 8.7,
+    "marginPct": 78.3,
+    "lean": "Strong Democrat",
+    "totalVotes": 9695
+  },
+  "ashland|other": {
+    "placeName": "Ashland",
+    "year": 2024,
+    "demPct": 70.2,
+    "repPct": 26.1,
+    "marginPct": 44.1,
+    "lean": "Strong Democrat",
+    "totalVotes": 5657
+  },
+  "berkeley|other": {
+    "placeName": "Berkeley",
+    "year": 2024,
+    "demPct": 89.8,
+    "repPct": 5.2,
+    "marginPct": 84.6,
+    "lean": "Strong Democrat",
+    "totalVotes": 58835
+  },
+  "castro valley|other": {
+    "placeName": "Castro Valley",
+    "year": 2024,
+    "demPct": 67.4,
+    "repPct": 28.8,
+    "marginPct": 38.6,
+    "lean": "Strong Democrat",
+    "totalVotes": 30810
+  },
+  "cherryland|other": {
+    "placeName": "Cherryland",
+    "year": 2024,
+    "demPct": 68.2,
+    "repPct": 27.8,
+    "marginPct": 40.4,
+    "lean": "Strong Democrat",
+    "totalVotes": 3619
+  },
+  "dublin|other": {
+    "placeName": "Dublin",
+    "year": 2024,
+    "demPct": 65.6,
+    "repPct": 29.8,
+    "marginPct": 35.8,
+    "lean": "Strong Democrat",
+    "totalVotes": 27111
+  },
+  "emeryville|other": {
+    "placeName": "Emeryville",
+    "year": 2024,
+    "demPct": 85.3,
+    "repPct": 9.2,
+    "marginPct": 76.1,
+    "lean": "Strong Democrat",
+    "totalVotes": 5388
+  },
+  "fairview|other": {
+    "placeName": "Fairview",
+    "year": 2024,
+    "demPct": 72.2,
+    "repPct": 24.2,
+    "marginPct": 48.0,
+    "lean": "Strong Democrat",
+    "totalVotes": 5279
+  },
+  "fremont|other": {
+    "placeName": "Fremont",
+    "year": 2024,
+    "demPct": 64.6,
+    "repPct": 30.6,
+    "marginPct": 34.0,
+    "lean": "Strong Democrat",
+    "totalVotes": 83029
+  },
+  "hayward|other": {
+    "placeName": "Hayward",
+    "year": 2024,
+    "demPct": 69.4,
+    "repPct": 27.1,
+    "marginPct": 42.3,
+    "lean": "Strong Democrat",
+    "totalVotes": 50207
+  },
+  "livermore|other": {
+    "placeName": "Livermore",
+    "year": 2024,
+    "demPct": 60.8,
+    "repPct": 36.0,
+    "marginPct": 24.8,
+    "lean": "Strong Democrat",
+    "totalVotes": 44085
+  },
+  "newark|other": {
+    "placeName": "Newark",
+    "year": 2024,
+    "demPct": 65.5,
+    "repPct": 30.4,
+    "marginPct": 35.1,
+    "lean": "Strong Democrat",
+    "totalVotes": 17240
+  },
+  "oakland|other": {
+    "placeName": "Oakland",
+    "year": 2024,
+    "demPct": 85.4,
+    "repPct": 9.2,
+    "marginPct": 76.2,
+    "lean": "Strong Democrat",
+    "totalVotes": 171306
+  },
+  "piedmont|other": {
+    "placeName": "Piedmont",
+    "year": 2024,
+    "demPct": 86.0,
+    "repPct": 11.2,
+    "marginPct": 74.8,
+    "lean": "Strong Democrat",
+    "totalVotes": 7322
+  },
+  "pleasanton|other": {
+    "placeName": "Pleasanton",
+    "year": 2024,
+    "demPct": 65.4,
+    "repPct": 30.7,
+    "marginPct": 34.7,
+    "lean": "Strong Democrat",
+    "totalVotes": 36894
+  },
+  "san leandro|other": {
+    "placeName": "San Leandro",
+    "year": 2024,
+    "demPct": 71.1,
+    "repPct": 25.6,
+    "marginPct": 45.5,
+    "lean": "Strong Democrat",
+    "totalVotes": 33077
+  },
+  "san lorenzo|other": {
+    "placeName": "San Lorenzo",
+    "year": 2024,
+    "demPct": 66.1,
+    "repPct": 30.7,
+    "marginPct": 35.4,
+    "lean": "Strong Democrat",
+    "totalVotes": 10500
+  },
+  "sunol|other": {
+    "placeName": "Sunol",
+    "year": 2024,
+    "demPct": 58.6,
+    "repPct": 35.9,
+    "marginPct": 22.7,
+    "lean": "Strong Democrat",
+    "totalVotes": 626
+  },
+  "union city|other": {
+    "placeName": "Union City",
+    "year": 2024,
+    "demPct": 66.4,
+    "repPct": 29.5,
+    "marginPct": 36.9,
+    "lean": "Strong Democrat",
+    "totalVotes": 26672
+  }
+}

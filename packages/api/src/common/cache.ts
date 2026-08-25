@@ -4,6 +4,17 @@ const TTL_SECONDS = 15 * 24 * 60 * 60; // 15 days
 const TTL_MS = TTL_SECONDS * 1000;
 const mem = new Map<string, { data: unknown; ts: number }>();
 
+// Bump this whenever a change alters what a cached response computes or contains (new/renamed
+// fields, fixed calculation, different data source) — old entries under the previous version
+// become unreachable immediately (never read again) and just expire on their own via Redis's
+// TTL, rather than silently serving stale-but-well-formed data to real users for up to 15 days
+// until someone remembers to manually clear the right cache prefix.
+const CACHE_VERSION = 1;
+
+function versionedKey(key: string): string {
+  return `v${CACHE_VERSION}:${key}`;
+}
+
 let _redis: Redis | null | undefined;
 function getRedis(): Redis | null {
   if (_redis !== undefined) return _redis;
@@ -18,10 +29,12 @@ function getRedis(): Redis | null {
 }
 
 export async function getCached<T>(
-  key: string,
+  rawKey: string,
   fetcher: () => Promise<T>,
   opts?: { shouldCache?: (result: T) => boolean }
 ): Promise<T> {
+  const key = versionedKey(rawKey);
+
   // Layer 1: memory
   const hit = mem.get(key);
   if (hit && Date.now() - hit.ts < TTL_MS) return hit.data as T;
@@ -48,7 +61,7 @@ export async function getCached<T>(
     mem.set(key, { data: fresh, ts: Date.now() });
     if (redis) {
       redis.set(key, fresh, { ex: TTL_SECONDS }).catch((e: Error) =>
-        console.warn(`[cache] write failed for "${key}":`, e.message)
+        console.warn('[cache] write failed for "%s": %s', key, e.message)
       );
     }
   }
@@ -59,10 +72,12 @@ export async function getCached<T>(
 export async function clearCache(
   prefix?: string
 ): Promise<{ memCleared: number; redisCleared: number | null }> {
+  const versionedPrefix = prefix ? versionedKey(prefix) : undefined;
+
   let memCleared = 0;
-  if (prefix) {
+  if (versionedPrefix) {
     for (const key of mem.keys()) {
-      if (key.startsWith(prefix)) {
+      if (key.startsWith(versionedPrefix)) {
         mem.delete(key);
         memCleared++;
       }
@@ -76,8 +91,8 @@ export async function clearCache(
   const redis = getRedis();
   if (redis) {
     try {
-      if (prefix) {
-        const keys = await redis.keys(`${prefix}*`);
+      if (versionedPrefix) {
+        const keys = await redis.keys(`${versionedPrefix}*`);
         if (keys.length) {
           await redis.del(...keys);
           redisCleared = keys.length;

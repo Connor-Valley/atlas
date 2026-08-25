@@ -1,7 +1,8 @@
 import type { City } from '../cities/cities.types.js';
 import type { CityIncome, DetailedCityIncome, EarningsByEducation, IncomeAffordabilityMetrics, IndustrySector, PovertyDepth, RawIncomeDistribution } from './income.types.js'
-import { buildCensusGeoQuery } from "../common/census.js";
+import { buildCensusGeoQuery, toNumber } from "../common/census.js";
 import { getCached } from "../common/cache.js";
+import { getJobsWithinRadius } from "./regional-jobs.service.js";
 
 export function getCityIncome(city: City, year: number): Promise<CityIncome> {
   return getCached(`income:${year}:${city.state}:${city.slug}`, () => fetchCityIncome(city, year));
@@ -52,10 +53,7 @@ async function fetchCityIncome(city: City, year: number): Promise<CityIncome> {
   if (!row) throw new Error("Census income response missing data row");
 
   // Helper: Census sometimes returns null-like strings
-  const n = (v: string | undefined) => {
-    const num = Number(v);
-    return Number.isFinite(num) ? num : 0;
-  };
+  const n = toNumber;
 
   // IMPORTANT: Order here must match the ?get= list above
   const [
@@ -133,7 +131,14 @@ const INDUSTRY_NAMES = [
   'Transportation & Utilities',
   'Information',
   'Finance, Insurance & Real Estate',
-  'Professional & Management Services',
+  // Census groups these three under one "Professional...and management, and administrative,
+  // and waste management services" subtotal, but they're very different kinds of work — most
+  // notably, real tech/R&D/engineering employment (Palo Alto, Bay Area, etc.) lives almost
+  // entirely in "Professional, Scientific & Technical Services" specifically, not in the
+  // subtotal's other two components, so lumping them together buried that signal.
+  'Professional, Scientific & Technical Services',
+  'Corporate Management',
+  'Administrative & Waste Services',
   'Education, Health & Social Services',
   'Arts, Entertainment & Food Services',
   'Other Services',
@@ -189,23 +194,25 @@ async function fetchDetailedCityIncome(city: City, year: number): Promise<Detail
     fetchCensusRow(
       `${baseUrl}?get=` + [
         'C24030_001E', // total civilian employed 16+
-        // Male sectors (_003E–_015E)
-        'C24030_003E', 'C24030_004E', 'C24030_005E', 'C24030_006E', 'C24030_007E',
-        'C24030_008E', 'C24030_009E', 'C24030_010E', 'C24030_011E', 'C24030_012E',
-        'C24030_013E', 'C24030_014E', 'C24030_015E',
-        // Female sectors (_017E–_029E)
-        'C24030_017E', 'C24030_018E', 'C24030_019E', 'C24030_020E', 'C24030_021E',
-        'C24030_022E', 'C24030_023E', 'C24030_024E', 'C24030_025E', 'C24030_026E',
-        'C24030_027E', 'C24030_028E', 'C24030_029E',
+        // Male sectors — C24030 nests several categories as "<Group>:" subtotals with their
+        // own child rows (e.g. _003E "Agriculture...and mining:" has children _004E/_005E);
+        // we fetch the subtotal row directly for those groups rather than the leaf children,
+        // so each of the 13 categories below is counted exactly once (see INDUSTRY_NAMES).
+        'C24030_003E', 'C24030_006E', 'C24030_007E', 'C24030_008E', 'C24030_009E',
+        'C24030_010E', 'C24030_013E', 'C24030_014E',
+        'C24030_018E', 'C24030_019E', 'C24030_020E', // Prof/scientific/technical, Mgmt, Admin&waste (leaves, not the _017E subtotal)
+        'C24030_021E', 'C24030_024E', 'C24030_027E', 'C24030_028E',
+        // Female sectors — same 15 categories, offset +27 (female block starts at _029E)
+        'C24030_030E', 'C24030_033E', 'C24030_034E', 'C24030_035E', 'C24030_036E',
+        'C24030_037E', 'C24030_040E', 'C24030_041E',
+        'C24030_045E', 'C24030_046E', 'C24030_047E',
+        'C24030_048E', 'C24030_051E', 'C24030_054E', 'C24030_055E',
       ].join(',') + geo + key
     ),
     fetchCensusRow(emp2019Url),
   ]);
 
-  const n = (v: string | undefined) => {
-    const num = Number(v);
-    return Number.isFinite(num) ? num : 0;
-  };
+  const n = toNumber;
   const nullable = (v: string | undefined): number | null => {
     const num = Number(v);
     return num > 0 ? num : null;
@@ -226,15 +233,17 @@ async function fetchDetailedCityIncome(city: City, year: number): Promise<Detail
   // ── Parse industry row ─────────────────────────────────────────────────────
   const [
     totalEmployed,
-    m_agri, m_constr, m_mfg, m_wholesale, m_retail, m_transport,
-    m_info, m_finance, m_prof, m_edu, m_arts, m_other, m_pubAdmin,
-    f_agri, f_constr, f_mfg, f_wholesale, f_retail, f_transport,
-    f_info, f_finance, f_prof, f_edu, f_arts, f_other, f_pubAdmin,
+    m_agri, m_constr, m_mfg, m_wholesale, m_retail, m_transport, m_info, m_finance,
+    m_profSciTech, m_corpMgmt, m_admin,
+    m_edu, m_arts, m_other, m_pubAdmin,
+    f_agri, f_constr, f_mfg, f_wholesale, f_retail, f_transport, f_info, f_finance,
+    f_profSciTech, f_corpMgmt, f_admin,
+    f_edu, f_arts, f_other, f_pubAdmin,
   ] = industryRow;
 
   const employed = n(totalEmployed);
-  const maleSectors = [m_agri, m_constr, m_mfg, m_wholesale, m_retail, m_transport, m_info, m_finance, m_prof, m_edu, m_arts, m_other, m_pubAdmin];
-  const femaleSectors = [f_agri, f_constr, f_mfg, f_wholesale, f_retail, f_transport, f_info, f_finance, f_prof, f_edu, f_arts, f_other, f_pubAdmin];
+  const maleSectors = [m_agri, m_constr, m_mfg, m_wholesale, m_retail, m_transport, m_info, m_finance, m_profSciTech, m_corpMgmt, m_admin, m_edu, m_arts, m_other, m_pubAdmin];
+  const femaleSectors = [f_agri, f_constr, f_mfg, f_wholesale, f_retail, f_transport, f_info, f_finance, f_profSciTech, f_corpMgmt, f_admin, f_edu, f_arts, f_other, f_pubAdmin];
 
   const industryBreakdown: IndustrySector[] = INDUSTRY_NAMES.map((name, i) => {
     const count = n(maleSectors[i]) + n(femaleSectors[i]);
@@ -343,6 +352,7 @@ async function fetchDetailedCityIncome(city: City, year: number): Promise<Detail
     industryBreakdown,
     affordabilityMetrics,
     employmentGrowthPct5yr,
+    jobsWithin25Miles: getJobsWithinRadius(city.countyFips),
   };
 }
 

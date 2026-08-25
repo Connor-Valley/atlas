@@ -1,5 +1,5 @@
 import type { City } from "../cities/cities.types.js";
-import { buildCensusGeoQuery } from "../common/census.js";
+import { buildCensusGeoQuery, toNumber } from "../common/census.js";
 import type { SourceAttribution } from "../common/source.types.js";
 import type { CityProfileDetails, CityProfileSummary, PercentageBreakdown, UrbanCharacter } from "./city-profile.types.js";
 import { getPoliticalAffiliation } from "./politics-reference.js";
@@ -263,11 +263,6 @@ function formatPercent(value: number): string {
 
 function sum(values: number[]): number {
   return values.reduce((total, value) => total + value, 0);
-}
-
-function toNumber(value: string | undefined): number {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 function toNullableNumber(value: string | undefined): number | null {

@@ -2,6 +2,7 @@
 import { ref, computed, reactive, onMounted, onUnmounted, nextTick, watch } from "vue";
 import { useRouter } from "vue-router";
 import CitySearch from "../components/CitySearch.vue";
+import CompareCitySearch from "../components/CompareCitySearch.vue";
 import CityInfoSection from "../components/CityInfoSection.vue";
 import CityInfoExpandedView from "../components/CityInfoExpandedView.vue";
 import HousingSection from "../components/HousingSection.vue";
@@ -20,6 +21,7 @@ import DashboardHeader from "../components/DashboardHeader.vue";
 import ThemeToggle from "../components/ThemeToggle.vue";
 import { useAuth } from "../composables/useAuth";
 import { footerHidden } from "../composables/useFooterVisibility";
+import { useRecentSearches } from "../composables/useRecentSearches";
 import AtlasScoreCard from "../components/AtlasScoreCard.vue";
 import { prefetchDetailedHousing } from "../api/housing";
 import { prefetchDetailedCityProfile } from "../api/cityProfile";
@@ -50,19 +52,21 @@ const props = defineProps<{
 
 const router = useRouter();
 const { user, displayName, signOut } = useAuth();
+const { recordRecentSearch } = useRecentSearches();
 const showAuthModal  = ref(false);
 const authModalMode  = ref<'login' | 'register'>('register');
 const userMenuOpen   = ref(false);
+// Hover only reveals the username label on the button — it no longer opens
+// the dropdown, which now opens strictly on click.
+const userMenuHovered = ref(false);
 const userMenuRef = ref<HTMLElement | null>(null);
-let userMenuCloseTimer: ReturnType<typeof setTimeout> | null = null;
 
 function openUserMenuHover() {
-  if (userMenuCloseTimer) { clearTimeout(userMenuCloseTimer); userMenuCloseTimer = null; }
-  userMenuOpen.value = true;
+  userMenuHovered.value = true;
 }
 
 function closeUserMenuHover() {
-  userMenuCloseTimer = setTimeout(() => { userMenuOpen.value = false; }, 300);
+  userMenuHovered.value = false;
 }
 const cityShareMenuRef = ref<HTMLElement | null>(null);
 const cityShareMenuOpen = ref(false);
@@ -73,6 +77,13 @@ function openAuth(mode: 'login' | 'register') {
   authModalMode.value = mode;
   showAuthModal.value = true;
 }
+
+type HeroMode = 'search' | 'compare';
+const heroMode = ref<HeroMode>('search');
+const compareCityA = reactive<{ city: string; state: string }>({ city: '', state: '' });
+const compareCityB = reactive<{ city: string; state: string }>({ city: '', state: '' });
+const compareReady = computed(() => !!compareCityA.city && !!compareCityA.state && !!compareCityB.city && !!compareCityB.state);
+const comparePartialReady = computed(() => !!compareCityA.city && !!compareCityA.state);
 
 const city = ref("");
 const state = ref("");
@@ -114,6 +125,15 @@ const scores = reactive({
   climate: null as number | null,
   lifestyle: null as number | null,
 });
+
+// Tracks which sections have hit a Census sample too small to publish, so the
+// hero card can surface a single "some data is missing" banner.
+const dataGaps = reactive({
+  economic: false,
+  housing: false,
+  affordability: false,
+});
+const hasMissingData = computed(() => Object.values(dataGaps).some(Boolean));
 
 const cityDisplayName = computed(() =>
   city.value.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
@@ -444,6 +464,8 @@ function onSearch(payload: { city: string; state: string }) {
 
   router.push(`/city/${payload.state}/${payload.city}`);
 
+  void recordRecentSearch(payload.city, payload.state);
+
   if (shouldAnimateLandingTransition) {
     void animateLandingToDashboard();
     return;
@@ -498,6 +520,34 @@ function resetSearch() {
 
 function goToCompare() {
   router.push({ name: "compare-empty" });
+}
+
+function onHeroModeToggle(mode: HeroMode) {
+  heroMode.value = mode;
+  if (mode === 'search') {
+    compareCityA.city = ''; compareCityA.state = '';
+    compareCityB.city = ''; compareCityB.state = '';
+  }
+}
+
+function onCompareASearch(p: { city: string; state: string }) {
+  compareCityA.city = p.city;
+  compareCityA.state = p.state;
+}
+
+function onCompareBSearch(p: { city: string; state: string }) {
+  compareCityB.city = p.city;
+  compareCityB.state = p.state;
+}
+
+function submitHeroCompare() {
+  if (!comparePartialReady.value) return;
+  router.push({
+    name: 'compare',
+    params: compareReady.value
+      ? { stateA: compareCityA.state, cityA: compareCityA.city, stateB: compareCityB.state, cityB: compareCityB.city }
+      : { stateA: compareCityA.state, cityA: compareCityA.city },
+  });
 }
 
 function openCompareView() {
@@ -1129,7 +1179,7 @@ async function closeExpandedSection() {
           @click.stop="toggleUserMenu"
         >
           <Transition name="menu-name-slide">
-            <span v-if="userMenuOpen" class="user-menu__name hero-auth__menu-name">{{ displayName() ?? 'Account' }}</span>
+            <span v-if="userMenuOpen || userMenuHovered" class="user-menu__name hero-auth__menu-name">{{ displayName() ?? 'Account' }}</span>
           </Transition>
           <span class="user-menu__avatar">{{ (displayName() ?? 'A')[0].toUpperCase() }}</span>
         </button>
@@ -1197,20 +1247,64 @@ async function closeExpandedSection() {
           :class="{ 'hero-tagline__cursor--done': typewriterDone }"
         >|</span>
       </p>
+      <div class="hero-mode-toggle" role="group" aria-label="Choose mode">
+        <button
+          class="hero-mode-toggle__option"
+          :class="{ 'hero-mode-toggle__option--active': heroMode === 'search' }"
+          @click="onHeroModeToggle('search')"
+        >
+          <span class="mdi mdi-magnify"></span>
+          Search
+        </button>
+        <button
+          class="hero-mode-toggle__option"
+          :class="{ 'hero-mode-toggle__option--active': heroMode === 'compare' }"
+          @click="onHeroModeToggle('compare')"
+        >
+          <span class="mdi mdi-compare-horizontal"></span>
+          Compare
+        </button>
+      </div>
       <div ref="landingSearch">
         <CitySearch
+          v-if="heroMode === 'search'"
           :initial-city="city"
           :initial-state="state"
           @search="onSearch"
         />
+        <div v-else class="hero-compare-picker">
+          <CompareCitySearch
+            label="Choose City"
+            tone="a"
+            variant="card"
+            :button-label="compareCityA.city ? 'Update' : 'Add'"
+            :initial-city="compareCityA.city"
+            :initial-state="compareCityA.state"
+            @search="onCompareASearch"
+          />
+          <div class="hero-compare-picker__divider"></div>
+          <CompareCitySearch
+            label="Choose City"
+            tone="b"
+            variant="card"
+            :button-label="compareCityB.city ? 'Update' : 'Add'"
+            :initial-city="compareCityB.city"
+            :initial-state="compareCityB.state"
+            @search="onCompareBSearch"
+          />
+          <button
+            class="hero-compare-picker__submit"
+            :disabled="!comparePartialReady"
+            @click="submitHeroCompare"
+          >
+            <span class="mdi mdi-arrow-right-circle-outline"></span>
+            Compare Cities
+          </button>
+        </div>
       </div>
       <div v-if="!user" class="hero-auth">
         <div class="hero-auth__actions">
           <button class="hero-auth__register" @click="openAuth('register')">Create a free account</button>
-          <button class="hero-auth__compare" @click="goToCompare">
-            <span class="mdi mdi-compare-horizontal"></span>
-            Compare Cities
-          </button>
         </div>
         <span class="hero-auth__login">
           Already have an account?
@@ -1219,17 +1313,13 @@ async function closeExpandedSection() {
       </div>
       <div v-else class="hero-auth hero-auth--welcome">
         <span class="hero-auth__welcome">Welcome back, {{ displayName() ?? 'there' }}!</span>
-        <button class="hero-auth__compare" @click="goToCompare">
-          <span class="mdi mdi-compare-horizontal"></span>
-          Compare Cities
-        </button>
       </div>
     </div>
   </div>
 
   <!-- After search: city data view -->
   <div v-if="showDashboard" ref="dashboardStage" class="container">
-    <DashboardHeader :city="city" :state="state" @logo-click="resetSearch" @search="onSearch">
+    <DashboardHeader :city="city" :state="state" @logo-click="router.push({ name: 'search' })" @search="onSearch">
       <template v-if="!cityNotFound && !sectionExpanded" #actions>
         <div ref="cityShareMenuRef" class="score-pills__share-wrap">
           <button
@@ -1336,6 +1426,7 @@ async function closeExpandedSection() {
           <CityInfoSection
             :city="city"
             :state="state"
+            :has-missing-data="hasMissingData"
             @score="scores.people = $event"
             @not-found="cityNotFound = true"
             @auth-required="openAuth('login')"
@@ -1355,7 +1446,7 @@ async function closeExpandedSection() {
       </div>
 
       <div v-if="!sectionExpanded" style="grid-column: 1 / -1;">
-        <AtlasScoreCard :city="city" :state="state" />
+        <AtlasScoreCard :city="city" :state="state" @auth-required="openAuth('login')" />
       </div>
 
       <div
@@ -1373,6 +1464,7 @@ async function closeExpandedSection() {
             :state="state"
             @score="scores.economic = $event"
             @expand="openSectionDetails('economic')"
+            @data-unavailable="dataGaps.economic = $event"
           />
         </div>
         <div
@@ -1402,6 +1494,7 @@ async function closeExpandedSection() {
             :state="state"
             @score="scores.housing = $event"
             @expand="openSectionDetails('housing')"
+            @data-unavailable="dataGaps.housing = $event"
           />
         </div>
 
@@ -1432,6 +1525,7 @@ async function closeExpandedSection() {
             :state="state"
             @score="scores.affordability = $event"
             @expand="openSectionDetails('affordability')"
+            @data-unavailable="dataGaps.affordability = $event"
           />
         </div>
         <div

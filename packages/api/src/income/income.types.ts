@@ -88,5 +88,6 @@ export type DetailedCityIncome = {
     industryBreakdown: IndustrySector[];
     affordabilityMetrics: IncomeAffordabilityMetrics;
     employmentGrowthPct5yr: number | null;
+    jobsWithin25Miles: number | null; // total employed population within a 25mi radius (regional labor market size)
 };
   

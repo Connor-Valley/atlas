@@ -6,6 +6,7 @@ const props = defineProps<{ city: string; state: string }>();
 const emit = defineEmits<{
   (e: 'score', value: number): void;
   (e: 'expand'): void;
+  (e: 'data-unavailable', value: boolean): void;
 }>();
 
 const data = ref<any>(null);
@@ -16,6 +17,12 @@ const score = computed(() => {
   if (!data.value) return null;
   return Math.min(100, Math.round((data.value.medianHouseholdIncome / 150000) * 100));
 });
+
+// medianHouseholdIncome (what the score/bar is based on) is virtually always
+// available; medianRenterIncome is the field Census tends to suppress for
+// small renter samples, so check that directly rather than the score.
+const dataUnavailable = computed(() => !!data.value && !data.value.medianRenterIncome);
+watch(dataUnavailable, (v) => emit('data-unavailable', v), { immediate: true });
 
 async function load() {
   if (!props.city || !props.state) return;
@@ -93,7 +100,7 @@ watch(
         </div>
         <div class="metric">
           <span class="metric__label">Median Renter Income</span>
-          <span class="metric__value">${{ data.medianRenterIncome.toLocaleString() }}</span>
+          <span class="metric__value">{{ data.medianRenterIncome ? `$${data.medianRenterIncome.toLocaleString()}` : "—" }}</span>
         </div>
         <div class="metric">
           <span class="metric__label">Poverty Rate</span>

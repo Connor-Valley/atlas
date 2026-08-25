@@ -24,6 +24,7 @@ import { initializeColCache } from "./cost-of-living/cost-of-living.service.js";
 import { initializeHpiCache } from "./housing/housing.service.js";
 import { initializeAqiCache } from "./air-quality/air-quality.service.js";
 import { initializePoliticalLeanCache } from "./political-lean/political-lean.service.js";
+import { initializeRegionalJobsCache } from "./income/regional-jobs.service.js";
 
 // Load .env from repo root (monorepo) or cwd
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -66,6 +67,7 @@ initializeHpiCache();
 initializeAqiCache();
 initializePoliticalLeanCache();
 initializeColCache();
+initializeRegionalJobsCache();
 
 app.listen(port, () => {
   console.log(`API listening on http://localhost:${port}`);

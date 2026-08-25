@@ -1,0 +1,173 @@
+{
+  "alviso|other": {
+    "placeName": "Alviso",
+    "year": 2024,
+    "demPct": 70.5,
+    "repPct": 28.0,
+    "marginPct": 42.5,
+    "lean": "Strong Democrat",
+    "totalVotes": 326
+  },
+  "campbell|other": {
+    "placeName": "Campbell",
+    "year": 2024,
+    "demPct": 70.3,
+    "repPct": 25.6,
+    "marginPct": 44.7,
+    "lean": "Strong Democrat",
+    "totalVotes": 20735
+  },
+  "cupertino|other": {
+    "placeName": "Cupertino",
+    "year": 2024,
+    "demPct": 69.8,
+    "repPct": 25.8,
+    "marginPct": 44.0,
+    "lean": "Strong Democrat",
+    "totalVotes": 25142
+  },
+  "gilroy|other": {
+    "placeName": "Gilroy",
+    "year": 2024,
+    "demPct": 60.4,
+    "repPct": 36.5,
+    "marginPct": 23.9,
+    "lean": "Strong Democrat",
+    "totalVotes": 27434
+  },
+  "hollister|other": {
+    "placeName": "Hollister",
+    "year": 2024,
+    "demPct": 21.1,
+    "repPct": 78.9,
+    "marginPct": -57.8,
+    "lean": "Strong Republican",
+    "totalVotes": 56
+  },
+  "los altos|other": {
+    "placeName": "Los Altos",
+    "year": 2024,
+    "demPct": 77.3,
+    "repPct": 19.2,
+    "marginPct": 58.1,
+    "lean": "Strong Democrat",
+    "totalVotes": 20499
+  },
+  "los altos hills|other": {
+    "placeName": "Los Altos Hills",
+    "year": 2024,
+    "demPct": 71.2,
+    "repPct": 24.7,
+    "marginPct": 46.5,
+    "lean": "Strong Democrat",
+    "totalVotes": 5024
+  },
+  "los gatos|other": {
+    "placeName": "Los Gatos",
+    "year": 2024,
+    "demPct": 70.2,
+    "repPct": 26.0,
+    "marginPct": 44.2,
+    "lean": "Strong Democrat",
+    "totalVotes": 22881
+  },
+  "milpitas|other": {
+    "placeName": "Milpitas",
+    "year": 2024,
+    "demPct": 61.2,
+    "repPct": 34.7,
+    "marginPct": 26.5,
+    "lean": "Strong Democrat",
+    "totalVotes": 25960
+  },
+  "monte sereno|other": {
+    "placeName": "Monte Sereno",
+    "year": 2024,
+    "demPct": 65.2,
+    "repPct": 31.0,
+    "marginPct": 34.2,
+    "lean": "Strong Democrat",
+    "totalVotes": 2242
+  },
+  "morgan hill|other": {
+    "placeName": "Morgan Hill",
+    "year": 2024,
+    "demPct": 60.1,
+    "repPct": 36.7,
+    "marginPct": 23.4,
+    "lean": "Strong Democrat",
+    "totalVotes": 26151
+  },
+  "mountain view|other": {
+    "placeName": "Mountain View",
+    "year": 2024,
+    "demPct": 79.2,
+    "repPct": 17.1,
+    "marginPct": 62.1,
+    "lean": "Strong Democrat",
+    "totalVotes": 32666
+  },
+  "palo alto|other": {
+    "placeName": "Palo Alto",
+    "year": 2024,
+    "demPct": 80.3,
+    "repPct": 15.9,
+    "marginPct": 64.4,
+    "lean": "Strong Democrat",
+    "totalVotes": 34014
+  },
+  "san jose|other": {
+    "placeName": "San Jose",
+    "year": 2024,
+    "demPct": 66.0,
+    "repPct": 30.3,
+    "marginPct": 35.7,
+    "lean": "Strong Democrat",
+    "totalVotes": 381535
+  },
+  "san martin|other": {
+    "placeName": "San Martin",
+    "year": 2024,
+    "demPct": 51.9,
+    "repPct": 45.1,
+    "marginPct": 6.8,
+    "lean": "Lean Democrat",
+    "totalVotes": 2500
+  },
+  "santa clara|other": {
+    "placeName": "Santa Clara",
+    "year": 2024,
+    "demPct": 68.0,
+    "repPct": 26.5,
+    "marginPct": 41.5,
+    "lean": "Strong Democrat",
+    "totalVotes": 43245
+  },
+  "saratoga|other": {
+    "placeName": "Saratoga",
+    "year": 2024,
+    "demPct": 68.6,
+    "repPct": 27.3,
+    "marginPct": 41.3,
+    "lean": "Strong Democrat",
+    "totalVotes": 17906
+  },
+  "stanford|other": {
+    "placeName": "Stanford",
+    "year": 2024,
+    "demPct": 88.5,
+    "repPct": 6.5,
+    "marginPct": 82.0,
+    "lean": "Strong Democrat",
+    "totalVotes": 3557
+  },
+  "sunnyvale|other": {
+    "placeName": "Sunnyvale",
+    "year": 2024,
+    "demPct": 72.2,
+    "repPct": 23.8,
+    "marginPct": 48.4,
+    "lean": "Strong Democrat",
+    "totalVotes": 53239
+  }
+}

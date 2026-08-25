@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import { useTheme } from './composables/useTheme';
+import { useAuthModal } from './composables/useAuthModal';
 import ToastContainer from './components/ToastContainer.vue';
 import SiteFooter from './components/SiteFooter.vue';
 import { footerHidden } from './composables/useFooterVisibility';
+import AuthModal from './components/AuthModal.vue';
 
 const { init } = useTheme();
+const { showAuthModal, authModalMode, closeAuthModal } = useAuthModal();
 
 onMounted(() => {
   init();
@@ -26,6 +29,7 @@ onMounted(() => {
     <router-view />
     <SiteFooter v-if="!footerHidden" />
     <ToastContainer />
+    <AuthModal v-if="showAuthModal" :mode="authModalMode" @close="closeAuthModal" />
   </div>
 </template>
 

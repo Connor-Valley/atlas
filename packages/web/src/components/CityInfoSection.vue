@@ -5,7 +5,7 @@ import { useAuth } from "../composables/useAuth";
 import { useFavorites } from "../composables/useFavorites";
 import { fetchCityPhoto } from "../lib/cityPhotos";
 
-const props = defineProps<{ city: string; state: string }>();
+const props = defineProps<{ city: string; state: string; hasMissingData?: boolean }>();
 const emit = defineEmits<{
   (e: 'score', value: number): void;
   (e: 'error'): void;
@@ -107,6 +107,12 @@ watch(
 
 <template>
   <div class="hero-section">
+    <div v-if="!loading && data && hasMissingData" class="missing-data-banner">
+      <span class="mdi mdi-information-outline missing-data-banner__icon"></span>
+      <span class="missing-data-banner__text">
+        Some figures for {{ data.name }} aren't available — the Census sample was too small to publish for a few measurements below.
+      </span>
+    </div>
     <div v-if="loading" class="city-hero-card city-hero-card--loading" aria-hidden="true">
       <div class="city-hero-card__content">
         <span class="city-hero-card__name city-hero-card__name--skeleton skeleton-line"></span>
