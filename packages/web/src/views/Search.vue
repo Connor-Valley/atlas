@@ -13,7 +13,7 @@ import { getStates, type StateOption } from '../api/states';
 import { fetchHousing } from '../api/housing';
 
 const router = useRouter();
-const { user } = useAuth();
+const { user, displayName } = useAuth();
 const { recentSearches, loaded, fetchRecentSearches, recordRecentSearch, removeRecentSearch, clearRecentSearches } = useRecentSearches();
 const { favorites, loaded: favLoaded, fetchFavorites } = useFavorites();
 const { savedComparisons, loaded: comparisonsLoaded, fetchComparisons } = useComparisons();
@@ -93,7 +93,11 @@ function openAuth(mode: 'login' | 'register') {
 <template>
   <div class="search-page">
     <div class="container container--header-only">
-      <DashboardHeader page-label="Search" @logo-click="router.push({ name: 'search' })" @search="onSearch" />
+      <DashboardHeader page-label="Search" @logo-click="router.push({ name: 'search' })" @search="onSearch">
+        <template v-if="user" #subtitle>
+          <span class="search-page__welcome">Welcome back, {{ displayName() ?? 'friend' }}</span>
+        </template>
+      </DashboardHeader>
     </div>
 
     <div class="container search-page__body">
@@ -276,6 +280,17 @@ function openAuth(mode: 'login' | 'register') {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+/* ── Welcome back greeting (inline in header bar) ───────── */
+.search-page__welcome {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: var(--text-muted);
+  white-space: nowrap;
 }
 
 /* ── Page heading + search row ─────────────────────────── */

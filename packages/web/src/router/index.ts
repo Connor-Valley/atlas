@@ -189,8 +189,10 @@ router.beforeEach(async (to, from) => {
 
 // Signed-in users hitting the bare landing route ("/") should skip the marketing hero and go
 // straight to /search — the hero's sign-up pitch has nothing to offer someone already logged in.
+// The "/" button in DashboardHeader deliberately opts back into the landing page via
+// ?view=landing — that's a real user's forced trip home and must not get bounced back to /search.
 router.beforeEach(async (to) => {
-  if (to.name !== 'home') return true;
+  if (to.name !== 'home' || to.query.view === 'landing') return true;
 
   await waitForAuthResolved();
   const { user } = useAuth();
