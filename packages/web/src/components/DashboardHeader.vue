@@ -78,6 +78,10 @@ function openAuth(mode: "login" | "register") {
         <span class="dashboard-hdr__sep">·</span>
         <span class="dashboard-hdr__page-title">{{ pageLabel ?? `${cityDisplayName}, ${state!.toUpperCase()}` }}</span>
       </template>
+      <template v-if="$slots.subtitle">
+        <span class="dashboard-hdr__sep">·</span>
+        <slot name="subtitle" />
+      </template>
     </div>
 
     <div v-if="showSearch" class="dashboard-hdr__search" :class="{ 'dashboard-hdr__search--wide': !$slots.actions }">
@@ -353,7 +357,8 @@ function openAuth(mode: "login" | "register") {
 /* Narrow desktop / tablet squeeze zone: free up room before the full mobile stack kicks in */
 @media (max-width: 900px) {
   .dashboard-hdr__sep,
-  .dashboard-hdr__page-title {
+  .dashboard-hdr__page-title,
+  .dashboard-hdr__left :slotted(*) {
     display: none;
   }
 

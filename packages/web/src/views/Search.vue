@@ -93,12 +93,14 @@ function openAuth(mode: 'login' | 'register') {
 <template>
   <div class="search-page">
     <div class="container container--header-only">
-      <DashboardHeader page-label="Search" @logo-click="router.push({ name: 'search' })" @search="onSearch" />
+      <DashboardHeader page-label="Search" @logo-click="router.push({ name: 'search' })" @search="onSearch">
+        <template v-if="user" #subtitle>
+          <span class="search-page__welcome">Welcome back, {{ displayName() ?? 'friend' }}</span>
+        </template>
+      </DashboardHeader>
     </div>
 
     <div class="container search-page__body">
-      <p v-if="user" class="search-page__welcome">Welcome back, {{ displayName() ?? 'friend' }}</p>
-
       <div ref="heroRef" class="search-page__heading">
         <span class="search-page__heading-icon"><span class="mdi mdi-magnify"></span></span>
         <div class="search-page__search">
@@ -280,15 +282,15 @@ function openAuth(mode: 'login' | 'register') {
   gap: 20px;
 }
 
-/* ── Welcome back greeting ─────────────────────────────── */
+/* ── Welcome back greeting (inline in header bar) ───────── */
 .search-page__welcome {
-  margin: 0 0 -6px 2px;
-  font-family: 'Allura', cursive;
-  font-weight: 400;
-  font-size: 2.15rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   line-height: 1;
-  letter-spacing: 0.12em;
-  color: var(--accent);
+  color: var(--text-muted);
+  white-space: nowrap;
 }
 
 /* ── Page heading + search row ─────────────────────────── */
