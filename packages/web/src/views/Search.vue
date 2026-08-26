@@ -13,7 +13,7 @@ import { getStates, type StateOption } from '../api/states';
 import { fetchHousing } from '../api/housing';
 
 const router = useRouter();
-const { user } = useAuth();
+const { user, displayName } = useAuth();
 const { recentSearches, loaded, fetchRecentSearches, recordRecentSearch, removeRecentSearch, clearRecentSearches } = useRecentSearches();
 const { favorites, loaded: favLoaded, fetchFavorites } = useFavorites();
 const { savedComparisons, loaded: comparisonsLoaded, fetchComparisons } = useComparisons();
@@ -97,6 +97,8 @@ function openAuth(mode: 'login' | 'register') {
     </div>
 
     <div class="container search-page__body">
+      <p v-if="user" class="search-page__welcome">Welcome back, {{ displayName() ?? 'friend' }}</p>
+
       <div ref="heroRef" class="search-page__heading">
         <span class="search-page__heading-icon"><span class="mdi mdi-magnify"></span></span>
         <div class="search-page__search">
@@ -276,6 +278,17 @@ function openAuth(mode: 'login' | 'register') {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+/* ── Welcome back greeting ─────────────────────────────── */
+.search-page__welcome {
+  margin: 0 0 -6px 2px;
+  font-family: 'Allura', cursive;
+  font-weight: 400;
+  font-size: 2.15rem;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  color: var(--accent);
 }
 
 /* ── Page heading + search row ─────────────────────────── */
