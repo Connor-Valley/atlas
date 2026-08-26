@@ -34,7 +34,7 @@ const showAuthModal = ref(false);
         <nav class="site-footer__col" aria-label="About">
           <span class="site-footer__heading">About</span>
           <router-link :to="{ name: 'about' }" class="site-footer__link">About Atlas</router-link>
-          <a href="mailto:hello@example.com" class="site-footer__link">Contact Us</a>
+          <a href="mailto:developer.atlas.help@gmail.com" class="site-footer__link">Contact Us</a>
         </nav>
       </div>
     </div>

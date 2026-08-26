@@ -114,7 +114,7 @@ onMounted(async () => {
 
       <footer class="story__footer">
         <p>
-          Found a bug, or a city that doesn't look right? <a href="mailto:hello@example.com">Send a note</a>
+          Found a bug, or a city that doesn't look right? <a href="mailto:developer.atlas.help@gmail.com">Send a note</a>
           — I read everything.
         </p>
       </footer>
