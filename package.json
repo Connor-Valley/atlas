@@ -9,5 +9,10 @@
   },
   "dependencies": {
     "@mdi/js": "^7.4.47"
+  },
+  "pnpm": {
+    "overrides": {
+      "minimatch@<9.0.7": ">=9.0.7 <10"
+    }
   }
 }
