@@ -10,3 +10,4 @@ build/
 design-refs/
 packages/api/cache/
 packages/api/data/
+package-lock.json
