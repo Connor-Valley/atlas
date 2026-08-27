@@ -1,7 +1,9 @@
 import type { City } from "../cities/cities.types.js";
 import type { ClimateSummary, HazardRisk, NaturalHazardRisks } from "./climate.types.js";
+import type { SourceAttribution } from "../common/source.types.js";
 import { getCached } from "../common/cache.js";
 import { trackCall } from "../common/metrics.js";
+import { findNearestStationNormals } from "./climate-fallback.service.js";
 
 const START_YEAR = 2014;
 const END_YEAR = 2023;
@@ -37,11 +39,34 @@ export async function getCityClimate(city: City): Promise<ClimateSummary> {
       : null,
   ]);
 
-  if (!weatherData) {
-    return buildResult(city, null, hazardRisks);
+  let weather = weatherData ? computeWeatherFromOpenMeteo(weatherData.daily) : null;
+  let source: SourceAttribution = OPEN_METEO_SOURCE;
+
+  // Live weather failed (or the city has no coordinates) — fall back to the nearest station
+  // in the precomputed Meteostat reference data rather than leaving weather fields empty.
+  if (!weather && city.lat != null && city.lon != null) {
+    const fallback = findNearestStationNormals(city.lat, city.lon);
+    if (fallback) {
+      weather = {
+        avgTempF: fallback.normals.avgTempF,
+        summerAvgHighF: fallback.normals.summerAvgHighF,
+        winterAvgLowF: fallback.normals.winterAvgLowF,
+        sunnyDaysPerYear: fallback.normals.sunnyDaysPerYear,
+        annualPrecipitationInches: fallback.normals.annualPrecipitationInches,
+        annualSnowfallInches: null,
+        hotDaysPerYear: fallback.normals.hotDaysPerYear,
+        freezingDaysPerYear: fallback.normals.freezingDaysPerYear,
+        snowDaysPerYear: fallback.normals.snowDaysPerYear,
+        approximate: true,
+      };
+      source = meteostatFallbackSource(fallback.distanceMiles, fallback.normals.yearsCovered);
+    }
   }
 
-  const { daily } = weatherData;
+  return buildResult(city, weather, hazardRisks, source);
+}
+
+function computeWeatherFromOpenMeteo(daily: OpenMeteoDaily): WeatherMetrics | null {
   const temps = daily.temperature_2m_mean;
   const maxTemps = daily.temperature_2m_max;
   const minTemps = daily.temperature_2m_min;
@@ -51,7 +76,7 @@ export async function getCityClimate(city: City): Promise<ClimateSummary> {
   const times = daily.time;
 
   const validTemps = temps.filter((v): v is number => v != null);
-  if (!validTemps.length) return buildResult(city, null, hazardRisks);
+  if (!validTemps.length) return null;
 
   const avgTempC = validTemps.reduce((s, v) => s + v, 0) / validTemps.length;
 
@@ -83,7 +108,7 @@ export async function getCityClimate(city: City): Promise<ClimateSummary> {
   const totalHotDays = validMaxes.filter(v => v >= HOT_DAY_CELSIUS).length;
   const totalFreezingDays = validMins.filter(v => v <= FREEZING_DAY_CELSIUS).length;
 
-  return buildResult(city, {
+  return {
     avgTempF: cToF(avgTempC),
     summerAvgHighF: summerAvgHighC != null ? cToF(summerAvgHighC) : null,
     winterAvgLowF: winterAvgLowC != null ? cToF(winterAvgLowC) : null,
@@ -92,24 +117,29 @@ export async function getCityClimate(city: City): Promise<ClimateSummary> {
     annualSnowfallInches: parseFloat((totalSnowCm / YEAR_COUNT / 2.54).toFixed(1)),
     hotDaysPerYear: Math.round(totalHotDays / YEAR_COUNT),
     freezingDaysPerYear: Math.round(totalFreezingDays / YEAR_COUNT),
-  }, hazardRisks);
+    snowDaysPerYear: null,
+    approximate: false,
+  };
 }
 
 type WeatherMetrics = {
   avgTempF: number;
   summerAvgHighF: number | null;
   winterAvgLowF: number | null;
-  sunnyDaysPerYear: number;
-  annualPrecipitationInches: number;
-  annualSnowfallInches: number;
-  hotDaysPerYear: number;
-  freezingDaysPerYear: number;
+  sunnyDaysPerYear: number | null;
+  annualPrecipitationInches: number | null;
+  annualSnowfallInches: number | null;
+  hotDaysPerYear: number | null;
+  freezingDaysPerYear: number | null;
+  snowDaysPerYear: number | null;
+  approximate: boolean;
 };
 
 function buildResult(
   city: City,
   weather: WeatherMetrics | null,
   hazardRisks: NaturalHazardRisks | null,
+  source: SourceAttribution,
 ): ClimateSummary {
   return {
     city: city.name,
@@ -122,9 +152,11 @@ function buildResult(
     annualSnowfallInches: weather?.annualSnowfallInches ?? null,
     hotDaysPerYear: weather?.hotDaysPerYear ?? null,
     freezingDaysPerYear: weather?.freezingDaysPerYear ?? null,
+    snowDaysPerYear: weather?.snowDaysPerYear ?? null,
+    weatherApproximate: weather?.approximate ?? false,
     hazardRisks,
     dataYearRange: weather ? `${START_YEAR}–${END_YEAR}` : null,
-    source: OPEN_METEO_SOURCE,
+    source,
   };
 }
 
@@ -268,6 +300,27 @@ const OPEN_METEO_SOURCE = {
     `Hot days = days ≥95°F. Freezing days = days with low ≤32°F. ` +
     `Sunny days = days with ≥6h sunshine.`,
 };
+
+function meteostatFallbackSource(distanceMiles: number, yearsCovered: number): SourceAttribution {
+  const confidence =
+    distanceMiles <= 15
+      ? "This is a close, generally reliable estimate for this location."
+      : distanceMiles <= 50
+        ? "Treat this as an approximate estimate — the nearest station isn't right on top of this location."
+        : "Treat this as a rough regional estimate — the nearest available station is far from this location.";
+
+  return {
+    sourceName: "Meteostat Weather Station Network (nearest-station estimate)",
+    sourceUrl: "https://meteostat.net/",
+    asOf: `${START_YEAR}–${END_YEAR} average (${yearsCovered}yr station record)`,
+    geographyLevel: "place",
+    methodologyNote:
+      `Live weather data was temporarily unavailable, so these values are estimated from the ` +
+      `nearest weather station, ${distanceMiles}mi away. ${confidence} ` +
+      `Snow days = days with measurable snow on the ground, which is a different measurement ` +
+      `than new-snowfall totals (not available from this source).`,
+  };
+}
 
 const FEMA_NRI_SOURCE = {
   sourceName: "FEMA National Risk Index",
