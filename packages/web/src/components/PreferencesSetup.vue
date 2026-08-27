@@ -81,7 +81,7 @@ const STEPS: QuizStep[] = [
     options: [
       { value: 'cost_low',    icon: 'mdi-minus-circle-outline', label: 'Not very important', description: "Cost won't heavily influence my score" },
       { value: 'cost_medium', icon: 'mdi-scale-balance',        label: 'Somewhat important',  description: "I care, but it won't make or break a city" },
-      { value: 'cost_high',   icon: 'mdi-piggy-bank-outline',   label: 'Very important',      description: 'Affordability is a dealbreaker for me' },
+      { value: 'cost_high',   icon: 'mdi-piggy-bank-outline',   label: 'Very important',      description: 'A big factor in how I choose a city' },
     ],
   },
   {
@@ -147,7 +147,7 @@ const STEPS: QuizStep[] = [
     options: [
       { value: 'low',    icon: 'mdi-minus-circle-outline', label: 'Not very important', description: "Air quality won't heavily influence my score" },
       { value: 'medium', icon: 'mdi-leaf-circle-outline',  label: 'Somewhat important',  description: "I care, but it won't make or break a city" },
-      { value: 'high',   icon: 'mdi-air-filter',           label: 'Very important',      description: 'Clean air is a dealbreaker for me' },
+      { value: 'high',   icon: 'mdi-air-filter',           label: 'Very important',      description: 'A big factor in how I choose a city' },
     ],
   },
   {
