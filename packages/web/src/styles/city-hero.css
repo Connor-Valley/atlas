@@ -253,6 +253,12 @@
   z-index: 2;
 }
 
+.city-hero-card__footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .city-hero-card__stat--population-mobile {
   display: none;
   text-align: right;

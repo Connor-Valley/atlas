@@ -2,11 +2,16 @@
 import { onMounted } from 'vue';
 import { useTheme } from './composables/useTheme';
 import { useAuthModal } from './composables/useAuthModal';
+import { useBackendHealth } from './composables/useBackendHealth';
 import ToastContainer from './components/ToastContainer.vue';
+import SiteFooter from './components/SiteFooter.vue';
+import { footerHidden } from './composables/useFooterVisibility';
 import AuthModal from './components/AuthModal.vue';
+import BackendWakingUp from './components/BackendWakingUp.vue';
 
 const { init } = useTheme();
 const { showAuthModal, authModalMode, closeAuthModal } = useAuthModal();
+const { isAwake, isChecking } = useBackendHealth();
 
 onMounted(() => {
   init();
@@ -24,13 +29,29 @@ onMounted(() => {
 <template>
   <div class="app">
     <div class="app-safe-top" aria-hidden="true"></div>
-    <router-view />
-    <ToastContainer />
-    <AuthModal v-if="showAuthModal" :mode="authModalMode" @close="closeAuthModal" />
+    <BackendWakingUp v-if="!isAwake && !isChecking" />
+    <template v-else-if="isAwake">
+      <div class="app-main">
+        <router-view />
+      </div>
+      <SiteFooter v-if="!footerHidden" />
+      <ToastContainer />
+      <AuthModal v-if="showAuthModal" :mode="authModalMode" @close="closeAuthModal" />
+    </template>
   </div>
 </template>
 
 <style>
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.app-main {
+  flex: 1 0 auto;
+}
+
 @media (max-width: 640px) {
   .app-safe-top {
     position: fixed;

@@ -164,8 +164,12 @@ SUPABASE_URL=                 # same value as VITE_SUPABASE_URL
 SUPABASE_SERVICE_ROLE_KEY=    # service role key (never expose client-side)
 UPSTASH_REDIS_REST_URL=       # Upstash Redis REST URL
 UPSTASH_REDIS_REST_TOKEN=     # Upstash Redis REST token
+RESEND_API_KEY=               # Resend API key, for the /contact form. Optional — form fails with a 500 if absent.
+CONTACT_TO_EMAIL=             # inbox that contact form submissions are delivered to
+CONTACT_FROM_EMAIL=           # "from" address; must be on a domain verified in Resend
+TURNSTILE_SECRET_KEY=         # optional — verifies TurnstileWidget tokens server-side for the /contact form
 ```
 
 If `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` are absent the API still works — auth and user data features degrade but core data endpoints are unaffected.
 
-API response caching uses **Upstash Redis** (15-day TTL). If `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` are absent, caching degrades to in-process memory only (lost on restart).
+API response caching uses **Upstash Redis** (15-day TTL). If `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` are absent, caching degrades to in-process memory only (lost on restart). The `/contact` endpoint's per-IP rate limit also relies on Upstash Redis and is skipped (no limit) when it's absent.

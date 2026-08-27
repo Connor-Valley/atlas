@@ -12,6 +12,11 @@ import SavedComparisons from '../views/SavedComparisons.vue';
 import Profile from '../views/Profile.vue';
 import Friends from '../views/Friends.vue';
 import UserProfile from '../views/UserProfile.vue';
+import About from '../views/About.vue';
+import DataSources from '../views/DataSources.vue';
+import HowScoringWorks from '../views/HowScoringWorks.vue';
+import Contact from '../views/Contact.vue';
+import NotFound from '../views/NotFound.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -93,6 +98,26 @@ const router = createRouter({
       component: Compare
     },
     {
+      path: '/about',
+      name: 'about',
+      component: About
+    },
+    {
+      path: '/data-sources',
+      name: 'data-sources',
+      component: DataSources
+    },
+    {
+      path: '/how-scoring-works',
+      name: 'how-scoring-works',
+      component: HowScoringWorks
+    },
+    {
+      path: '/contact',
+      name: 'contact',
+      component: Contact
+    },
+    {
       path: '/compare/:stateA/:cityA/:stateB?/:cityB?',
       name: 'compare',
       component: Compare,
@@ -140,8 +165,17 @@ const router = createRouter({
       name: 'user-profile',
       component: UserProfile,
       props: true
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: NotFound
     }
-  ]
+  ],
+  scrollBehavior(_to, _from, savedPosition) {
+    if (savedPosition) return savedPosition;
+    return { top: 0 };
+  }
 });
 
 // Waits out the transient `loading === true` window while the Supabase session is still being
