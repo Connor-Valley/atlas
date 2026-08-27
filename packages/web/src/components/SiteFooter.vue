@@ -19,7 +19,7 @@ const showAuthModal = ref(false);
 
         <nav class="site-footer__col" aria-label="Product">
           <span class="site-footer__heading">Product</span>
-          <router-link :to="{ name: 'home' }" class="site-footer__link">City Search</router-link>
+          <router-link :to="{ name: 'search' }" class="site-footer__link">City Search</router-link>
           <router-link :to="{ name: 'compare-empty' }" class="site-footer__link">Compare Cities</router-link>
           <button type="button" class="site-footer__link site-footer__link--button" @click="showAuthModal = true">Sign Up</button>
         </nav>
