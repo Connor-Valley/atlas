@@ -5,7 +5,7 @@ import { useAuth } from './useAuth';
 export interface UserPreferences {
   // Quiz answers — drive both weights and sub-preference signals
   climate_preference:      'warm' | 'hot_dry' | 'mild' | 'four_seasons' | 'cool' | 'any';
-  affordability_preference: 'affordable' | 'moderate' | 'pricey' | 'expensive' | 'any';
+  affordability_preference: 'cost_high' | 'cost_medium' | 'cost_low';
   job_market_preference:   'high_earning' | 'stable' | 'growth' | 'remote' | 'any';
   lifestyle_preference:    'urban' | 'urban_edge' | 'suburban' | 'nature' | 'any';
   opportunity_preference:
@@ -18,9 +18,10 @@ export interface UserPreferences {
 
   // Weights double as the "how much should this count" importance dial — the UI writes a
   // low/medium/high preset straight into these instead of storing a separate importance choice,
-  // so no schema change was needed to add per-dimension importance. Air quality is the exception:
-  // air_quality_priority is itself already an importance dial (not a "type" choice), so its
-  // weight still gets derived from that field below rather than set directly by the UI.
+  // so no schema change was needed to add per-dimension importance. Air quality and affordability
+  // are the exceptions: both only ever have one "good" direction (cleaner air, lower cost), so
+  // their quiz answer IS an importance dial (not a "type" choice) — their weights get derived
+  // from that field below rather than set directly by the UI.
   weight_affordability:     number;
   weight_job_market:        number;
   weight_climate:           number;
@@ -47,7 +48,7 @@ export interface UserPreferences {
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
   climate_preference:       'any',
-  affordability_preference: 'any',
+  affordability_preference: 'cost_medium',
   job_market_preference:    'any',
   lifestyle_preference:     'any',
   opportunity_preference:   'any',
@@ -78,7 +79,7 @@ const QUIZ_ANSWER_KEYS: Array<keyof UserPreferences> = [
   'climate_preference', 'affordability_preference', 'job_market_preference',
   'lifestyle_preference', 'opportunity_preference', 'air_quality_priority',
   'connectivity_preference', 'political_lean_preference',
-  'weight_affordability', 'weight_job_market', 'weight_climate',
+  'weight_job_market', 'weight_climate',
   'weight_lifestyle_vibrancy', 'weight_connectivity', 'weight_opportunity',
   'weight_safety', // repurposed as "political lean is a deal breaker" — see computeAtlasScore
   'weight_education', // repurposed as the deal-breaker bitmask for the other 7 dimensions
@@ -135,12 +136,15 @@ export function withDealbreakerToggled(prefs: UserPreferences, dim: DealbreakerD
 // both happen to be set at once.
 export const DEALBREAKER_WEIGHT = 90;
 
-/** Derive weight_air_quality and political settings from quiz answers. Every other weight_*
- *  field is written directly by the importance dial in the UI, so it just passes through
- *  unchanged via the `...prefs` spread below. */
+/** Derive weight_air_quality, weight_affordability, and political settings from quiz answers.
+ *  Every other weight_* field is written directly by the importance dial in the UI, so it just
+ *  passes through unchanged via the `...prefs` spread below. */
 export function deriveWeightsFromQuiz(prefs: UserPreferences): UserPreferences {
   const AIR_QUALITY: Record<string, number> = {
     high: 80, medium: 18, low: 8,
+  };
+  const AFFORDABILITY: Record<string, number> = {
+    cost_high: 80, cost_medium: 18, cost_low: 8,
   };
   const POLITICAL: Record<string, { enabled: boolean; value: number; weight: number }> = {
     progressive:  { enabled: true,  value:  100, weight: 20 },
@@ -154,6 +158,7 @@ export function deriveWeightsFromQuiz(prefs: UserPreferences): UserPreferences {
   return {
     ...prefs,
     weight_air_quality: AIR_QUALITY[prefs.air_quality_priority] ?? 18,
+    weight_affordability: AFFORDABILITY[prefs.affordability_preference] ?? 18,
     political_preference_enabled: pol.enabled,
     political_preference:         pol.value,
   };

@@ -25,7 +25,7 @@ export const PREF_LABELS: Record<string, string> = {
   warm: 'Warm & sunny', hot_dry: 'Hot & dry', cool: 'Cool & crisp',
   mild: 'Mild year-round', four_seasons: 'Four seasons',
   // affordability
-  affordable: 'Affordable', moderate: 'Moderate', pricey: 'Pricey', expensive: 'Expensive',
+  cost_high: 'Very important', cost_medium: 'Somewhat important', cost_low: 'Not very important',
   // job market
   high_earning: 'High-earning', stable: 'Stable market',
   growth: 'Fast growth', remote: 'Remote-friendly',
@@ -40,7 +40,7 @@ export const PREF_LABELS: Record<string, string> = {
   hospitality_arts: 'Hospitality, Arts & Entertainment', agriculture: 'Agriculture & Natural Resources',
   nonprofit: 'Nonprofit & Community Organizations',
   // air quality
-  high: 'Clean air priority', medium: 'Balanced', low: 'Not a priority',
+  high: 'Very important', medium: 'Somewhat important', low: 'Not very important',
   // connectivity
   walkable: 'Walkable', balanced: 'Balanced access', airport: 'Airport access', car: 'Car-friendly',
   // political

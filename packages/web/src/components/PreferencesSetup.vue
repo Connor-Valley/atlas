@@ -74,18 +74,14 @@ const STEPS: QuizStep[] = [
   },
   {
     key: 'affordability_preference',
-    title: 'What price tier are you looking for?',
+    title: 'How much does cost of living matter to you?',
     shortTitle: 'Cost of Living',
-    subtitle: 'Affects how much rent, expenses, and cost trends influence your score.',
-    importanceKey: 'weight_affordability',
-    importanceScale: { low: 8, medium: 18, high: 80 },
+    subtitle: 'Cheaper always scores higher — this sets how heavily that pulls on your total score.',
     dealbreakerDim: 'affordability',
     options: [
-      { value: 'affordable', icon: 'mdi-piggy-bank-outline',  label: 'Affordable', description: 'Housing and everyday costs run below the national average', tooltip: 'Cost of Living Index under ~95' },
-      { value: 'moderate',   icon: 'mdi-scale-balance',       label: 'Moderate',   description: 'Costs land close to the national average — not a bargain, not a stretch', tooltip: 'Cost of Living Index ~95–108' },
-      { value: 'pricey',     icon: 'mdi-cash-multiple',       label: 'Pricey',     description: 'Above-average costs for housing and daily life', tooltip: 'Cost of Living Index ~108–125' },
-      { value: 'expensive',  icon: 'mdi-credit-card-outline', label: 'Expensive',  description: 'Among the priciest places to live in the country', tooltip: 'Cost of Living Index 125+' },
-      { value: 'any',        icon: 'mdi-equal-box',           label: 'No preference', description: "Cost won't factor into my score" },
+      { value: 'cost_low',    icon: 'mdi-minus-circle-outline', label: 'Not very important', description: "Cost won't heavily influence my score" },
+      { value: 'cost_medium', icon: 'mdi-scale-balance',        label: 'Somewhat important',  description: "I care, but it won't make or break a city" },
+      { value: 'cost_high',   icon: 'mdi-piggy-bank-outline',   label: 'Very important',      description: 'Affordability is a dealbreaker for me' },
     ],
   },
   {
@@ -149,9 +145,9 @@ const STEPS: QuizStep[] = [
     subtitle: 'Sets the weight of EPA AQI data in your overall score.',
     dealbreakerDim: 'air_quality',
     options: [
-      { value: 'high',   icon: 'mdi-air-filter',          label: 'Very important',       description: 'Clean air is a dealbreaker for me' },
-      { value: 'medium', icon: 'mdi-leaf-circle-outline',  label: 'Somewhat important',   description: 'I care, but it won\'t make or break a city' },
-      { value: 'low',    icon: 'mdi-minus-circle-outline', label: 'Not a priority',        description: 'Air quality won\'t heavily influence my score' },
+      { value: 'low',    icon: 'mdi-minus-circle-outline', label: 'Not very important', description: "Air quality won't heavily influence my score" },
+      { value: 'medium', icon: 'mdi-leaf-circle-outline',  label: 'Somewhat important',  description: "I care, but it won't make or break a city" },
+      { value: 'high',   icon: 'mdi-air-filter',           label: 'Very important',      description: 'Clean air is a dealbreaker for me' },
     ],
   },
   {
