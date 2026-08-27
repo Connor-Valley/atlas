@@ -201,24 +201,39 @@ export function politicalDimTier(
 // Exact match = 100, similar = 75, partial = ~55, mismatch = ~25–35.
 
 const MATCH_SCORES: Record<string, Record<string, Record<string, number>>> = {
+  // Options mirror the four cityAffordabilityChar() buckets directly (see below) — picking
+  // "Pricey" means "target cities we classify as Pricey," so score decays with distance from
+  // the picked tier rather than always favoring cheaper.
   affordability: {
-    budget: {
+    affordable: {
       'Affordable': 100,
       'Moderate':    70,
       'Pricey':      35,
       'Expensive':   15,
     },
-    value: {
-      'Affordable': 90,
-      'Moderate':    100,
-      'Pricey':      60,
-      'Expensive':   30,
+    moderate: {
+      'Affordable':  75,
+      'Moderate':   100,
+      'Pricey':      75,
+      'Expensive':   40,
     },
-    flexible: {
+    pricey: {
+      'Affordable':  30,
+      'Moderate':    75,
+      'Pricey':     100,
+      'Expensive':   80,
+    },
+    expensive: {
+      'Affordable':  15,
+      'Moderate':    45,
+      'Pricey':      80,
+      'Expensive':  100,
+    },
+    any: {
       'Affordable': 100,
-      'Moderate':    100,
-      'Pricey':      100,
-      'Expensive':   100,
+      'Moderate':   100,
+      'Pricey':     100,
+      'Expensive':  100,
     },
   },
 

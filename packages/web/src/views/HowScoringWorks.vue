@@ -45,7 +45,7 @@ const tiers = [
       <section class="sources__group">
         <h2 class="sources__group-label">Scored against what you want, not a fixed formula</h2>
         <p class="sources__note sources__note--lead">
-          A short quiz asks what you want out of each dimension, like "budget-friendly" for cost
+          A short quiz asks what you want out of each dimension, like "Affordable" for cost
           of living or "warm &amp; sunny" for climate. Every city then gets scored on how well it
           actually matches what you picked: a close match scores near 100, a clean mismatch
           scores 25–35, with shades in between for partial matches.
@@ -80,14 +80,15 @@ const tiers = [
       <section class="sources__group">
         <h2 class="sources__group-label">How much each dimension counts</h2>
         <p class="sources__note sources__note--lead">
-          There's no slider for "how much do you care about climate." Instead, the specific
-          answer you pick sets that dimension's weight automatically. Someone who picks
-          "budget-friendly" for cost of living is telling Atlas that dimension matters a lot, so
-          it's weighted heavily; someone who picks "flexible" is telling Atlas it barely matters,
-          so it's weighted lightly. Every dimension's weighted match score is then averaged into
-          the single number you see. Political Lean, when turned on, is weighted lower than the
-          rest when it's only backed by a county-wide result (a poor stand-in for one specific
-          city) and weighted normally wherever we've sourced real precinct-level results instead.
+          Most dimensions pair their quiz question with a separate "how important is this" dial
+          — Not very / Somewhat / Very important — that sets the weight independently of which
+          answer you pick. Someone who marks cost of living "Very important" gets it weighted
+          heavily whether they picked Affordable or Expensive; the answer itself only decides
+          which cities match, not how much the match counts. Every dimension's weighted match
+          score is then averaged into the single number you see. Political Lean, when turned on,
+          is weighted lower than the rest when it's only backed by a county-wide result (a poor
+          stand-in for one specific city) and weighted normally wherever we've sourced real
+          precinct-level results instead.
         </p>
       </section>
 

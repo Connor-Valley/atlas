@@ -74,16 +74,18 @@ const STEPS: QuizStep[] = [
   },
   {
     key: 'affordability_preference',
-    title: 'How important is cost of living?',
+    title: 'What price tier are you looking for?',
     shortTitle: 'Cost of Living',
     subtitle: 'Affects how much rent, expenses, and cost trends influence your score.',
     importanceKey: 'weight_affordability',
     importanceScale: { low: 8, medium: 18, high: 80 },
     dealbreakerDim: 'affordability',
     options: [
-      { value: 'budget',   icon: 'mdi-piggy-bank-outline',  label: 'Affordable',   description: 'Keeping rent and daily costs low is a priority' },
-      { value: 'value',    icon: 'mdi-scale-balance',        label: 'Moderate',      description: 'Not the cheapest, but shouldn\'t feel expensive' },
-      { value: 'flexible', icon: 'mdi-credit-card-outline',  label: 'Flexible', description: 'Cost won\'t hold me back from the right fit' },
+      { value: 'affordable', icon: 'mdi-piggy-bank-outline',  label: 'Affordable', description: 'Housing and everyday costs run below the national average', tooltip: 'Cost of Living Index under ~95' },
+      { value: 'moderate',   icon: 'mdi-scale-balance',       label: 'Moderate',   description: 'Costs land close to the national average — not a bargain, not a stretch', tooltip: 'Cost of Living Index ~95–108' },
+      { value: 'pricey',     icon: 'mdi-cash-multiple',       label: 'Pricey',     description: 'Above-average costs for housing and daily life', tooltip: 'Cost of Living Index ~108–125' },
+      { value: 'expensive',  icon: 'mdi-credit-card-outline', label: 'Expensive',  description: 'Among the priciest places to live in the country', tooltip: 'Cost of Living Index 125+' },
+      { value: 'any',        icon: 'mdi-equal-box',           label: 'No preference', description: "Cost won't factor into my score" },
     ],
   },
   {
@@ -721,6 +723,10 @@ defineExpose({ save, saving, saved });
 
 .quiz__options--count-5 {
   grid-template-columns: 1fr 1fr;
+}
+
+.quiz__options--count-5 .quiz__option:last-child {
+  grid-column: 1 / -1;
 }
 
 .quiz__options--count-12 {

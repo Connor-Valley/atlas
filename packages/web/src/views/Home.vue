@@ -1312,7 +1312,7 @@ async function closeExpandedSection() {
         </span>
       </div>
       <div v-else class="hero-auth hero-auth--welcome">
-        <span class="hero-auth__welcome">Welcome back, {{ displayName() ?? 'there' }}!</span>
+        <span class="hero-auth__welcome"><strong>Welcome back, {{ displayName() ?? 'there' }}!</strong></span>
       </div>
     </div>
   </div>

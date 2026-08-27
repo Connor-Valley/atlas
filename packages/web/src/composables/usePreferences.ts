@@ -5,7 +5,7 @@ import { useAuth } from './useAuth';
 export interface UserPreferences {
   // Quiz answers — drive both weights and sub-preference signals
   climate_preference:      'warm' | 'hot_dry' | 'mild' | 'four_seasons' | 'cool' | 'any';
-  affordability_preference: 'budget' | 'value' | 'flexible' | 'any';
+  affordability_preference: 'affordable' | 'moderate' | 'pricey' | 'expensive' | 'any';
   job_market_preference:   'high_earning' | 'stable' | 'growth' | 'remote' | 'any';
   lifestyle_preference:    'urban' | 'urban_edge' | 'suburban' | 'nature' | 'any';
   opportunity_preference:

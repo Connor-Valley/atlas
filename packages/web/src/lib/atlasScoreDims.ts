@@ -25,7 +25,7 @@ export const PREF_LABELS: Record<string, string> = {
   warm: 'Warm & sunny', hot_dry: 'Hot & dry', cool: 'Cool & crisp',
   mild: 'Mild year-round', four_seasons: 'Four seasons',
   // affordability
-  budget: 'Budget-friendly', value: 'Good value', flexible: 'Flexible budget',
+  affordable: 'Affordable', moderate: 'Moderate', pricey: 'Pricey', expensive: 'Expensive',
   // job market
   high_earning: 'High-earning', stable: 'Stable market',
   growth: 'Fast growth', remote: 'Remote-friendly',
