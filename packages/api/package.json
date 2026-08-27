@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "node --import tsx src/index.ts",
-    "build-political-lean": "tsx scripts/build-political-lean.ts"
+    "build-political-lean": "tsx scripts/build-political-lean.ts",
+    "warm-climate-cache": "tsx scripts/warm-climate-cache.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.101.1",

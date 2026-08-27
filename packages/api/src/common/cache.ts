@@ -1,7 +1,6 @@
 import { Redis } from "@upstash/redis";
 
-const TTL_SECONDS = 15 * 24 * 60 * 60; // 15 days
-const TTL_MS = TTL_SECONDS * 1000;
+const TTL_SECONDS = 15 * 24 * 60 * 60; // 15 days (default; individual callers may override)
 const mem = new Map<string, { data: unknown; ts: number }>();
 
 // Bump this whenever a change alters what a cached response computes or contains (new/renamed
@@ -31,13 +30,15 @@ export function getRedis(): Redis | null {
 export async function getCached<T>(
   rawKey: string,
   fetcher: () => Promise<T>,
-  opts?: { shouldCache?: (result: T) => boolean }
+  opts?: { shouldCache?: (result: T) => boolean; ttlSeconds?: number }
 ): Promise<T> {
   const key = versionedKey(rawKey);
+  const ttlSeconds = opts?.ttlSeconds ?? TTL_SECONDS;
+  const ttlMs = ttlSeconds * 1000;
 
   // Layer 1: memory
   const hit = mem.get(key);
-  if (hit && Date.now() - hit.ts < TTL_MS) return hit.data as T;
+  if (hit && Date.now() - hit.ts < ttlMs) return hit.data as T;
 
   // Layer 2: Redis (survives restarts, auto-expires)
   const redis = getRedis();
@@ -60,7 +61,7 @@ export async function getCached<T>(
   if (shouldCache(fresh)) {
     mem.set(key, { data: fresh, ts: Date.now() });
     if (redis) {
-      redis.set(key, fresh, { ex: TTL_SECONDS }).catch((e: Error) =>
+      redis.set(key, fresh, { ex: ttlSeconds }).catch((e: Error) =>
         console.warn('[cache] write failed for "%s": %s', key, e.message)
       );
     }

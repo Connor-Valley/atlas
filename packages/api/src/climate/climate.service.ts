@@ -1,6 +1,7 @@
 import type { City } from "../cities/cities.types.js";
 import type { ClimateSummary, HazardRisk, NaturalHazardRisks } from "./climate.types.js";
 import { getCached } from "../common/cache.js";
+import { trackCall } from "../common/metrics.js";
 
 const START_YEAR = 2014;
 const END_YEAR = 2023;
@@ -9,14 +10,31 @@ const SUNSHINE_THRESHOLD_SECONDS = 6 * 3600;
 const HOT_DAY_CELSIUS = 35;      // ≥ 95°F
 const FREEZING_DAY_CELSIUS = 0;  // ≤ 32°F
 
-export function getCityClimate(city: City): Promise<ClimateSummary> {
-  return getCached(`climate:${city.state}:${city.slug}`, () => fetchCityClimate(city));
-}
+// The underlying data (2014–2023 historical average) only shifts when START_YEAR/END_YEAR
+// change, which happens at most once a year — so this can sit far longer than the default
+// TTL without going stale, which also keeps us well clear of upstream rate limits.
+const CLIMATE_TTL_SECONDS = 180 * 24 * 60 * 60; // 180 days
 
-async function fetchCityClimate(city: City): Promise<ClimateSummary> {
+// Weather and hazard risk come from two independent upstream services, so they're cached
+// under separate keys with their own negative-cache guard. Bundling them under one cache
+// entry would let a successful hazard fetch mask (and lock in) a failed weather fetch for
+// the full TTL, or vice versa — each source needs to be free to retry on its own.
+export async function getCityClimate(city: City): Promise<ClimateSummary> {
   const [weatherData, hazardRisks] = await Promise.all([
-    city.lat != null && city.lon != null ? fetchWeatherData(city.lat, city.lon) : null,
-    city.countyFips ? fetchHazardRisks(city.countyFips) : null,
+    city.lat != null && city.lon != null
+      ? getCached(
+          `climate-weather:${city.state}:${city.slug}`,
+          () => fetchWeatherData(city.lat as number, city.lon as number),
+          { shouldCache: (r) => r !== null, ttlSeconds: CLIMATE_TTL_SECONDS },
+        )
+      : null,
+    city.countyFips
+      ? getCached(
+          `climate-hazard:${city.state}:${city.slug}`,
+          () => fetchHazardRisks(city.countyFips),
+          { shouldCache: (r) => r !== null, ttlSeconds: CLIMATE_TTL_SECONDS },
+        )
+      : null,
   ]);
 
   if (!weatherData) {
@@ -130,12 +148,14 @@ async function fetchWeatherData(lat: number, lon: number): Promise<{ daily: Open
     `&daily=temperature_2m_mean,temperature_2m_max,temperature_2m_min,sunshine_duration,precipitation_sum,snowfall_sum` +
     `&timezone=America%2FNew_York`;
 
+  const res = await fetchWithRetry(url, "open-meteo");
+  if (!res) return null;
+
   try {
-    const res = await fetch(url);
-    if (!res.ok) return null;
     const data = (await res.json()) as { daily?: OpenMeteoDaily };
     return data.daily ? { daily: data.daily } : null;
-  } catch {
+  } catch (e) {
+    console.error("[climate] failed to parse Open-Meteo response", { lat, lon, error: (e as Error).message });
     return null;
   }
 }
@@ -167,10 +187,10 @@ async function fetchHazardRisks(countyFips: string): Promise<NaturalHazardRisks 
     `${NRI_SERVICE}?where=STCOFIPS+%3D+%27${countyFips}%27` +
     `&outFields=${NRI_FIELDS}&returnGeometry=false&f=json`;
 
-  try {
-    const res = await fetch(url);
-    if (!res.ok) return null;
+  const res = await fetchWithRetry(url, "fema-nri");
+  if (!res) return null;
 
+  try {
     type NriResponse = {
       features?: Array<{ attributes: Record<string, number | string | null> }>;
     };
@@ -197,12 +217,41 @@ async function fetchHazardRisks(countyFips: string): Promise<NaturalHazardRisks 
       drought: risk("DRGT_RISKS", "DRGT_RISKR"),
       source: FEMA_NRI_SOURCE,
     };
-  } catch {
+  } catch (e) {
+    console.error("[climate] failed to parse FEMA NRI response", { countyFips, error: (e as Error).message });
     return null;
   }
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+const RETRYABLE_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504]);
+
+// A single failed attempt (network blip, upstream 429/5xx) shouldn't be treated the same as
+// "this city has no data" — that distinction is what caching downstream needs to be correct.
+async function fetchWithRetry(url: string, label: string, attempts = 3): Promise<Response | null> {
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      void trackCall(label);
+      const res = await fetch(url);
+      if (res.ok) return res;
+      if (!RETRYABLE_STATUSES.has(res.status)) {
+        console.error(`[climate] ${label} returned non-retryable status`, { status: res.status, url });
+        return null;
+      }
+      console.warn(`[climate] ${label} returned ${res.status}, attempt ${attempt}/${attempts}`);
+    } catch (e) {
+      console.warn(`[climate] ${label} request failed, attempt ${attempt}/${attempts}`, { error: (e as Error).message });
+    }
+    if (attempt < attempts) await sleep(300 * 2 ** (attempt - 1));
+  }
+  console.error(`[climate] ${label} failed after ${attempts} attempts`, { url });
+  return null;
+}
 
 function cToF(celsius: number): number {
   return parseFloat(((celsius * 9) / 5 + 32).toFixed(1));
