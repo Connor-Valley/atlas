@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import DashboardHeader from '../components/DashboardHeader.vue';
 import TurnstileWidget from '../components/TurnstileWidget.vue';
 import { sendContactMessage } from '../api/contact';
+import { useAuth } from '../composables/useAuth';
 
 const router = useRouter();
+const { user, profile, displayName } = useAuth();
 
 function onHeaderSearch(payload: { city: string; state: string }) {
   router.push(`/city/${payload.state}/${payload.city}`);
@@ -36,6 +38,16 @@ const captchaToken = ref<string | null>(null);
 const status = ref<'idle' | 'sending' | 'sent' | 'error'>('idle');
 const errorMessage = ref('');
 const fieldErrors = ref<{ name?: string; email?: string; message?: string }>({});
+
+watch(
+  [user, profile],
+  ([currentUser]) => {
+    if (!currentUser) return;
+    if (!name.value.trim()) name.value = displayName() ?? '';
+    if (!email.value.trim()) email.value = currentUser.email ?? '';
+  },
+  { immediate: true },
+);
 
 function validateFields(): boolean {
   const errors: typeof fieldErrors.value = {};
