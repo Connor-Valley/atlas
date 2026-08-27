@@ -30,7 +30,7 @@ const MAX_SCALE = 6;
 // more cities reveal themselves as you zoom in on a crowded metro area.
 const BASE_MIN_SEPARATION = 26;
 
-type Dot = { x: number; y: number; name: string };
+type Dot = { x: number; y: number; name: string; population: number };
 
 const loading = ref(true);
 const notFound = ref(false);
@@ -52,6 +52,31 @@ const contextLabelOffset = ref({ x: 0, y: 0 });
 
 function distance(a: { x: number; y: number }, b: { x: number; y: number }) {
   return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+// Population-scaled dot size (sqrt, so it reads as area rather than radius) — a state capital
+// shouldn't look the same size as the small suburb sitting next to it.
+const DOT_MIN_R = 2;
+const DOT_MAX_R = 6;
+function contextDotRadius(population: number) {
+  return Math.min(DOT_MAX_R, DOT_MIN_R + Math.sqrt(population) / 300);
+}
+
+// The state's real heavy-hitters (Chicago, Denver, Detroit-scale) get a little star instead of
+// a plain dot — but only once you've zoomed in a bit, so the default view stays quiet.
+const MAJOR_CITY_POPULATION = 500_000;
+const STAR_REVEAL_SCALE = 1.3;
+
+function starPath(cx: number, cy: number, outerR: number, innerR: number) {
+  const points = 5;
+  const step = Math.PI / points;
+  const coords: string[] = [];
+  for (let i = 0; i < points * 2; i++) {
+    const r = i % 2 === 0 ? outerR : innerR;
+    const angle = -Math.PI / 2 + i * step;
+    coords.push(`${(cx + r * Math.cos(angle)).toFixed(2)} ${(cy + r * Math.sin(angle)).toFixed(2)}`);
+  }
+  return `M${coords[0]} L${coords.slice(1).join(' L')} Z`;
 }
 
 // Screen (viewBox-unit) position of a world point at the current zoom/pan.
@@ -154,6 +179,7 @@ const visibleDots = computed(() => {
 });
 
 const hoveredDotData = computed(() => (hoveredDot.value !== null ? visibleDots.value[hoveredDot.value] ?? null : null));
+const starsActive = computed(() => scale.value > STAR_REVEAL_SCALE);
 
 // The main city's own label only needs to step aside once a context dot has actually revealed
 // itself close enough to crowd it — a fixed screen-pixel distance (not scaled by zoom), so it
@@ -188,6 +214,82 @@ async function resolveLabelCollision() {
 }
 
 watch(hoveredDot, resolveLabelCollision);
+
+// How far inside the boundary a nudged point should land, in world (viewBox) units — enough
+// that it doesn't just sit exactly on the outline stroke.
+const INSET_NUDGE = 6;
+
+function pointInRing(x: number, y: number, ring: [number, number][]): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i];
+    const [xj, yj] = ring[j];
+    const intersects = yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+    if (intersects) inside = !inside;
+  }
+  return inside;
+}
+
+function closestPointOnSegment(px: number, py: number, ax: number, ay: number, bx: number, by: number) {
+  const dx = bx - ax;
+  const dy = by - ay;
+  const lenSq = dx * dx + dy * dy;
+  const t = lenSq === 0 ? 0 : Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq));
+  return { x: ax + t * dx, y: ay + t * dy };
+}
+
+// If (x, y) falls outside every outer ring, moves it to the nearest point on the state's
+// boundary and nudges it inward a little further, so dots/stars for cities right at the edge
+// (or just outside it, since our city coordinates come from a different, imprecise geocoder)
+// never appear to float off the landmass.
+function containToState(
+  x: number,
+  y: number,
+  outerRings: [number, number][][],
+  centroid: { x: number; y: number } | null
+): { x: number; y: number } {
+  if (outerRings.length === 0 || outerRings.some((ring) => pointInRing(x, y, ring))) {
+    return { x, y };
+  }
+
+  let nearest: { x: number; y: number } | null = null;
+  let nearestDist = Infinity;
+  for (const ring of outerRings) {
+    for (let i = 0; i < ring.length; i++) {
+      const a = ring[i];
+      const b = ring[(i + 1) % ring.length];
+      const candidate = closestPointOnSegment(x, y, a[0], a[1], b[0], b[1]);
+      const d = Math.hypot(candidate.x - x, candidate.y - y);
+      if (d < nearestDist) {
+        nearestDist = d;
+        nearest = candidate;
+      }
+    }
+  }
+  if (!nearest) return { x, y };
+  if (!centroid) return nearest;
+
+  const dx = centroid.x - nearest.x;
+  const dy = centroid.y - nearest.y;
+  const len = Math.hypot(dx, dy) || 1;
+  return { x: nearest.x + (dx / len) * INSET_NUDGE, y: nearest.y + (dy / len) * INSET_NUDGE };
+}
+
+function extractOuterRings(geometry: any, projection: (p: [number, number]) => [number, number] | null): [number, number][][] {
+  const polygons: [number, number][][][] =
+    geometry.type === 'MultiPolygon' ? geometry.coordinates : [geometry.coordinates];
+
+  const rings: [number, number][][] = [];
+  for (const polygon of polygons) {
+    const outer = polygon[0]; // first ring is exterior per GeoJSON convention; holes ignored
+    if (!outer) continue;
+    const projected = outer
+      .map(([lng, lat]: [number, number]) => projection([lng, lat]))
+      .filter((p): p is [number, number] => p !== null);
+    if (projected.length >= 3) rings.push(projected);
+  }
+  return rings;
+}
 
 async function load() {
   loading.value = true;
@@ -233,8 +335,13 @@ async function load() {
   const pathGenerator = d3geo.geoPath(projection);
   outlinePath.value = pathGenerator(feature);
 
+  const outerRings = extractOuterRings(feature.geometry, (p) => projection(p));
+  const centroidLngLat = d3geo.geoCentroid(feature);
+  const projectedCentroid = projection(centroidLngLat);
+  const centroid = projectedCentroid ? { x: projectedCentroid[0], y: projectedCentroid[1] } : null;
+
   const projected = projection([location.lng, location.lat]);
-  if (projected) pin.value = { x: projected[0], y: projected[1] };
+  if (projected) pin.value = containToState(projected[0], projected[1], outerRings, centroid);
 
   // Fetched separately (not awaited above) so the outline + main pin can render immediately —
   // this can take a few seconds on a cold cache since it's geocoding several cities.
@@ -243,7 +350,8 @@ async function load() {
     for (const major of majorCities) {
       const point = projection([major.lng, major.lat]);
       if (!point) continue;
-      dots.push({ x: point[0], y: point[1], name: major.name });
+      const contained = containToState(point[0], point[1], outerRings, centroid);
+      dots.push({ x: contained.x, y: contained.y, name: major.name, population: major.population });
     }
     rawDots.value = dots;
   });
@@ -309,16 +417,23 @@ watch(() => [props.city, props.state], load);
                   class="city-loc-modal__context-hit"
                   :cx="dot.x"
                   :cy="dot.y"
-                  :r="12 / scale"
+                  :r="Math.max(12, contextDotRadius(dot.population) * 2.5) / scale"
                   @mouseenter="hoveredDot = i"
                   @mouseleave="hoveredDot = null"
                 />
+                <path
+                  v-if="starsActive && dot.population >= MAJOR_CITY_POPULATION"
+                  class="city-loc-modal__context-star"
+                  :class="{ 'city-loc-modal__context-dot--hover': hoveredDot === i }"
+                  :d="starPath(dot.x, dot.y, (contextDotRadius(dot.population) * 1.7) / scale, (contextDotRadius(dot.population) * 0.75) / scale)"
+                />
                 <circle
+                  v-else
                   class="city-loc-modal__context-dot"
                   :class="{ 'city-loc-modal__context-dot--hover': hoveredDot === i }"
                   :cx="dot.x"
                   :cy="dot.y"
-                  :r="3 / scale"
+                  :r="contextDotRadius(dot.population) / scale"
                 />
               </g>
               <g v-if="pin" :transform="`translate(${pin.x}, ${pin.y})`">
@@ -504,6 +619,13 @@ watch(() => [props.city, props.state], load);
 .city-loc-modal__context-dot {
   fill: var(--text-muted);
   opacity: 0.55;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.city-loc-modal__context-star {
+  fill: var(--accent-soft);
+  opacity: 0.75;
   pointer-events: none;
   transition: opacity 0.15s ease;
 }
