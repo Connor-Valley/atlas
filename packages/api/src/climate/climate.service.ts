@@ -2,8 +2,9 @@ import type { City } from "../cities/cities.types.js";
 import type { ClimateSummary, HazardRisk, NaturalHazardRisks } from "./climate.types.js";
 import type { SourceAttribution } from "../common/source.types.js";
 import { getCached } from "../common/cache.js";
-import { trackCall } from "../common/metrics.js";
+import { fetchWithRetry } from "../common/http-retry.js";
 import { findNearestStationNormals } from "./climate-fallback.service.js";
+import { getPowerSupplement } from "./climate-power.service.js";
 
 const START_YEAR = 2014;
 const END_YEAR = 2023;
@@ -59,7 +60,27 @@ export async function getCityClimate(city: City): Promise<ClimateSummary> {
         snowDaysPerYear: fallback.normals.snowDaysPerYear,
         approximate: true,
       };
-      source = meteostatFallbackSource(fallback.distanceMiles, fallback.normals.yearsCovered);
+
+      // Most stations don't have a sunshine sensor or snow-depth sensor at all (see
+      // climate-fallback.service.ts), so those two fields are usually still null here.
+      // NASA POWER is gridded (no station gaps), so it can model estimates for exactly
+      // those two gaps without needing its own nearest-neighbor matching.
+      let usedPowerSupplement = false;
+      if (weather.sunnyDaysPerYear == null || weather.annualSnowfallInches == null) {
+        const supplement = await getPowerSupplement(city.lat, city.lon);
+        if (supplement) {
+          if (weather.sunnyDaysPerYear == null && supplement.sunnyDaysPerYear != null) {
+            weather.sunnyDaysPerYear = supplement.sunnyDaysPerYear;
+            usedPowerSupplement = true;
+          }
+          if (weather.annualSnowfallInches == null && supplement.annualSnowfallInches != null) {
+            weather.annualSnowfallInches = supplement.annualSnowfallInches;
+            usedPowerSupplement = true;
+          }
+        }
+      }
+
+      source = meteostatFallbackSource(fallback.distanceMiles, fallback.normals.yearsCovered, usedPowerSupplement);
     }
   }
 
@@ -257,34 +278,6 @@ async function fetchHazardRisks(countyFips: string): Promise<NaturalHazardRisks 
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-const RETRYABLE_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504]);
-
-// A single failed attempt (network blip, upstream 429/5xx) shouldn't be treated the same as
-// "this city has no data" — that distinction is what caching downstream needs to be correct.
-async function fetchWithRetry(url: string, label: string, attempts = 3): Promise<Response | null> {
-  for (let attempt = 1; attempt <= attempts; attempt++) {
-    try {
-      void trackCall(label);
-      const res = await fetch(url);
-      if (res.ok) return res;
-      if (!RETRYABLE_STATUSES.has(res.status)) {
-        console.error(`[climate] ${label} returned non-retryable status`, { status: res.status, url });
-        return null;
-      }
-      console.warn(`[climate] ${label} returned ${res.status}, attempt ${attempt}/${attempts}`);
-    } catch (e) {
-      console.warn(`[climate] ${label} request failed, attempt ${attempt}/${attempts}`, { error: (e as Error).message });
-    }
-    if (attempt < attempts) await sleep(300 * 2 ** (attempt - 1));
-  }
-  console.error(`[climate] ${label} failed after ${attempts} attempts`, { url });
-  return null;
-}
-
 function cToF(celsius: number): number {
   return parseFloat(((celsius * 9) / 5 + 32).toFixed(1));
 }
@@ -301,13 +294,25 @@ const OPEN_METEO_SOURCE = {
     `Sunny days = days with ≥6h sunshine.`,
 };
 
-function meteostatFallbackSource(distanceMiles: number, yearsCovered: number): SourceAttribution {
+function meteostatFallbackSource(
+  distanceMiles: number,
+  yearsCovered: number,
+  usedPowerSupplement: boolean,
+): SourceAttribution {
   const confidence =
     distanceMiles <= 15
       ? "This is a close, generally reliable estimate for this location."
       : distanceMiles <= 50
-        ? "Treat this as an approximate estimate — the nearest station isn't right on top of this location."
-        : "Treat this as a rough regional estimate — the nearest available station is far from this location.";
+        ? "Treat this as an approximate estimate, since the nearest station isn't right on top of this location."
+        : "Treat this as a rough regional estimate, since the nearest available station is far from this location.";
+
+  const supplementNote = usedPowerSupplement
+    ? " Sunny days and/or annual snowfall came from NASA POWER's gridded satellite/reanalysis " +
+      "data instead (most stations don't carry a sunshine or snow-depth sensor); these are " +
+      "modeled estimates (a clearness-index proxy for sunny days, a standard ~10:1 snow-to-" +
+      "liquid ratio for snowfall), not direct measurements."
+    : " Snow days = days with measurable snow on the ground, which is a different measurement " +
+      "than new-snowfall totals.";
 
   return {
     sourceName: "Meteostat Weather Station Network (nearest-station estimate)",
@@ -316,9 +321,7 @@ function meteostatFallbackSource(distanceMiles: number, yearsCovered: number): S
     geographyLevel: "place",
     methodologyNote:
       `Live weather data was temporarily unavailable, so these values are estimated from the ` +
-      `nearest weather station, ${distanceMiles}mi away. ${confidence} ` +
-      `Snow days = days with measurable snow on the ground, which is a different measurement ` +
-      `than new-snowfall totals (not available from this source).`,
+      `nearest weather station, ${distanceMiles}mi away. ${confidence}${supplementNote}`,
   };
 }
 
