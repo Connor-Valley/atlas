@@ -33,7 +33,19 @@ type QuizStep = {
   shortTitle: string;
   subtitle: string;
   options: QuizOption<string>[];
+  // Which dimensions get a separate "how much should this count" dial, and what the dial's
+  // three tiers translate to — these write straight into the existing weight_* columns, so
+  // there's no separate "importance" field to persist. Air quality (its own options already ARE
+  // an importance dial) and political lean don't have one.
+  importanceKey?: keyof UserPreferences;
+  importanceScale?: Record<'low' | 'medium' | 'high', number>;
 };
+
+const IMPORTANCE_LEVELS: Array<{ value: 'low' | 'medium' | 'high'; label: string }> = [
+  { value: 'low',    label: 'Not very important' },
+  { value: 'medium', label: 'Somewhat important' },
+  { value: 'high',   label: 'Very important' },
+];
 
 const STEPS: QuizStep[] = [
   {
@@ -41,6 +53,8 @@ const STEPS: QuizStep[] = [
     title: 'What kind of climate do you prefer?',
     shortTitle: 'Climate',
     subtitle: 'This shapes how weather data factors into your score.',
+    importanceKey: 'weight_climate',
+    importanceScale: { low: 8, medium: 18, high: 80 },
     options: [
       { value: 'warm',         icon: 'mdi-weather-sunny',           label: 'Warm & sunny',    description: 'Hot summers, mild winters, lots of sun',                   tooltip: 'e.g. Florida' },
       { value: 'hot_dry',      icon: 'mdi-sun-thermometer-outline', label: 'Hot & dry',       description: 'Arid heat with low humidity — desert and inland climates', tooltip: 'e.g. Arizona' },
@@ -55,6 +69,8 @@ const STEPS: QuizStep[] = [
     title: 'How important is cost of living?',
     shortTitle: 'Cost of Living',
     subtitle: 'Affects how much rent, expenses, and cost trends influence your score.',
+    importanceKey: 'weight_affordability',
+    importanceScale: { low: 8, medium: 18, high: 80 },
     options: [
       { value: 'budget',   icon: 'mdi-piggy-bank-outline',  label: 'Affordable',   description: 'Keeping rent and daily costs low is a priority' },
       { value: 'value',    icon: 'mdi-scale-balance',        label: 'Moderate',      description: 'Not the cheapest, but shouldn\'t feel expensive' },
@@ -66,6 +82,8 @@ const STEPS: QuizStep[] = [
     title: 'What matters most about the job market?',
     shortTitle: 'Job Market',
     subtitle: 'Changes how regional job availability, unemployment, and growth data are weighted.',
+    importanceKey: 'weight_job_market',
+    importanceScale: { low: 8, medium: 18, high: 80 },
     options: [
       { value: 'high_earning', icon: 'mdi-trending-up',      label: 'High-earning market',  description: 'I want access to a large regional job market with strong earning potential' },
       { value: 'stable',       icon: 'mdi-shield-check-outline', label: 'Stable & secure',   description: 'Low unemployment and a steady local economy' },
@@ -79,6 +97,8 @@ const STEPS: QuizStep[] = [
     title: 'How do you like to spend your time?',
     shortTitle: 'Lifestyle',
     subtitle: 'Adjusts how restaurants, arts, commute, and transit factor in.',
+    importanceKey: 'weight_lifestyle_vibrancy',
+    importanceScale: { low: 8, medium: 18, high: 80 },
     options: [
       { value: 'urban',      icon: 'mdi-city-variant-outline', label: 'City energy',        description: 'Walkable, vibrant — restaurants, bars, arts, transit' },
       { value: 'urban_edge', icon: 'mdi-home-city-outline',   label: 'Urban edge',         description: 'Close to the city core, walkable but not fully downtown' },
@@ -91,6 +111,8 @@ const STEPS: QuizStep[] = [
     title: 'What industry are you in?',
     shortTitle: 'Opportunity',
     subtitle: "A bonus when a city's dominant industry matches your field — never a penalty if it doesn't.",
+    importanceKey: 'weight_opportunity',
+    importanceScale: { low: 4, medium: 10, high: 18 },
     options: [
       { value: 'tech_media_pro',           icon: 'mdi-laptop',                    label: 'Tech, Media & Professional Services', description: 'Software, engineering, consulting, publishing, telecom' },
       { value: 'corporate_finance',        icon: 'mdi-domain',                    label: 'Corporate & Finance',                 description: 'Banking, real estate, corporate HQ & management' },
@@ -122,6 +144,8 @@ const STEPS: QuizStep[] = [
     title: 'How do you get around?',
     shortTitle: 'Getting Around',
     subtitle: 'Weights transit, walkability, and airport access accordingly.',
+    importanceKey: 'weight_connectivity',
+    importanceScale: { low: 8, medium: 18, high: 80 },
     options: [
       { value: 'walkable', icon: 'mdi-walk',             label: 'Dense & walkable',       description: 'I want to walk or take transit everywhere' },
       { value: 'balanced', icon: 'mdi-map-marker-radius-outline', label: 'Balanced & accessible', description: 'Good airport, some transit, still drivable' },
@@ -182,12 +206,12 @@ watch(loaded, (isLoaded) => {
 
 const totalSteps = STEPS.length;
 
-function selectOption(key: keyof UserPreferences, value: string) {
+function selectOption(key: keyof UserPreferences, value: string | number) {
   (draft.value as any)[key] = value;
   touchedKeys.value.add(key);
 }
 
-function isSelected(key: keyof UserPreferences, value: string): boolean {
+function isSelected(key: keyof UserPreferences, value: string | number): boolean {
   return (draft.value as any)[key] === value;
 }
 
@@ -237,7 +261,23 @@ function closeCategory() {
 
 function selectFlatOption(key: keyof UserPreferences, value: string) {
   selectOption(key, value);
-  closeCategory();
+  maybeCloseCategory();
+}
+
+function selectFlatImportance(key: keyof UserPreferences, value: number) {
+  selectOption(key, value);
+  maybeCloseCategory();
+}
+
+// Closes the popup once everything for this category has been picked — the main option, and
+// (for steps that have one) the importance dial too. Picking the option first no longer closes
+// it out from under you before you've had a chance to also set how much it matters.
+function maybeCloseCategory() {
+  const step = activeCategoryStep.value;
+  if (!step) return;
+  const mainSet = touchedKeys.value.has(step.key);
+  const importanceSet = !step.importanceKey || touchedKeys.value.has(step.importanceKey);
+  if (mainSet && importanceSet) closeCategory();
 }
 
 const hasAnyPreference = computed(() => touchedKeys.value.size > 0);
@@ -259,6 +299,45 @@ function getSelectedOption(step: QuizStep): QuizOption<string> | null {
   if (!touchedKeys.value.has(step.key)) return null;
   const val = (draft.value as any)[step.key] as string;
   return step.options.find(o => o.value === val) ?? null;
+}
+
+// "Deal breaker" is just this dimension's top importance tier (air quality's own options
+// already ARE its importance dial) — a one-tap shortcut from the card face so marking something
+// as a deal breaker doesn't require opening the popup just to hit "Very important." Any number
+// of dimensions can be a deal breaker at once — nothing here caps it.
+//
+// Political lean has no importance dial of its own (its weight is normally fixed — 20 for a
+// real place-level lean, 8 for a county-level stand-in — see computeAtlasScore). weight_safety
+// is a fully dead column otherwise (breakdown.safety is always null, so it never scores
+// anything and has no UI presence anywhere), so it's repurposed here to flag "political lean is
+// a deal breaker" (weight_safety > 0) rather than adding a new column just for a boolean.
+function supportsDealbreaker(step: QuizStep): boolean {
+  return !!(step.importanceKey && step.importanceScale)
+    || step.key === 'air_quality_priority'
+    || step.key === 'political_lean_preference';
+}
+
+function isDealbreaker(step: QuizStep): boolean {
+  if (step.importanceKey && step.importanceScale) {
+    return (draft.value as any)[step.importanceKey] === step.importanceScale.high;
+  }
+  if (step.key === 'air_quality_priority') {
+    return draft.value.air_quality_priority === 'high';
+  }
+  if (step.key === 'political_lean_preference') {
+    return draft.value.weight_safety > 0;
+  }
+  return false;
+}
+
+function toggleDealbreaker(step: QuizStep) {
+  if (step.importanceKey && step.importanceScale) {
+    selectOption(step.importanceKey, isDealbreaker(step) ? step.importanceScale.medium : step.importanceScale.high);
+  } else if (step.key === 'air_quality_priority') {
+    selectOption('air_quality_priority', isDealbreaker(step) ? 'medium' : 'high');
+  } else if (step.key === 'political_lean_preference') {
+    selectOption('weight_safety', isDealbreaker(step) ? 0 : 80);
+  }
 }
 
 defineExpose({ save, saving, saved });
@@ -283,14 +362,33 @@ defineExpose({ save, saving, saved });
       <!-- Editing or read-only saved summary -->
       <template v-else>
         <div class="quiz__flat-grid">
-          <button
+          <div
             v-for="step in STEPS"
             :key="step.key"
             class="quiz__flat-card"
-            :class="{ 'quiz__flat-card--readonly': mode === 'saved' }"
-            :disabled="mode === 'saved'"
-            @click="openCategory(step.key)"
+            :class="{ 'quiz__flat-card--readonly': mode === 'saved', 'quiz__flat-card--dealbreaker': isDealbreaker(step) }"
+            role="button"
+            :tabindex="mode === 'saved' ? -1 : 0"
+            @click="mode !== 'saved' && openCategory(step.key)"
+            @keydown.enter="mode !== 'saved' && openCategory(step.key)"
           >
+            <div
+              v-if="mode === 'editing' && supportsDealbreaker(step)"
+              class="quiz__flat-card-dealbreaker-wrap"
+            >
+              <span v-if="isDealbreaker(step)" class="quiz__flat-card-dealbreaker-label">Deal breaker</span>
+              <label
+                class="quiz__flat-card-dealbreaker-toggle"
+                :class="{ 'quiz__flat-card-dealbreaker-toggle--active': isDealbreaker(step) }"
+                :title="isDealbreaker(step) ? 'Deal breaker — click to unmark' : 'Mark as deal breaker'"
+                @click.stop
+              >
+                <input type="checkbox" :checked="isDealbreaker(step)" @change="toggleDealbreaker(step)">
+                <span class="quiz__flat-card-dealbreaker-slider"></span>
+              </label>
+            </div>
+            <span v-else-if="isDealbreaker(step)" class="quiz__flat-card-dealbreaker-badge" title="Deal breaker"></span>
+
             <div class="quiz__flat-card-top">
               <span
                 class="mdi quiz__flat-card-icon"
@@ -305,7 +403,7 @@ defineExpose({ save, saving, saved });
               :class="{ 'quiz__flat-card-value--unset': !getSelectedOption(step) }"
             >{{ getSelectedOption(step)?.label ?? 'No preference set' }}</span>
             <span class="quiz__flat-card-desc">{{ getSelectedOption(step)?.description ?? 'Tap to set your preference' }}</span>
-          </button>
+          </div>
         </div>
         <div class="quiz__flat-footer">
           <template v-if="mode === 'editing'">
@@ -372,6 +470,21 @@ defineExpose({ save, saving, saved });
                 <span class="quiz__option-desc">{{ opt.description }}</span>
               </button>
             </div>
+
+            <div v-if="activeCategoryStep.importanceKey" class="quiz__importance">
+              <p class="quiz__importance-label">How much should this matter?</p>
+              <div class="quiz__importance-options">
+                <button
+                  v-for="level in IMPORTANCE_LEVELS"
+                  :key="level.value"
+                  class="quiz__importance-btn"
+                  :class="{ 'quiz__importance-btn--selected': isSelected(activeCategoryStep.importanceKey, activeCategoryStep.importanceScale![level.value]) }"
+                  @click="selectFlatImportance(activeCategoryStep.importanceKey, activeCategoryStep.importanceScale![level.value])"
+                >
+                  {{ level.label }}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </Transition>
@@ -434,6 +547,21 @@ defineExpose({ save, saving, saved });
             </span>
             <span class="quiz__option-desc">{{ opt.description }}</span>
           </button>
+        </div>
+
+        <div v-if="STEPS[currentStep].importanceKey" class="quiz__importance">
+          <p class="quiz__importance-label">How much should this matter?</p>
+          <div class="quiz__importance-options">
+            <button
+              v-for="level in IMPORTANCE_LEVELS"
+              :key="level.value"
+              class="quiz__importance-btn"
+              :class="{ 'quiz__importance-btn--selected': isSelected(STEPS[currentStep].importanceKey, STEPS[currentStep].importanceScale![level.value]) }"
+              @click="selectOption(STEPS[currentStep].importanceKey, STEPS[currentStep].importanceScale![level.value])"
+            >
+              {{ level.label }}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -677,6 +805,50 @@ defineExpose({ save, saving, saved });
   word-break: break-word;
 }
 
+/* ── Importance dial ── */
+.quiz__importance {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-card);
+}
+
+.quiz__importance-label {
+  margin: 0 0 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.quiz__importance-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.quiz__importance-btn {
+  padding: 8px 6px;
+  background: var(--bg-card-inner);
+  border: 2px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.quiz__importance-btn:hover {
+  background: var(--bg-card-subtle);
+}
+
+.quiz__importance-btn--selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg-card-inner));
+  color: var(--text-primary);
+}
+
 /* ── Navigation ── */
 .quiz__nav {
   display: flex;
@@ -776,6 +948,7 @@ defineExpose({ save, saving, saved });
 }
 
 .quiz__flat-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -849,6 +1022,90 @@ defineExpose({ save, saving, saved });
   overflow: hidden;
   text-overflow: ellipsis;
   margin-top: 1px;
+}
+
+/* ── Deal breaker ── */
+.quiz__flat-card--dealbreaker {
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--border-card));
+  background: color-mix(in srgb, var(--danger) 6%, var(--bg-card-inner));
+}
+
+.quiz__flat-card-dealbreaker-wrap {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 1;
+}
+
+.quiz__flat-card-dealbreaker-label {
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--danger);
+  white-space: nowrap;
+}
+
+.quiz__flat-card-dealbreaker-toggle {
+  position: relative;
+  display: block;
+  width: 32px;
+  height: 18px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.quiz__flat-card-dealbreaker-toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.quiz__flat-card-dealbreaker-slider {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background: color-mix(in srgb, var(--border-card) 60%, transparent);
+  border: 1px solid var(--border-card);
+  border-radius: 20px;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.quiz__flat-card-dealbreaker-slider::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.quiz__flat-card-dealbreaker-toggle--active .quiz__flat-card-dealbreaker-slider {
+  background: color-mix(in srgb, var(--danger) 40%, transparent);
+  border-color: var(--danger);
+}
+
+.quiz__flat-card-dealbreaker-toggle--active .quiz__flat-card-dealbreaker-slider::before {
+  transform: translate(14px, -50%);
+  background: var(--danger);
+}
+
+.quiz__flat-card-dealbreaker-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--danger);
 }
 
 .quiz__flat-footer {
