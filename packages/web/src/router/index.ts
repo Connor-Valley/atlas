@@ -171,11 +171,7 @@ const router = createRouter({
       name: 'not-found',
       component: NotFound
     }
-  ],
-  scrollBehavior(_to, _from, savedPosition) {
-    if (savedPosition) return savedPosition;
-    return { top: 0 };
-  }
+  ]
 });
 
 // Waits out the transient `loading === true` window while the Supabase session is still being
