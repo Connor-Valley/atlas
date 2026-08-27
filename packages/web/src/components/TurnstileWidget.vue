@@ -9,6 +9,7 @@ declare global {
         options: {
           sitekey: string;
           theme?: 'auto' | 'light' | 'dark';
+          appearance?: 'always' | 'execute' | 'interaction-only';
           callback?: (token: string) => void;
           'expired-callback'?: () => void;
           'error-callback'?: () => void;
@@ -23,6 +24,7 @@ declare global {
 const props = defineProps<{
   siteKey: string;
   theme?: 'auto' | 'light' | 'dark';
+  appearance?: 'always' | 'execute' | 'interaction-only';
 }>();
 
 const emit = defineEmits<{
@@ -71,6 +73,7 @@ async function renderWidget() {
     widgetId = window.turnstile.render(containerRef.value, {
       sitekey: props.siteKey,
       theme: props.theme ?? 'auto',
+      appearance: props.appearance ?? 'always',
       callback: (token: string) => emit('verified', token),
       'expired-callback': () => emit('expired'),
       'error-callback': () => emit('error', 'Unable to verify Cloudflare Turnstile right now.'),
@@ -92,7 +95,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="turnstile-widget">
+  <div class="turnstile-widget" :class="{ 'turnstile-widget--invisible': appearance === 'interaction-only' }">
     <div ref="containerRef"></div>
   </div>
 </template>
@@ -102,5 +105,11 @@ onBeforeUnmount(() => {
   display: flex;
   justify-content: center;
   min-height: 78px;
+}
+
+/* interaction-only renders nothing visible in the common case — don't reserve space for a
+   checkbox that isn't there, unless Cloudflare actually surfaces a challenge. */
+.turnstile-widget--invisible {
+  min-height: 0;
 }
 </style>

@@ -31,7 +31,9 @@ onMounted(() => {
     <div class="app-safe-top" aria-hidden="true"></div>
     <BackendWakingUp v-if="!isAwake && !isChecking" />
     <template v-else-if="isAwake">
-      <router-view />
+      <div class="app-main">
+        <router-view />
+      </div>
       <SiteFooter v-if="!footerHidden" />
       <ToastContainer />
       <AuthModal v-if="showAuthModal" :mode="authModalMode" @close="closeAuthModal" />
@@ -40,6 +42,16 @@ onMounted(() => {
 </template>
 
 <style>
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.app-main {
+  flex: 1 0 auto;
+}
+
 @media (max-width: 640px) {
   .app-safe-top {
     position: fixed;

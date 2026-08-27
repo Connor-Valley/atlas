@@ -114,7 +114,8 @@ onMounted(async () => {
 
       <footer class="story__footer">
         <p>
-          Found a bug, or a city that doesn't look right? <a href="mailto:developer.atlas.help@gmail.com">Send a note</a>.
+          Found a bug, or a city that doesn't look right?
+          <router-link :to="{ name: 'contact' }">Send a note</router-link>.
         </p>
       </footer>
     </article>

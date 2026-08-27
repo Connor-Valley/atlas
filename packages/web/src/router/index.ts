@@ -15,6 +15,7 @@ import UserProfile from '../views/UserProfile.vue';
 import About from '../views/About.vue';
 import DataSources from '../views/DataSources.vue';
 import HowScoringWorks from '../views/HowScoringWorks.vue';
+import Contact from '../views/Contact.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -102,6 +103,11 @@ const router = createRouter({
       path: '/how-scoring-works',
       name: 'how-scoring-works',
       component: HowScoringWorks
+    },
+    {
+      path: '/contact',
+      name: 'contact',
+      component: Contact
     },
     {
       path: '/compare/:stateA/:cityA/:stateB?/:cityB?',
