@@ -396,7 +396,6 @@ defineExpose({ save, saving, saved });
                 :class="getSelectedOption(step)?.icon ?? 'mdi-dots-horizontal-circle-outline'"
                 :style="getSelectedOption(step) ? {} : { opacity: '0.35' }"
               ></span>
-              <span v-if="mode === 'editing'" class="mdi mdi-chevron-right quiz__flat-card-chevron"></span>
             </div>
             <span class="quiz__flat-card-label">{{ step.shortTitle }}</span>
             <span
@@ -983,12 +982,6 @@ defineExpose({ save, saving, saved });
   font-size: 1.5rem;
   color: var(--accent);
   opacity: 0.9;
-}
-
-.quiz__flat-card-chevron {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  opacity: 0.5;
 }
 
 .quiz__flat-card-label {
