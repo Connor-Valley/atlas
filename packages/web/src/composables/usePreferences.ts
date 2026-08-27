@@ -16,7 +16,11 @@ export interface UserPreferences {
   connectivity_preference: 'walkable' | 'balanced' | 'car' | 'airport' | 'any';
   political_lean_preference: 'progressive' | 'conservative' | 'open' | 'not_a_factor';
 
-  // Derived weights — computed from quiz answers, persisted for the score card breakdown display
+  // Weights double as the "how much should this count" importance dial — the UI writes a
+  // low/medium/high preset straight into these instead of storing a separate importance choice,
+  // so no schema change was needed to add per-dimension importance. Air quality is the exception:
+  // air_quality_priority is itself already an importance dial (not a "type" choice), so its
+  // weight still gets derived from that field below rather than set directly by the UI.
   weight_affordability:     number;
   weight_job_market:        number;
   weight_climate:           number;
@@ -25,6 +29,15 @@ export interface UserPreferences {
   weight_air_quality:       number;
   weight_safety:            number;
   weight_connectivity:      number;
+  // Bitmask of which dimensions are marked a "deal breaker" — fully independent of the
+  // importance dial above (picking "Very important" does NOT imply deal breaker, and marking a
+  // deal breaker doesn't change the importance dial's displayed tier either). Repurposes
+  // weight_education (the old education-scoring column — dropped from the app when opportunityScore
+  // started deriving its inputs from profile.educationalAttainment directly, see CLAUDE.md) since
+  // it's otherwise fully dead and has no CHECK constraint. Offset by DEALBREAKER_OFFSET so any
+  // leftover legacy value from when this column meant something else (small, e.g. 15) never gets
+  // misread as a bitmask — see isDealbreakerDim / withDealbreakerToggled below.
+  weight_education:         number;
 
   // Legacy / compat
   persona_id: string;
@@ -42,14 +55,17 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   connectivity_preference:  'any',
   political_lean_preference: 'not_a_factor',
 
-  weight_affordability:      20,
-  weight_job_market:         20,
-  weight_climate:            20,
-  weight_opportunity:        5,
-  weight_lifestyle_vibrancy: 15,
-  weight_air_quality:        10,
+  // "Medium" tier of each dimension's low/medium/high scale (see deriveWeightsFromQuiz) —
+  // matches what a never-touched importance dial shows as selected.
+  weight_affordability:      18,
+  weight_job_market:         18,
+  weight_climate:            18,
+  weight_opportunity:        10,
+  weight_lifestyle_vibrancy: 18,
+  weight_air_quality:        18,
   weight_safety:             0,
-  weight_connectivity:       20,
+  weight_connectivity:       18,
+  weight_education:          0,
 
   persona_id: 'custom',
   political_preference_enabled: false,
@@ -62,6 +78,10 @@ const QUIZ_ANSWER_KEYS: Array<keyof UserPreferences> = [
   'climate_preference', 'affordability_preference', 'job_market_preference',
   'lifestyle_preference', 'opportunity_preference', 'air_quality_priority',
   'connectivity_preference', 'political_lean_preference',
+  'weight_affordability', 'weight_job_market', 'weight_climate',
+  'weight_lifestyle_vibrancy', 'weight_connectivity', 'weight_opportunity',
+  'weight_safety', // repurposed as "political lean is a deal breaker" — see computeAtlasScore
+  'weight_education', // repurposed as the deal-breaker bitmask for the other 7 dimensions
 ];
 
 // A preferences object that merely EXISTS (e.g. `{ ...DEFAULT_PREFERENCES }` after a reset, or
@@ -74,37 +94,53 @@ export function hasRealPreferences(prefs: UserPreferences | null | undefined): b
   return QUIZ_ANSWER_KEYS.some((k) => prefs[k] !== DEFAULT_PREFERENCES[k]);
 }
 
-/** Derive weights and political settings from quiz answers. */
+// ── Deal breakers ──────────────────────────────────────────────────────────────
+// Independent of the importance dial (weight_affordability etc.) and of political lean's own
+// weight_safety flag — a separate on/off per dimension, packed into one bitmask so no new
+// column was needed. Any dimension can be a deal breaker regardless of its importance tier.
+
+export const DEALBREAKER_DIMS = [
+  'affordability', 'job_market', 'climate', 'lifestyle_vibrancy', 'connectivity', 'opportunity', 'air_quality',
+] as const;
+export type DealbreakerDim = typeof DEALBREAKER_DIMS[number];
+
+const DEALBREAKER_BIT: Record<DealbreakerDim, number> = {
+  affordability: 1, job_market: 2, climate: 4, lifestyle_vibrancy: 8,
+  connectivity: 16, opportunity: 32, air_quality: 64,
+};
+
+// Legacy weight_education values (from when this column meant something else) were always a
+// small plain number — offsetting new bitmask writes well above that range means an old
+// leftover value reads as "no deal breakers" instead of being misinterpreted as one.
+const DEALBREAKER_OFFSET = 1000;
+
+function dealbreakerBits(prefs: UserPreferences): number {
+  return prefs.weight_education >= DEALBREAKER_OFFSET ? prefs.weight_education - DEALBREAKER_OFFSET : 0;
+}
+
+export function isDealbreakerDim(prefs: UserPreferences, dim: DealbreakerDim): boolean {
+  return (dealbreakerBits(prefs) & DEALBREAKER_BIT[dim]) !== 0;
+}
+
+export function withDealbreakerToggled(prefs: UserPreferences, dim: DealbreakerDim): UserPreferences {
+  const bit = DEALBREAKER_BIT[dim];
+  const bits = dealbreakerBits(prefs);
+  const next = (bits & bit) !== 0 ? (bits & ~bit) : (bits | bit);
+  return { ...prefs, weight_education: DEALBREAKER_OFFSET + next };
+}
+
+// Weight given to any dimension marked a deal breaker (including political lean's own
+// weight_safety flag) — dominant enough to genuinely swing the score, higher than the normal
+// importance dial's own "Very important" tier so the two remain meaningfully different even if
+// both happen to be set at once.
+export const DEALBREAKER_WEIGHT = 90;
+
+/** Derive weight_air_quality and political settings from quiz answers. Every other weight_*
+ *  field is written directly by the importance dial in the UI, so it just passes through
+ *  unchanged via the `...prefs` spread below. */
 export function deriveWeightsFromQuiz(prefs: UserPreferences): UserPreferences {
-  const AFFORDABILITY: Record<string, number> = {
-    budget: 35, value: 20, flexible: 8, any: 20,
-  };
-  const JOB_MARKET: Record<string, number> = {
-    high_earning: 35, stable: 30, growth: 28, remote: 10, any: 20,
-  };
-  const CLIMATE: Record<string, number> = {
-    warm: 30, hot_dry: 28, cool: 30, mild: 25, four_seasons: 25, any: 15,
-  };
-  // Modest, uniform weight for every real field — this is a soft "does the local industry
-  // match your field" signal, not a hard requirement, so it shouldn't swing the overall score
-  // as much as core dimensions do. Lowered from 18 after evaluateOpportunityMatch (atlasScore.ts)
-  // started scoring genuinely low ranks (7+) as real red-zone misses down to a floor of 20,
-  // instead of never going below a 70 "no bonus" floor — the score range this weight applies to
-  // got much wider (20–100 vs. 70–100), so the same weight was pulling harder on the overall
-  // score than it used to for the exact same "one field in a city with a dozen industries" case.
-  const OPPORTUNITY: Record<string, number> = {
-    tech_media_pro: 10, corporate_finance: 10, manufacturing: 10, construction_trades: 10,
-    transportation_logistics: 10, education_healthcare: 10, government_services: 10, retail: 10,
-    hospitality_arts: 10, agriculture: 10, nonprofit: 10, any: 5,
-  };
-  const LIFESTYLE: Record<string, number> = {
-    urban: 35, urban_edge: 22, suburban: 10, nature: 15, any: 15,
-  };
   const AIR_QUALITY: Record<string, number> = {
-    high: 25, medium: 12, low: 4,
-  };
-  const CONNECTIVITY: Record<string, number> = {
-    walkable: 30, balanced: 22, airport: 25, car: 8, any: 15,
+    high: 80, medium: 18, low: 8,
   };
   const POLITICAL: Record<string, { enabled: boolean; value: number; weight: number }> = {
     progressive:  { enabled: true,  value:  100, weight: 20 },
@@ -117,13 +153,7 @@ export function deriveWeightsFromQuiz(prefs: UserPreferences): UserPreferences {
 
   return {
     ...prefs,
-    weight_affordability:      AFFORDABILITY[prefs.affordability_preference]  ?? 20,
-    weight_job_market:         JOB_MARKET[prefs.job_market_preference]        ?? 20,
-    weight_climate:            CLIMATE[prefs.climate_preference]               ?? 15,
-    weight_opportunity:        OPPORTUNITY[prefs.opportunity_preference]       ?? 15,
-    weight_lifestyle_vibrancy: LIFESTYLE[prefs.lifestyle_preference]           ?? 15,
-    weight_air_quality:        AIR_QUALITY[prefs.air_quality_priority]         ?? 12,
-    weight_connectivity:       CONNECTIVITY[prefs.connectivity_preference]     ?? 15,
+    weight_air_quality: AIR_QUALITY[prefs.air_quality_priority] ?? 18,
     political_preference_enabled: pol.enabled,
     political_preference:         pol.value,
   };
@@ -153,7 +183,7 @@ export function usePreferences() {
         'connectivity_preference', 'political_lean_preference',
         'weight_affordability', 'weight_job_market', 'weight_climate',
         'weight_opportunity', 'weight_lifestyle_vibrancy', 'weight_air_quality',
-        'weight_safety', 'weight_connectivity',
+        'weight_safety', 'weight_connectivity', 'weight_education',
         'political_preference_enabled', 'political_preference',
       ].join(', '))
       .eq('user_id', userId)

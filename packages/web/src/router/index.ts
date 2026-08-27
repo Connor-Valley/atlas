@@ -20,6 +20,13 @@ import NotFound from '../views/NotFound.vue';
 
 const router = createRouter({
   history: createWebHistory(),
+  // Without this, Vue Router leaves the scroll position wherever it was on the previous page
+  // instead of resetting it — e.g. clicking a state near the bottom of "Browse by State" landed
+  // you mid-scroll (looking like an "auto-scroll to the bottom") on the new page instead of at
+  // its top. Browser back/forward still restores the scroll position you were at.
+  scrollBehavior(_to, _from, savedPosition) {
+    return savedPosition ?? { top: 0 };
+  },
   routes: [
     {
       path: '/',
@@ -164,11 +171,7 @@ const router = createRouter({
       name: 'not-found',
       component: NotFound
     }
-  ],
-  scrollBehavior(_to, _from, savedPosition) {
-    if (savedPosition) return savedPosition;
-    return { top: 0 };
-  }
+  ]
 });
 
 // Waits out the transient `loading === true` window while the Supabase session is still being

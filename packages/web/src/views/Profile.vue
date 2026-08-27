@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import DashboardHeader from '../components/DashboardHeader.vue';
 import PreferencesSetup from '../components/PreferencesSetup.vue';
-import { usePreferences } from '../composables/usePreferences';
+import { usePreferences, hasRealPreferences } from '../composables/usePreferences';
 import { useAuth } from '../composables/useAuth';
 import { useAuthModal } from '../composables/useAuthModal';
 import { useFavorites } from '../composables/useFavorites';
@@ -24,7 +24,7 @@ const { user, profile, loading: authLoading, displayName, signOut, reauthenticat
 const { favorites, fetchFavorites } = useFavorites();
 const { savedComparisons, fetchComparisons } = useComparisons();
 const { friends, fetchAll: fetchFriends } = useFriends();
-const { fetchPreferences } = usePreferences();
+const { preferences, loaded: preferencesLoaded, fetchPreferences } = usePreferences();
 
 // Wait for auth to finish restoring the session before treating `user.value === null` as
 // "not logged in" — on a fresh page load it starts null while the Supabase session is still
@@ -35,6 +35,28 @@ watch([user, authLoading], ([, isAuthLoading]) => {
 }, { immediate: true });
 
 const { openAuthModal } = useAuthModal();
+
+// Atlas Score card starts collapsed once you've already set real preferences — otherwise
+// the quiz cover (and everything below it on the page) buries the rest of the profile below
+// the fold every time you visit. Stays expanded (or re-expands) for anyone still on the
+// "make your preferences" cover state. Only auto-set until the user manually toggles it once.
+const atlasExpanded = ref(false);
+const atlasUserToggled = ref(false);
+watch(preferencesLoaded, (isLoaded) => {
+  if (isLoaded && !atlasUserToggled.value) {
+    atlasExpanded.value = !hasRealPreferences(preferences.value);
+  }
+}, { immediate: true });
+
+function toggleAtlasSection() {
+  atlasUserToggled.value = true;
+  atlasExpanded.value = !atlasExpanded.value;
+}
+
+function handlePreferencesSaved() {
+  atlasUserToggled.value = true;
+  atlasExpanded.value = false;
+}
 
 // The router guard already keeps signed-out visitors from ever landing here (it cancels the
 // navigation and pops the shared sign-in modal on whatever page they were on). This only fires
@@ -428,23 +450,29 @@ onBeforeUnmount(() => {
       </section>
 
       <!-- Atlas Score feature card -->
-      <section class="profile-card profile-card--atlas">
-        <div class="atlas-feature__inner">
-          <div class="atlas-feature__left">
-            <div class="atlas-feature__header-row">
-              <div class="atlas-feature__badge">
-                <span class="mdi mdi-map-marker-star-outline atlas-feature__badge-icon"></span>
-              </div>
-              <p class="atlas-feature__eyebrow">Personalized ranking</p>
+      <section class="profile-card profile-card--atlas" :class="{ 'profile-card--atlas-collapsed': !atlasExpanded }">
+        <button class="atlas-feature__toggle" :aria-expanded="atlasExpanded" @click="toggleAtlasSection">
+          <div class="atlas-feature__header-row">
+            <div class="atlas-feature__badge">
+              <span class="mdi mdi-map-marker-star-outline atlas-feature__badge-icon"></span>
             </div>
-            <h2 class="atlas-feature__title">Atlas Score</h2>
+            <div>
+              <p class="atlas-feature__eyebrow">Personalized ranking</p>
+              <h2 class="atlas-feature__title atlas-feature__title--toggle">Atlas Score</h2>
+            </div>
+          </div>
+          <span class="mdi atlas-feature__chevron" :class="atlasExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"></span>
+        </button>
+
+        <div v-if="atlasExpanded" class="atlas-feature__inner">
+          <div class="atlas-feature__left">
             <p class="atlas-feature__desc">
               Every city gets a 0–100 match score tailored to your priorities — so you can instantly see which cities fit your life.
             </p>
           </div>
 
           <div class="atlas-feature__prefs">
-            <PreferencesSetup :flat="true" />
+            <PreferencesSetup :flat="true" @saved="handlePreferencesSaved" />
           </div>
         </div>
       </section>
@@ -1610,6 +1638,44 @@ html:not(.dark) .profile-card__avatar {
   );
   border-color: color-mix(in srgb, var(--accent) 28%, var(--border-card));
   padding: 28px 30px;
+  transition: opacity 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+/* Once you've already personalized and collapsed it, it shouldn't keep pulling the eye the
+   way the full-strength gradient/border does — fade it toward a plain card until reopened. */
+.profile-card--atlas-collapsed {
+  background: var(--bg-card);
+  border-color: var(--border-card);
+  opacity: 0.6;
+}
+
+.profile-card--atlas-collapsed:hover {
+  opacity: 0.85;
+}
+
+.atlas-feature__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+}
+
+.atlas-feature__chevron {
+  font-size: 1.3rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.atlas-feature__title--toggle {
+  font-size: 1.3rem;
 }
 
 .atlas-feature__inner {
@@ -1617,6 +1683,7 @@ html:not(.dark) .profile-card__avatar {
   grid-template-columns: minmax(0, 240px) 1fr;
   gap: 28px;
   align-items: stretch;
+  margin-top: 20px;
 }
 
 .atlas-feature__left {

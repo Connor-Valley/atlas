@@ -4,6 +4,10 @@ import { useRouter } from 'vue-router';
 import DashboardHeader from '../components/DashboardHeader.vue';
 import { useRecentSearches } from '../composables/useRecentSearches';
 import { getStates, getCitiesForState, type StateOption } from '../api/states';
+import { useAuth } from '../composables/useAuth';
+import { usePreferences, hasRealPreferences } from '../composables/usePreferences';
+import { useFavorites } from '../composables/useFavorites';
+import { computeTopCitiesForState, type TopCityResult } from '../lib/topCities';
 
 const props = defineProps<{ code: string }>();
 
@@ -77,6 +81,78 @@ onMounted(async () => {
 });
 
 watch(stateCode, load, { immediate: true });
+
+// ── Your Top Cities (in this state) ─────────────────────────────────────────
+const { user, loading: authLoading } = useAuth();
+const { preferences, fetchPreferences } = usePreferences();
+const { isFavorited, fetchFavorites } = useFavorites();
+
+watch([user, authLoading], ([, isAuthLoading]) => {
+  if (!isAuthLoading) {
+    fetchPreferences();
+    fetchFavorites();
+  }
+}, { immediate: true });
+
+const topCities = ref<TopCityResult[] | null>(null);
+const topCitiesLoading = ref(false);
+const topCitiesProgress = ref({ done: 0, total: 0 });
+const topCitiesError = ref<string | null>(null);
+
+// Persisted per user+state so revisiting a state you've already scored shows the ranking
+// immediately — no need to hit "Find my top cities" again. "Refresh" recomputes and overwrites it.
+// The version tag lets a scoring-logic change (e.g. the population-floor / data-reliability
+// fixes) invalidate anything cached under the old logic — bump it whenever computeAtlasScore's
+// scoring or eligibility rules change, so stale results don't silently linger forever.
+const TOP_CITIES_CACHE_VERSION = 'v2';
+function topCitiesStorageKey(): string | null {
+  if (!user.value) return null;
+  return `atlas-top-cities:${TOP_CITIES_CACHE_VERSION}:${user.value.id}:${stateCode.value}`;
+}
+
+function loadCachedTopCities() {
+  const key = topCitiesStorageKey();
+  if (!key) { topCities.value = null; return; }
+  try {
+    const raw = localStorage.getItem(key);
+    topCities.value = raw ? JSON.parse(raw) : null;
+  } catch {
+    topCities.value = null;
+  }
+}
+
+watch(stateCode, () => {
+  topCitiesError.value = null;
+  loadCachedTopCities();
+});
+
+watch(user, loadCachedTopCities, { immediate: true });
+
+async function loadTopCities() {
+  if (!hasRealPreferences(preferences.value) || topCitiesLoading.value) return;
+  topCitiesLoading.value = true;
+  topCitiesError.value = null;
+  topCitiesProgress.value = { done: 0, total: 0 };
+  try {
+    const result = await computeTopCitiesForState(stateCode.value, preferences.value, (done, total) => {
+      topCitiesProgress.value = { done, total };
+    });
+    topCities.value = result;
+    const key = topCitiesStorageKey();
+    if (key) {
+      try {
+        localStorage.setItem(key, JSON.stringify(result));
+      } catch {
+        // Storage full or unavailable (private browsing) — the ranking still shows for this
+        // visit, it just won't be there automatically next time.
+      }
+    }
+  } catch {
+    topCitiesError.value = 'Unable to score cities right now. Try again later.';
+  } finally {
+    topCitiesLoading.value = false;
+  }
+}
 </script>
 
 <template>
@@ -99,6 +175,50 @@ watch(stateCode, load, { immediate: true });
       <div v-if="loadError" class="state-page__status">Couldn't load cities for {{ stateName }}.</div>
 
       <template v-else>
+        <section v-if="user" class="state-page__panel data-card">
+          <div class="state-page__panel-header">
+            <span class="state-page__panel-label">
+              <span class="mdi mdi-map-marker-star-outline state-page__panel-icon"></span>
+              Your Top Cities in {{ stateName }}
+            </span>
+            <span v-if="topCities && topCities.length" class="state-page__panel-label">Your Score</span>
+          </div>
+
+          <p v-if="!hasRealPreferences(preferences)" class="state-page__empty">
+            Set your preferences on your profile to see your top-matching cities here.
+          </p>
+
+          <div v-else-if="topCitiesLoading" class="state-page__top-cities-loading">
+            <span class="mdi mdi-loading state-page__spinner"></span>
+            <span>Scoring cities… {{ topCitiesProgress.done }}/{{ topCitiesProgress.total || '…' }}</span>
+          </div>
+
+          <p v-else-if="topCitiesError" class="state-page__empty">{{ topCitiesError }}</p>
+
+          <div v-else-if="topCities && topCities.length" class="state-page__list state-page__list--ranked">
+            <button
+              v-for="(city, i) in topCities"
+              :key="`${city.state}-${city.city}`"
+              class="state-page__row state-page__row--ranked"
+              @click="goToCity(city.city, city.state)"
+            >
+              <span class="state-page__row-rank">#{{ i + 1 }}</span>
+              <span class="state-page__row-name">{{ city.cityName }}</span>
+              <span v-if="isFavorited(city.city, city.state)" class="mdi mdi-star state-page__row-star"></span>
+              <span class="state-page__row-score">{{ Math.round(city.score) }}</span>
+            </button>
+          </div>
+
+          <p v-else class="state-page__empty">No ranking yet — find your top-matching cities in {{ stateName }}.</p>
+
+          <div v-if="hasRealPreferences(preferences) && !topCitiesLoading" class="state-page__top-cities-btn-row">
+            <button class="state-page__top-cities-btn" @click="loadTopCities">
+              <span class="mdi mdi-map-marker-star-outline"></span>
+              {{ topCities ? 'Refresh my top cities' : 'Find my top cities' }}
+            </button>
+          </div>
+        </section>
+
         <section class="state-page__panel data-card">
           <div class="state-page__panel-header">
             <span class="state-page__panel-label">
@@ -353,6 +473,95 @@ watch(stateCode, load, { immediate: true });
   font-weight: 500;
   font-size: 0.76rem;
   white-space: nowrap;
+}
+
+/* ── Your Top Cities ── */
+.state-page__list--ranked {
+  grid-template-columns: repeat(2, 1fr);
+  /* Column-major fill (1–5 down the first column, 6–10 down the second) instead of the grid's
+     default row-major order (1,2 / 3,4 / ...) — matches how the ranking actually reads. */
+  grid-auto-flow: column;
+  grid-template-rows: repeat(5, auto);
+  max-height: none;
+}
+
+@media (max-width: 720px) {
+  .state-page__list--ranked {
+    grid-template-columns: 1fr;
+    grid-auto-flow: row;
+    grid-template-rows: none;
+  }
+}
+
+.state-page__row--ranked {
+  justify-content: flex-start;
+}
+
+.state-page__row-rank {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.state-page__row-star {
+  color: var(--accent);
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.state-page__row-score {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  flex-shrink: 0;
+}
+
+.state-page__top-cities-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  padding: 10px 0;
+}
+
+.state-page__spinner {
+  animation: state-page-spin 1s linear infinite;
+}
+
+@keyframes state-page-spin {
+  to { transform: rotate(360deg); }
+}
+
+.state-page__top-cities-btn-row {
+  margin-top: 14px;
+  display: flex;
+  justify-content: center;
+}
+
+.state-page__top-cities-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.state-page__top-cities-btn:hover {
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
 }
 
 @media (max-width: 720px) {

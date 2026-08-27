@@ -204,10 +204,18 @@ function handlePersonalizeClick(e: MouseEvent) {
       </p>
     </div>
 
+    <!-- Too little real data behind this city (a small town missing income/housing/lifestyle
+         data, etc.) — averaging whatever one or two dimensions happened to have data isn't a
+         real assessment of it, so don't present a confident 0–100 number for it at all. -->
+    <div v-if="result && result.isPersonalized && !result.hasEnoughData" class="atlas-card__insufficient">
+      <span class="mdi mdi-database-alert-outline atlas-card__insufficient-icon"></span>
+      <p class="atlas-card__insufficient-text">Not enough reliable data available to score this city — it's either too small for confident Census estimates or missing too many key metrics.</p>
+    </div>
+
     <!-- Loaded + personalized state — the raw/objective score (no preferences) isn't something
          worth showing on its own right now (due for a rework), so an unpersonalized visit just
          gets the bar above and nothing else here. -->
-    <div v-if="result && result.isPersonalized" class="atlas-card__body">
+    <div v-else-if="result && result.isPersonalized" class="atlas-card__body">
       <!-- Left: score number + tier + narrative -->
       <div class="atlas-card__left">
         <div class="atlas-card__score-wrap" :data-tier="tier?.tier">
@@ -357,6 +365,26 @@ function handlePersonalizeClick(e: MouseEvent) {
 .atlas-card__personalize-bar-arrow {
   font-size: 0.85rem;
   flex-shrink: 0;
+}
+
+.atlas-card__insufficient {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px 20px;
+  color: var(--text-muted);
+}
+
+.atlas-card__insufficient-icon {
+  font-size: 1.3rem;
+  color: var(--warning);
+  flex-shrink: 0;
+}
+
+.atlas-card__insufficient-text {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
 }
 
 .atlas-card__prefs-personalized {

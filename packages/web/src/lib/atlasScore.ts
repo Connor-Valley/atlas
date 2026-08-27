@@ -1,5 +1,5 @@
-import type { UserPreferences } from '../composables/usePreferences';
-import { DEFAULT_PREFERENCES, deriveWeightsFromQuiz } from '../composables/usePreferences';
+import type { UserPreferences, DealbreakerDim } from '../composables/usePreferences';
+import { DEFAULT_PREFERENCES, deriveWeightsFromQuiz, isDealbreakerDim, DEALBREAKER_WEIGHT } from '../composables/usePreferences';
 
 export type DimensionScores = {
   affordability:     number | null;
@@ -42,6 +42,12 @@ export type AtlasScoreResult = {
   cityChars: CityCharacteristics;
   politicalScore: number | null;
   isPersonalized: boolean;
+  // Fraction (0–1) of the total possible weight that actually had real data behind it. A tiny
+  // town missing most of its data (income, housing, lifestyle, etc.) might still have, say,
+  // climate data available — averaging just that one dimension and presenting it as a full,
+  // confident score is misleading, not a real assessment of the city.
+  dataCoverage: number;
+  hasEnoughData: boolean;
 };
 
 // ── Normalization (used for non-personalized raw scoring) ─────────────────────
@@ -86,7 +92,9 @@ function regionalJobsScore(income: any): number | null {
 
 function rawAffordabilityScore(affordability: any, costOfLiving: any, housing: any): number | null {
   const rentToIncomeS = score(affordability?.rentToIncomeRatio, 0.15, 0.6, 'lower');
-  const rppS          = score(costOfLiving?.rppIndex, 80, 130, 'lower');
+  // Same reasoning as cityAffordabilityChar — a statewide RPP fallback isn't a real signal
+  // about this specific place, so don't score it as one.
+  const rppS          = score(costOfLiving?.level !== 'state' ? costOfLiving?.rppIndex : null, 80, 130, 'lower');
   const rentGrowthS   = score(housing?.rentGrowthPct5yr, -5, 30, 'lower');
   return avg(rentToIncomeS, rppS, rentGrowthS);
 }
@@ -387,7 +395,12 @@ function lookupMatchScore(
 // ── City characteristic classifiers ───────────────────────────────────────────
 
 function cityAffordabilityChar(costOfLiving: any, affordability: any): string | null {
-  const rpp = costOfLiving?.rppIndex;
+  // costOfLiving.rppIndex falls back to a STATEWIDE figure (level: 'state') when MSA-level data
+  // isn't available for this place — that's Idaho's overall cost of living, not Sun Valley's (a
+  // small, notably expensive resort town, $962,500 median home value), and confidently labeling
+  // it "Affordable" off a state average is wrong. Only trust rppIndex when it's actually
+  // local (MSA-level or finer).
+  const rpp = costOfLiving?.level !== 'state' ? costOfLiving?.rppIndex : null;
   if (rpp != null) {
     if (rpp < 95)  return 'Affordable';
     if (rpp < 108) return 'Moderate';
@@ -597,6 +610,13 @@ function cityLifestyleChar(lifestyle: any, profile: any): string | null {
   // sweeping in mid-size suburbs that just happen to cross six figures.
   const population = profile?.population ?? 0;
   const isMajorCity = population > 300_000 || profile?.urbanCharacter === 'Urban Core';
+  // The same county-inheritance problem cuts the other way too: a town the backend already
+  // classifies "Small Town" or "Rural" by its own density (e.g. Sun Valley, ID — pop. 1,460,
+  // 153/sq mi) can still sit in a county with a touristy or otherwise dense core (Ketchum/Sun
+  // Valley resort area, Blaine County) that inflates the county-level restaurant count. Defer to
+  // the backend's own density-based classification rather than that county figure.
+  const isSmallOrRural = profile?.urbanCharacter === 'Small Town' || profile?.urbanCharacter === 'Rural';
+  if (isSmallOrRural) return 'Quiet & suburban';
   // Dense walkable cores (NYC, SF, Chicago) — high transit + high restaurant density
   if (restaurants > 35 && transit > 0.12) return 'City energy';
   // Large car-dependent metros (Tampa, Phoenix, Houston) — high restaurant density, but only
@@ -616,9 +636,22 @@ function cityAirQualityChar(airQuality: any): string | null {
 }
 
 function cityConnectivityChar(profile: any, qol: any): string | null {
-  const transit    = profile?.transitShare ?? 0;
+  // transitShare missing (no city-level profile data at all, common for very small towns)
+  // used to silently fall back to 0 here — a confident "no transit" data point — which meant
+  // the airport-distance check below could still return "Balanced & accessible" off a nearby
+  // regional airport alone, with no real signal about the city's own connectivity. Require a
+  // real transit reading before characterizing this dimension at all.
+  const transit = profile?.transitShare;
+  if (transit == null) return null;
+  // A tiny town's ACS transit-share estimate carries a wide enough margin of error (Sun Valley,
+  // ID — population 1,460 — reads 6.44% "public transit" from a sample this small) that it
+  // shouldn't be taken at face value into "Balanced & accessible," and a nearby regional airport
+  // doesn't make a town like that any less rural day-to-day. Defer to the backend's own
+  // density-based classification instead.
+  if (profile?.urbanCharacter === 'Small Town' || profile?.urbanCharacter === 'Rural') {
+    return 'Suburban & drivable';
+  }
   const airportDist = qol?.airportDistanceMiles?.value;
-  if (transit == null && airportDist == null) return null;
   if (transit > 0.12) return 'Dense & walkable';
   if (transit > 0.05 || (airportDist != null && airportDist < 25)) return 'Balanced & accessible';
   return 'Suburban & drivable';
@@ -680,15 +713,21 @@ export function computeAtlasScore(inputs: ScoreInputs, prefs?: UserPreferences |
     ? politicalMatchScore(inputs.politicalLean, p.political_preference)
     : null;
 
+  // A deal breaker is independent of the importance dial — it doesn't matter whether that
+  // dimension is set to Low/Medium/High, marking it a deal breaker always dominates the weight.
+  function dimWeight(base: number, dim: DealbreakerDim): number {
+    return isDealbreakerDim(raw, dim) ? Math.max(base, DEALBREAKER_WEIGHT) : base;
+  }
+
   const weighted: Array<{ score: number | null; weight: number }> = [
-    { score: breakdown.affordability,     weight: p.weight_affordability },
-    { score: breakdown.jobMarket,         weight: p.weight_job_market },
-    { score: breakdown.climate,           weight: p.weight_climate },
-    { score: breakdown.opportunity,       weight: p.weight_opportunity },
-    { score: breakdown.lifestyleVibrancy, weight: p.weight_lifestyle_vibrancy },
-    { score: breakdown.airQuality,        weight: p.weight_air_quality },
+    { score: breakdown.affordability,     weight: dimWeight(p.weight_affordability, 'affordability') },
+    { score: breakdown.jobMarket,         weight: dimWeight(p.weight_job_market, 'job_market') },
+    { score: breakdown.climate,           weight: dimWeight(p.weight_climate, 'climate') },
+    { score: breakdown.opportunity,       weight: dimWeight(p.weight_opportunity, 'opportunity') },
+    { score: breakdown.lifestyleVibrancy, weight: dimWeight(p.weight_lifestyle_vibrancy, 'lifestyle_vibrancy') },
+    { score: breakdown.airQuality,        weight: dimWeight(p.weight_air_quality, 'air_quality') },
     { score: breakdown.safety,            weight: p.weight_safety },
-    { score: breakdown.connectivity,      weight: p.weight_connectivity },
+    { score: breakdown.connectivity,      weight: dimWeight(p.weight_connectivity, 'connectivity') },
   ];
 
   if (politicalScore != null) {
@@ -697,20 +736,39 @@ export function computeAtlasScore(inputs: ScoreInputs, prefs?: UserPreferences |
     // measuring it. Where a real place-level override exists (see PLACE_OVERRIDE_SOURCES
     // in political-lean.service.ts) it's weighted the same as the top-tier dimensions.
     const isPlaceLevel = inputs.politicalLean?.source?.geographyLevel === 'place';
-    weighted.push({ score: politicalScore, weight: isPlaceLevel ? 20 : 8 });
+    // weight_safety doubles as "political lean is a deal breaker" (see the deal-breaker toggle
+    // in PreferencesSetup.vue) — political lean has no importance dial of its own otherwise, so
+    // marking it a deal breaker overrides the usual place/county weight with a dominant one.
+    const politicalWeight = p.weight_safety > 0 ? DEALBREAKER_WEIGHT : (isPlaceLevel ? 20 : 8);
+    weighted.push({ score: politicalScore, weight: politicalWeight });
   }
 
   let total = 0;
   let totalWeight = 0;
+  let maxPossibleWeight = 0;
   for (const { score: s, weight } of weighted) {
+    maxPossibleWeight += weight;
     if (s != null && weight > 0) {
       total += s * weight;
       totalWeight += weight;
     }
   }
 
+  const dataCoverage = maxPossibleWeight > 0 ? totalWeight / maxPossibleWeight : 0;
+  // A small town can still have most of its ACS fields technically non-null (Sun Valley, ID —
+  // population 1,460 — had real numbers for 7 of 8 dimensions) while the underlying estimates
+  // themselves are unreliable: 5-year ACS samples this small carry wide margins of error, get
+  // suppressed inconsistently field-by-field, and sometimes silently fall back to a coarser
+  // geography (e.g. state-level cost of living standing in for the city). A coverage percentage
+  // alone doesn't catch that — population is the more honest signal that the data underneath
+  // isn't trustworthy enough for a confident composite score, regardless of how many individual
+  // fields happen to have a number in them.
+  const MIN_RELIABLE_POPULATION = 5_000;
+  const population = inputs.profile?.population;
+  const populationTooSmall = population != null && population < MIN_RELIABLE_POPULATION;
+  const hasEnoughData = dataCoverage >= 0.5 && !populationTooSmall;
   const finalScore = totalWeight > 0 ? Math.round(total / totalWeight) : 50;
-  return { score: finalScore, breakdown, cityChars, politicalScore, isPersonalized };
+  return { score: finalScore, breakdown, cityChars, politicalScore, isPersonalized, dataCoverage, hasEnoughData };
 }
 
 export function scoreTier(score: number): { label: string; tier: 'excellent' | 'good' | 'average' | 'below' | 'poor' } {
