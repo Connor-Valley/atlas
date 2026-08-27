@@ -201,24 +201,27 @@ export function politicalDimTier(
 // Exact match = 100, similar = 75, partial = ~55, mismatch = ~25–35.
 
 const MATCH_SCORES: Record<string, Record<string, Record<string, number>>> = {
+  // Cost of living has only one "good" direction (cheaper), unlike most dimensions here — mirrors
+  // airQuality below: affordability_preference is an importance level, not a target tier, so it
+  // sets how steeply an expensive city gets penalized rather than which tier is preferred.
   affordability: {
-    budget: {
+    cost_high: {
       'Affordable': 100,
       'Moderate':    70,
       'Pricey':      35,
-      'Expensive':   15,
+      'Expensive':   10,
     },
-    value: {
-      'Affordable': 90,
-      'Moderate':    100,
-      'Pricey':      60,
-      'Expensive':   30,
-    },
-    flexible: {
+    cost_medium: {
       'Affordable': 100,
-      'Moderate':    100,
-      'Pricey':      100,
-      'Expensive':   100,
+      'Moderate':    90,
+      'Pricey':      65,
+      'Expensive':   35,
+    },
+    cost_low: {
+      'Affordable': 100,
+      'Moderate':   100,
+      'Pricey':     100,
+      'Expensive':  100,
     },
   },
 

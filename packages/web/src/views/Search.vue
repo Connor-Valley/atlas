@@ -95,7 +95,7 @@ function openAuth(mode: 'login' | 'register') {
     <div class="container container--header-only">
       <DashboardHeader page-label="Search" @logo-click="router.push({ name: 'search' })" @search="onSearch">
         <template v-if="user" #subtitle>
-          <span class="search-page__welcome">Welcome back, {{ displayName() ?? 'friend' }}</span>
+          <span class="search-page__welcome"><strong>Welcome back, {{ displayName() ?? 'friend' }}</strong></span>
         </template>
       </DashboardHeader>
     </div>

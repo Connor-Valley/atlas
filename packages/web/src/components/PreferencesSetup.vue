@@ -74,16 +74,14 @@ const STEPS: QuizStep[] = [
   },
   {
     key: 'affordability_preference',
-    title: 'How important is cost of living?',
+    title: 'How much does cost of living matter to you?',
     shortTitle: 'Cost of Living',
-    subtitle: 'Affects how much rent, expenses, and cost trends influence your score.',
-    importanceKey: 'weight_affordability',
-    importanceScale: { low: 8, medium: 18, high: 80 },
+    subtitle: 'Cheaper always scores higher — this sets how heavily that pulls on your total score.',
     dealbreakerDim: 'affordability',
     options: [
-      { value: 'budget',   icon: 'mdi-piggy-bank-outline',  label: 'Affordable',   description: 'Keeping rent and daily costs low is a priority' },
-      { value: 'value',    icon: 'mdi-scale-balance',        label: 'Moderate',      description: 'Not the cheapest, but shouldn\'t feel expensive' },
-      { value: 'flexible', icon: 'mdi-credit-card-outline',  label: 'Flexible', description: 'Cost won\'t hold me back from the right fit' },
+      { value: 'cost_low',    icon: 'mdi-minus-circle-outline', label: 'Not very important', description: "Cost won't heavily influence my score" },
+      { value: 'cost_medium', icon: 'mdi-scale-balance',        label: 'Somewhat important',  description: "I care, but it won't make or break a city" },
+      { value: 'cost_high',   icon: 'mdi-piggy-bank-outline',   label: 'Very important',      description: 'A big factor in how I choose a city' },
     ],
   },
   {
@@ -147,9 +145,9 @@ const STEPS: QuizStep[] = [
     subtitle: 'Sets the weight of EPA AQI data in your overall score.',
     dealbreakerDim: 'air_quality',
     options: [
-      { value: 'high',   icon: 'mdi-air-filter',          label: 'Very important',       description: 'Clean air is a dealbreaker for me' },
-      { value: 'medium', icon: 'mdi-leaf-circle-outline',  label: 'Somewhat important',   description: 'I care, but it won\'t make or break a city' },
-      { value: 'low',    icon: 'mdi-minus-circle-outline', label: 'Not a priority',        description: 'Air quality won\'t heavily influence my score' },
+      { value: 'low',    icon: 'mdi-minus-circle-outline', label: 'Not very important', description: "Air quality won't heavily influence my score" },
+      { value: 'medium', icon: 'mdi-leaf-circle-outline',  label: 'Somewhat important',  description: "I care, but it won't make or break a city" },
+      { value: 'high',   icon: 'mdi-air-filter',           label: 'Very important',      description: 'A big factor in how I choose a city' },
     ],
   },
   {
@@ -721,6 +719,10 @@ defineExpose({ save, saving, saved });
 
 .quiz__options--count-5 {
   grid-template-columns: 1fr 1fr;
+}
+
+.quiz__options--count-5 .quiz__option:last-child {
+  grid-column: 1 / -1;
 }
 
 .quiz__options--count-12 {
