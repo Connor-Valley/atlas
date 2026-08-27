@@ -4,7 +4,25 @@ import { ContactRateLimitError, ContactValidationError, type ContactRequest } fr
 
 const MAX_NAME_LENGTH = 100;
 const MAX_MESSAGE_LENGTH = 5000;
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAX_EMAIL_LENGTH = 254; // RFC 5321 max mailbox length
+
+// No dot in the domain, or a dot straight after @, is enough to reject nonsense like "a@b" or
+// "a@.com" without a regex at all — the local-part/domain split and the dot check are both
+// plain string operations (indexOf/includes), which stay linear-time regardless of input length.
+// The previous version used /^[^\s@]+@[^\s@]+\.[^\s@]+$/, which CodeQL flagged as a polynomial
+// ReDoS: the two `[^\s@]+` groups both allow dots, so a domain with many dots (e.g. "a.a.a.a...")
+// gives the backtracker many ways to split across the literal `\.`, and the email field had no
+// length cap to bound that cost.
+function isValidEmail(value: string): boolean {
+  if (!value || value.length > MAX_EMAIL_LENGTH) return false;
+  const at = value.indexOf("@");
+  if (at <= 0 || at !== value.lastIndexOf("@")) return false;
+  if (/\s/.test(value)) return false;
+
+  const domain = value.slice(at + 1);
+  const dot = domain.lastIndexOf(".");
+  return dot > 0 && dot < domain.length - 1;
+}
 
 // A blunt, non-exhaustive deterrent against the obvious troll case (e.g. "fuckyou@bitch.com")
 // — not a real moderation system. Checked against name and the email's local part/domain since
@@ -37,7 +55,7 @@ function validate(body: Partial<ContactRequest>): ContactRequest {
   if (!name || name.length > MAX_NAME_LENGTH) {
     throw new ContactValidationError("Please enter a valid name.");
   }
-  if (!EMAIL_PATTERN.test(email)) {
+  if (!isValidEmail(email)) {
     throw new ContactValidationError("Please enter a valid email address.");
   }
   if (!message || message.length > MAX_MESSAGE_LENGTH) {

@@ -13,7 +13,21 @@ function onHeaderSearch(payload: { city: string; state: string }) {
 
 const turnstileSiteKey = (import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined)?.trim() ?? '';
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAX_EMAIL_LENGTH = 254; // RFC 5321 max mailbox length
+
+// Plain string checks instead of a regex — see the matching isValidEmail in the API's
+// contact.service.ts for why (CodeQL flagged the old two-`[^\s@]+`-groups regex as a
+// polynomial ReDoS).
+function isValidEmail(value: string): boolean {
+  if (!value || value.length > MAX_EMAIL_LENGTH) return false;
+  const at = value.indexOf('@');
+  if (at <= 0 || at !== value.lastIndexOf('@')) return false;
+  if (/\s/.test(value)) return false;
+
+  const domain = value.slice(at + 1);
+  const dot = domain.lastIndexOf('.');
+  return dot > 0 && dot < domain.length - 1;
+}
 
 const name = ref('');
 const email = ref('');
@@ -27,7 +41,7 @@ function validateFields(): boolean {
   const errors: typeof fieldErrors.value = {};
   if (!name.value.trim()) errors.name = 'Name is required.';
   if (!email.value.trim()) errors.email = 'Email is required.';
-  else if (!EMAIL_PATTERN.test(email.value.trim())) errors.email = 'Enter a valid email address.';
+  else if (!isValidEmail(email.value.trim())) errors.email = 'Enter a valid email address.';
   if (!message.value.trim()) errors.message = 'Message is required.';
 
   fieldErrors.value = errors;
