@@ -27,8 +27,7 @@ const showAuthModal = ref(false);
         <nav class="site-footer__col" aria-label="Data & Methodology">
           <span class="site-footer__heading">Data &amp; Methodology</span>
           <router-link :to="{ name: 'data-sources' }" class="site-footer__link">Data Sources</router-link>
-          <a href="#" class="site-footer__link">How the Atlas Score Works</a>
-          <a href="#" class="site-footer__link">How Affordability Is Calculated</a>
+          <router-link :to="{ name: 'how-scoring-works' }" class="site-footer__link">How Scoring Works</router-link>
         </nav>
 
         <nav class="site-footer__col" aria-label="About">

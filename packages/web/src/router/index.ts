@@ -14,6 +14,7 @@ import Friends from '../views/Friends.vue';
 import UserProfile from '../views/UserProfile.vue';
 import About from '../views/About.vue';
 import DataSources from '../views/DataSources.vue';
+import HowScoringWorks from '../views/HowScoringWorks.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -96,6 +97,11 @@ const router = createRouter({
       path: '/data-sources',
       name: 'data-sources',
       component: DataSources
+    },
+    {
+      path: '/how-scoring-works',
+      name: 'how-scoring-works',
+      component: HowScoringWorks
     },
     {
       path: '/compare/:stateA/:cityA/:stateB?/:cityB?',

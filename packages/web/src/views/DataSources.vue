@@ -87,8 +87,13 @@ const groups: Group[] = [
       },
       {
         name: 'MIT Election Data and Science Lab (Harvard Dataverse)',
-        note: '2020 county-level presidential results, shown only if you opt in to political lean.',
+        note: '2020 county-level presidential results, shown only if you opt in to political lean. For a couple dozen cities where county results are a poor stand-in for the city itself, this is refined with place-level precinct data from official county election sites or state-specific archives instead.',
         url: 'https://doi.org/10.7910/DVN/VOQCHQ',
+      },
+      {
+        name: 'U.S. Bureau of Transportation Statistics',
+        note: 'Annual passenger enplanements, used to gauge how busy a city’s nearest airport is.',
+        url: 'https://www.bts.gov/topics/airlines-and-airports/passengers',
       },
     ],
   },
@@ -135,7 +140,6 @@ const groups: Group[] = [
           Crime and school-quality data are on the way — official crime figures are held back
           until we have a reliable city/county join, so nothing gets shown half-right.
         </p>
-        <router-link :to="{ name: 'about' }" class="sources__back">&larr; Back to About Atlas</router-link>
       </footer>
     </article>
   </div>
@@ -260,17 +264,6 @@ const groups: Group[] = [
   color: var(--text-secondary);
   margin: 0;
   max-width: 60ch;
-}
-
-.sources__back {
-  font-size: 0.88rem;
-  color: var(--accent);
-  text-decoration: none;
-  width: fit-content;
-}
-
-.sources__back:hover {
-  text-decoration: underline;
 }
 
 @media (max-width: 560px) {

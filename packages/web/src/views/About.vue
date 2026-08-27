@@ -100,7 +100,8 @@ onMounted(async () => {
           actually weigh when they're deciding where to plant themselves — affordability,
           job market, climate, safety, and a handful of others — and lets you tune how
           much each one matters to you. Two people searching the same city can walk away
-          with two different scores, because they should.
+          with two different scores, because they should. Here's exactly
+          <router-link :to="{ name: 'how-scoring-works' }">how scoring works</router-link>.
         </p>
 
         <h2 class="story__subhead">Still being built</h2>
