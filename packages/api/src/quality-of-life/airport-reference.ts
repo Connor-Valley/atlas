@@ -3,7 +3,7 @@ import type { AirportBusyness, AirportInfo } from "./quality-of-life.types.js";
 export const FAA_AIRPORT_REFERENCE_AS_OF = "2025-01-01";
 export const FAA_AIRPORT_SOURCE_URL = "https://www.faa.gov/air_traffic/flight_info/aeronav/aero_data/Airport_Data/";
 
-export const BTS_SOURCE_URL = "https://www.bts.gov/topics/airlines-and-airports/passengers";
+export const BTS_SOURCE_URL = "https://data.bts.gov/stories/s/Passengers/itj6-vfiw/";
 export const BTS_ENPLANEMENTS_AS_OF = "2023";
 
 // US total commercial enplanements 2023 (~900M), used for percentile calc

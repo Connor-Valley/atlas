@@ -16,7 +16,7 @@ function versionedKey(key: string): string {
 }
 
 let _redis: Redis | null | undefined;
-function getRedis(): Redis | null {
+export function getRedis(): Redis | null {
   if (_redis !== undefined) return _redis;
   _redis =
     process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
