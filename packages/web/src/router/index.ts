@@ -12,6 +12,7 @@ import SavedComparisons from '../views/SavedComparisons.vue';
 import Profile from '../views/Profile.vue';
 import Friends from '../views/Friends.vue';
 import UserProfile from '../views/UserProfile.vue';
+import NotFound from '../views/NotFound.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -133,6 +134,11 @@ const router = createRouter({
       name: 'user-profile',
       component: UserProfile,
       props: true
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: NotFound
     }
   ]
 });
