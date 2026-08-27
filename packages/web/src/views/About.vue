@@ -43,7 +43,7 @@ onMounted(async () => {
         <h1 class="story__headline">Find where you actually want to live.</h1>
         <p class="story__dek">
           A field guide to picking a city, built from the same public records everyone
-          already has access to — just finally put in one place.
+          already has access to, just finally put in one place.
         </p>
       </header>
 
@@ -61,15 +61,14 @@ onMounted(async () => {
 
       <div class="story__body">
         <p>
-          I kept doing the same search over and over: open a new tab, look up rent in one
-          city, cost of living in another, then try to remember which one had the better
-          job market. A spreadsheet helped for about a week. Eventually I got tired of
-          rebuilding it every time and turned it into Atlas instead.
+          Picking a city usually means the same scattered routine: open a new tab, look up
+          rent in one place, cost of living in another, then try to remember which one had
+          the better job market. Atlas replaces that routine with one search.
         </p>
         <p>
           The idea is simple. Every number that matters when you're deciding where to
-          live — rent, home prices, income, taxes, air quality, how the weather actually
-          feels in July — already exists in some public dataset. It's just scattered
+          live (rent, home prices, income, taxes, air quality, how the weather actually
+          feels in July) already exists in some public dataset. It's just scattered
           across a dozen government agencies and buried in PDFs nobody wants to open.
           Atlas pulls it into one place and lines two cities up side by side.
         </p>
@@ -89,7 +88,7 @@ onMounted(async () => {
           Housing, income, and demographic data comes from the U.S. Census Bureau's
           American Community Survey. Home price trends come from the Federal Housing
           Finance Agency's House Price Index. Air quality comes from the EPA. None of it
-          is proprietary or scraped — it's the same data a city planner or a mortgage
+          is proprietary or scraped. It's the same data a city planner or a mortgage
           underwriter would pull, just translated into something you can actually read
           in a few minutes. See the
           <router-link :to="{ name: 'data-sources' }">full list of data sources</router-link>
@@ -97,8 +96,8 @@ onMounted(async () => {
         </p>
         <p>
           From there, Atlas builds a score for each city across eight things people
-          actually weigh when they're deciding where to plant themselves — affordability,
-          job market, climate, safety, and a handful of others — and lets you tune how
+          actually weigh when they're deciding where to plant themselves (affordability,
+          job market, climate, safety, and a handful of others) and lets you tune how
           much each one matters to you. Two people searching the same city can walk away
           with two different scores, because they should. Here's exactly
           <router-link :to="{ name: 'how-scoring-works' }">how scoring works</router-link>.
@@ -106,17 +105,16 @@ onMounted(async () => {
 
         <h2 class="story__subhead">Still being built</h2>
         <p>
-          Atlas is a solo project and very much a work in progress. New sections get
-          added as I track down better data — crime, schools, and neighborhood-level
-          detail are all on the list. If something looks wrong or missing, that's less
-          "known limitation" and more "not built yet."
+          Atlas is very much a work in progress. New sections get added as better data
+          becomes available: crime, schools, and neighborhood-level detail are all on the
+          list. If something looks wrong or missing, that's less "known limitation" and
+          more "not built yet."
         </p>
       </div>
 
       <footer class="story__footer">
         <p>
-          Found a bug, or a city that doesn't look right? <a href="mailto:developer.atlas.help@gmail.com">Send a note</a>
-          — I read everything.
+          Found a bug, or a city that doesn't look right? <a href="mailto:developer.atlas.help@gmail.com">Send a note</a>.
         </p>
       </footer>
     </article>

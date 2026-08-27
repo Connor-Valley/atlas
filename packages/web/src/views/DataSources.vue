@@ -16,12 +16,12 @@ const groups: Group[] = [
     label: 'People & housing',
     sources: [
       {
-        name: 'U.S. Census Bureau — American Community Survey (5-Year Estimates)',
-        note: 'Income, rent, home values, education, demographics — the backbone of most numbers on Atlas.',
+        name: 'U.S. Census Bureau: American Community Survey (5-Year Estimates)',
+        note: 'The backbone of most numbers on Atlas: income, rent, home values, education, and demographics.',
         url: 'https://www.census.gov/data/developers/data-sets/acs-5year.2010.html',
       },
       {
-        name: 'Federal Housing Finance Agency — House Price Index',
+        name: 'Federal Housing Finance Agency House Price Index',
         note: 'Home price trends over time, at the metro and state level.',
         url: 'https://www.fhfa.gov/data/hpi',
       },
@@ -31,7 +31,7 @@ const groups: Group[] = [
     label: 'Money',
     sources: [
       {
-        name: 'U.S. Bureau of Economic Analysis — Regional Price Parities',
+        name: 'U.S. Bureau of Economic Analysis Regional Price Parities',
         note: 'How far a dollar goes in one place versus another, used for cost-of-living comparisons.',
         url: 'https://apps.bea.gov/iTable/?reqid=70&step=1&acrdn=8',
       },
@@ -56,12 +56,12 @@ const groups: Group[] = [
         url: 'https://open-meteo.com/en/docs/historical-weather-api',
       },
       {
-        name: 'U.S. EPA — Air Quality System (AQS)',
+        name: 'U.S. EPA Air Quality System (AQS)',
         note: 'Monitored air quality index readings by county.',
         url: 'https://aqs.epa.gov/aqsweb/airdata/download_files.html',
       },
       {
-        name: 'FEMA — National Risk Index',
+        name: 'FEMA National Risk Index',
         note: 'County-level exposure to natural hazards.',
         url: 'https://hazards.fema.gov/nri/',
       },
@@ -71,7 +71,7 @@ const groups: Group[] = [
     label: 'Getting around & daily life',
     sources: [
       {
-        name: 'U.S. Census Bureau — County Business Patterns',
+        name: 'U.S. Census Bureau County Business Patterns',
         note: 'Restaurants, bars, and arts venues per capita, for the Lifestyle & Connectivity score.',
         url: 'https://www.census.gov/programs-surveys/cbp.html',
       },
@@ -81,7 +81,7 @@ const groups: Group[] = [
         url: 'https://www.faa.gov/air_traffic/flight_info/aeronav/aero_data/Airport_Data/',
       },
       {
-        name: 'Federal Transit Administration — National Transit Database',
+        name: 'Federal Transit Administration National Transit Database',
         note: 'Public transit availability and ridership.',
         url: 'https://www.transit.dot.gov/ntd/ntd-data',
       },
@@ -93,7 +93,7 @@ const groups: Group[] = [
       {
         name: 'U.S. Bureau of Transportation Statistics',
         note: 'Annual passenger enplanements, used to gauge how busy a city’s nearest airport is.',
-        url: 'https://www.bts.gov/topics/airlines-and-airports/passengers',
+        url: 'https://data.bts.gov/stories/s/Passengers/itj6-vfiw/',
       },
     ],
   },
@@ -109,8 +109,8 @@ const groups: Group[] = [
         <span class="sources__eyebrow">Data &amp; Methodology</span>
         <h1 class="sources__headline">Where the numbers come from.</h1>
         <p class="sources__dek">
-          Every figure on Atlas traces back to a public dataset — no scraping, no proprietary
-          blends. Below is the full list, grouped by what they feed into.
+          Every figure on Atlas traces back to a public dataset, with no scraping and no
+          proprietary blends. Below is the full list, grouped by what they feed into.
         </p>
       </header>
 
@@ -131,13 +131,14 @@ const groups: Group[] = [
             >
               Source ↗
             </a>
+            <span v-else class="sources__item-link sources__item-link--muted">Varies by state</span>
           </li>
         </ul>
       </section>
 
       <footer class="sources__footer">
         <p>
-          Crime and school-quality data are on the way — official crime figures are held back
+          Crime and school-quality data are on the way. Official crime figures are held back
           until we have a reliable city/county join, so nothing gets shown half-right.
         </p>
       </footer>
@@ -249,6 +250,16 @@ const groups: Group[] = [
 
 .sources__item-link:hover {
   text-decoration: underline;
+}
+
+.sources__item-link--muted {
+  color: var(--text-muted);
+  font-style: italic;
+  pointer-events: none;
+}
+
+.sources__item-link--muted:hover {
+  text-decoration: none;
 }
 
 .sources__footer {

@@ -12,7 +12,7 @@ const showAuthModal = ref(false);
         <div class="site-footer__brand">
           <span class="site-footer__logo">Atlas</span>
           <p class="site-footer__tagline">
-            Find the city that actually fits how you want to live — built on real Census,
+            Find the city that actually fits how you want to live, built on real Census,
             housing, and climate data instead of guesswork.
           </p>
         </div>

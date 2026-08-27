@@ -9,14 +9,14 @@ function onHeaderSearch(payload: { city: string; state: string }) {
 }
 
 const dimensions = [
-  { icon: 'mdi-weather-partly-cloudy', label: 'Climate', note: 'Year-round weather quality — sunny days, mild temps, and low hazard risk.' },
+  { icon: 'mdi-weather-partly-cloudy', label: 'Climate', note: 'Year-round weather quality: sunny days, mild temps, and low hazard risk.' },
   { icon: 'mdi-credit-card-outline', label: 'Cost of Living', note: 'How far income stretches relative to local rent and cost of living.' },
   { icon: 'mdi-trending-up', label: 'Job Market', note: 'Size of the labor market actually reachable within 25 miles, plus unemployment and growth trends.' },
   { icon: 'mdi-home-city-outline', label: 'Lifestyle', note: 'Day-to-day quality of life including restaurants, arts, and walkability.' },
   { icon: 'mdi-chart-line', label: 'Opportunity', note: "The area's dominant job industry, based on what residents actually work in." },
-  { icon: 'mdi-leaf-circle-outline', label: 'Air Quality', note: 'Air cleanliness based on EPA AQI data — good days vs. unhealthy days.' },
+  { icon: 'mdi-leaf-circle-outline', label: 'Air Quality', note: 'Air cleanliness based on EPA AQI data: good days vs. unhealthy days.' },
   { icon: 'mdi-map-marker-radius-outline', label: 'Getting Around', note: 'Access to transportation options including airports and public transit.' },
-  { icon: 'mdi-vote-outline', label: 'Political Lean', note: 'County or, where we have it, precinct-level presidential results — opt-in only, and off by default.' },
+  { icon: 'mdi-vote-outline', label: 'Political Lean', note: 'County or, where we have it, precinct-level presidential results. Opt-in only, and off by default.' },
 ];
 
 const tiers = [
@@ -37,24 +37,24 @@ const tiers = [
         <span class="sources__eyebrow">Data &amp; Methodology</span>
         <h1 class="sources__headline">How the Atlas Score works.</h1>
         <p class="sources__dek">
-          There's no single formula — the score changes depending on whether you've told Atlas
-          what you're looking for. Here's the actual mechanism behind it.
+          There's no single formula. The score changes depending on whether you've told Atlas
+          what you're looking for, and this page walks through the actual mechanism behind it.
         </p>
       </header>
 
       <section class="sources__group">
         <h2 class="sources__group-label">Scored against what you want, not a fixed formula</h2>
         <p class="sources__note sources__note--lead">
-          A short quiz asks what you want out of each dimension — say, "budget-friendly" for
-          cost of living or "warm &amp; sunny" for climate. Every city then gets scored on how
-          well it actually matches what you picked: a close match scores near 100, a clean
-          mismatch scores 25–35, with shades in between for partial matches.
+          A short quiz asks what you want out of each dimension, like "budget-friendly" for cost
+          of living or "warm &amp; sunny" for climate. Every city then gets scored on how well it
+          actually matches what you picked: a close match scores near 100, a clean mismatch
+          scores 25–35, with shades in between for partial matches.
         </p>
         <p class="sources__note">
           Without an account, there's no quiz answer to match against yet, so there's nothing to
-          score a city on — that's why you'll just see a prompt to personalize instead of a
-          score card. An objective, one-size-fits-all score for that case is on the roadmap, but
-          isn't live today.
+          score a city on. That's why you'll just see a prompt to personalize instead of a score
+          card. An objective, one-size-fits-all score for that case is on the roadmap, but isn't
+          live today.
         </p>
       </section>
 
@@ -70,8 +70,8 @@ const tiers = [
           </li>
         </ul>
         <p class="sources__note">
-          A ninth dimension, Safety, has a reserved slot in the score but isn't factored in yet —
-          it's held back for the same reason crime figures are missing from the
+          A ninth dimension, Safety, has a reserved slot in the score but isn't factored in yet.
+          It's held back for the same reason crime figures are missing from the
           <router-link :to="{ name: 'data-sources' }">data sources page</router-link>: no reliable
           city/county join yet, so nothing gets shown, or scored, half-right.
         </p>
@@ -80,7 +80,7 @@ const tiers = [
       <section class="sources__group">
         <h2 class="sources__group-label">How much each dimension counts</h2>
         <p class="sources__note sources__note--lead">
-          There's no slider for "how much do you care about climate" — instead, the specific
+          There's no slider for "how much do you care about climate." Instead, the specific
           answer you pick sets that dimension's weight automatically. Someone who picks
           "budget-friendly" for cost of living is telling Atlas that dimension matters a lot, so
           it's weighted heavily; someone who picks "flexible" is telling Atlas it barely matters,
