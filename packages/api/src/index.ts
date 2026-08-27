@@ -20,6 +20,7 @@ import politicalLeanRouter from "./political-lean/political-lean.route.js";
 import educationRouter from "./education/education.route.js";
 import costOfLivingRouter from "./cost-of-living/cost-of-living.route.js";
 import cityPhotoRouter from "./city-photo/city-photo.route.js";
+import cityLocationRouter from "./city-location/city-location.route.js";
 import contactRouter from "./contact/contact.route.js";
 import { initializeColCache } from "./cost-of-living/cost-of-living.service.js";
 import { initializeHpiCache } from "./housing/housing.service.js";
@@ -62,6 +63,7 @@ app.use('/political-lean', politicalLeanRouter);
 app.use('/education', educationRouter);
 app.use('/cost-of-living', costOfLivingRouter);
 app.use('/city-photo', cityPhotoRouter);
+app.use('/city-location', cityLocationRouter);
 app.use('/contact', contactRouter);
 
 // Initialize FHFA data cache at startup

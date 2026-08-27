@@ -4,6 +4,7 @@ import { fetchCity } from "../api/cities";
 import { useAuth } from "../composables/useAuth";
 import { useFavorites } from "../composables/useFavorites";
 import { fetchCityPhoto } from "../lib/cityPhotos";
+import CityLocationModal from "./CityLocationModal.vue";
 
 const props = defineProps<{ city: string; state: string; hasMissingData?: boolean }>();
 const emit = defineEmits<{
@@ -37,6 +38,7 @@ const data = ref<any>(null);
 const loading = ref(false);
 const error = ref<string | null>(null);
 const photoUrl = ref<string | null>(null);
+const showMapModal = ref(false);
 let photoRequestId = 0;
 
 const peopleScore = computed(() => {
@@ -186,15 +188,29 @@ watch(
         </div>
       </div>
       <div class="city-hero-card__footer">
-        <button class="city-hero-card__details-btn" @click="emit('expand')">
-          More Info
-          <span class="mdi mdi-arrow-right city-hero-card__details-icon"></span>
-        </button>
+        <div class="city-hero-card__footer-actions">
+          <button class="city-hero-card__details-btn city-hero-card__map-btn" @click="showMapModal = true">
+            <span class="mdi mdi-map-marker-outline city-hero-card__details-icon"></span>
+            View on Map
+          </button>
+          <button class="city-hero-card__details-btn" @click="emit('expand')">
+            More Info
+            <span class="mdi mdi-arrow-right city-hero-card__details-icon"></span>
+          </button>
+        </div>
         <div class="city-hero-card__stat city-hero-card__stat--population city-hero-card__stat--population-mobile">
           <span class="city-hero-card__stat-label">Population</span>
           <span class="city-hero-card__stat-value">{{ data.population.toLocaleString() }}</span>
         </div>
       </div>
     </div>
+
+    <CityLocationModal
+      v-if="showMapModal && data"
+      :city="city"
+      :state="state"
+      :city-name="data.name"
+      @close="showMapModal = false"
+    />
   </div>
 </template>
