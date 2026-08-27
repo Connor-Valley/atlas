@@ -16,6 +16,7 @@ import About from '../views/About.vue';
 import DataSources from '../views/DataSources.vue';
 import HowScoringWorks from '../views/HowScoringWorks.vue';
 import Contact from '../views/Contact.vue';
+import NotFound from '../views/NotFound.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -157,6 +158,11 @@ const router = createRouter({
       name: 'user-profile',
       component: UserProfile,
       props: true
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: NotFound
     }
   ],
   scrollBehavior(_to, _from, savedPosition) {
