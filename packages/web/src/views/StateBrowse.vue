@@ -478,12 +478,18 @@ async function loadTopCities() {
 /* ── Your Top Cities ── */
 .state-page__list--ranked {
   grid-template-columns: repeat(2, 1fr);
+  /* Column-major fill (1–5 down the first column, 6–10 down the second) instead of the grid's
+     default row-major order (1,2 / 3,4 / ...) — matches how the ranking actually reads. */
+  grid-auto-flow: column;
+  grid-template-rows: repeat(5, auto);
   max-height: none;
 }
 
 @media (max-width: 720px) {
   .state-page__list--ranked {
     grid-template-columns: 1fr;
+    grid-auto-flow: row;
+    grid-template-rows: none;
   }
 }
 

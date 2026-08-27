@@ -1,5 +1,5 @@
-import type { UserPreferences } from '../composables/usePreferences';
-import { DEFAULT_PREFERENCES, deriveWeightsFromQuiz } from '../composables/usePreferences';
+import type { UserPreferences, DealbreakerDim } from '../composables/usePreferences';
+import { DEFAULT_PREFERENCES, deriveWeightsFromQuiz, isDealbreakerDim, DEALBREAKER_WEIGHT } from '../composables/usePreferences';
 
 export type DimensionScores = {
   affordability:     number | null;
@@ -713,15 +713,21 @@ export function computeAtlasScore(inputs: ScoreInputs, prefs?: UserPreferences |
     ? politicalMatchScore(inputs.politicalLean, p.political_preference)
     : null;
 
+  // A deal breaker is independent of the importance dial — it doesn't matter whether that
+  // dimension is set to Low/Medium/High, marking it a deal breaker always dominates the weight.
+  function dimWeight(base: number, dim: DealbreakerDim): number {
+    return isDealbreakerDim(raw, dim) ? Math.max(base, DEALBREAKER_WEIGHT) : base;
+  }
+
   const weighted: Array<{ score: number | null; weight: number }> = [
-    { score: breakdown.affordability,     weight: p.weight_affordability },
-    { score: breakdown.jobMarket,         weight: p.weight_job_market },
-    { score: breakdown.climate,           weight: p.weight_climate },
-    { score: breakdown.opportunity,       weight: p.weight_opportunity },
-    { score: breakdown.lifestyleVibrancy, weight: p.weight_lifestyle_vibrancy },
-    { score: breakdown.airQuality,        weight: p.weight_air_quality },
+    { score: breakdown.affordability,     weight: dimWeight(p.weight_affordability, 'affordability') },
+    { score: breakdown.jobMarket,         weight: dimWeight(p.weight_job_market, 'job_market') },
+    { score: breakdown.climate,           weight: dimWeight(p.weight_climate, 'climate') },
+    { score: breakdown.opportunity,       weight: dimWeight(p.weight_opportunity, 'opportunity') },
+    { score: breakdown.lifestyleVibrancy, weight: dimWeight(p.weight_lifestyle_vibrancy, 'lifestyle_vibrancy') },
+    { score: breakdown.airQuality,        weight: dimWeight(p.weight_air_quality, 'air_quality') },
     { score: breakdown.safety,            weight: p.weight_safety },
-    { score: breakdown.connectivity,      weight: p.weight_connectivity },
+    { score: breakdown.connectivity,      weight: dimWeight(p.weight_connectivity, 'connectivity') },
   ];
 
   if (politicalScore != null) {
@@ -733,7 +739,7 @@ export function computeAtlasScore(inputs: ScoreInputs, prefs?: UserPreferences |
     // weight_safety doubles as "political lean is a deal breaker" (see the deal-breaker toggle
     // in PreferencesSetup.vue) — political lean has no importance dial of its own otherwise, so
     // marking it a deal breaker overrides the usual place/county weight with a dominant one.
-    const politicalWeight = p.weight_safety > 0 ? 80 : (isPlaceLevel ? 20 : 8);
+    const politicalWeight = p.weight_safety > 0 ? DEALBREAKER_WEIGHT : (isPlaceLevel ? 20 : 8);
     weighted.push({ score: politicalScore, weight: politicalWeight });
   }
 

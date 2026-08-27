@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { useAuth } from '../composables/useAuth';
-import { usePreferences, DEFAULT_PREFERENCES, hasRealPreferences, type UserPreferences } from '../composables/usePreferences';
+import {
+  usePreferences, DEFAULT_PREFERENCES, hasRealPreferences, type UserPreferences,
+  isDealbreakerDim, withDealbreakerToggled, type DealbreakerDim,
+} from '../composables/usePreferences';
 
 const props = defineProps<{ flat?: boolean }>();
 const emit = defineEmits<{ (e: 'saved'): void }>();
@@ -39,6 +42,10 @@ type QuizStep = {
   // an importance dial) and political lean don't have one.
   importanceKey?: keyof UserPreferences;
   importanceScale?: Record<'low' | 'medium' | 'high', number>;
+  // Deal breaker is fully independent of the importance dial above — see DEALBREAKER_DIMS in
+  // usePreferences.ts. Political lean is handled separately (its own weight_safety flag), not
+  // through this bitmask.
+  dealbreakerDim?: DealbreakerDim;
 };
 
 const IMPORTANCE_LEVELS: Array<{ value: 'low' | 'medium' | 'high'; label: string }> = [
@@ -55,6 +62,7 @@ const STEPS: QuizStep[] = [
     subtitle: 'This shapes how weather data factors into your score.',
     importanceKey: 'weight_climate',
     importanceScale: { low: 8, medium: 18, high: 80 },
+    dealbreakerDim: 'climate',
     options: [
       { value: 'warm',         icon: 'mdi-weather-sunny',           label: 'Warm & sunny',    description: 'Hot summers, mild winters, lots of sun',                   tooltip: 'e.g. Florida' },
       { value: 'hot_dry',      icon: 'mdi-sun-thermometer-outline', label: 'Hot & dry',       description: 'Arid heat with low humidity — desert and inland climates', tooltip: 'e.g. Arizona' },
@@ -71,6 +79,7 @@ const STEPS: QuizStep[] = [
     subtitle: 'Affects how much rent, expenses, and cost trends influence your score.',
     importanceKey: 'weight_affordability',
     importanceScale: { low: 8, medium: 18, high: 80 },
+    dealbreakerDim: 'affordability',
     options: [
       { value: 'budget',   icon: 'mdi-piggy-bank-outline',  label: 'Affordable',   description: 'Keeping rent and daily costs low is a priority' },
       { value: 'value',    icon: 'mdi-scale-balance',        label: 'Moderate',      description: 'Not the cheapest, but shouldn\'t feel expensive' },
@@ -84,6 +93,7 @@ const STEPS: QuizStep[] = [
     subtitle: 'Changes how regional job availability, unemployment, and growth data are weighted.',
     importanceKey: 'weight_job_market',
     importanceScale: { low: 8, medium: 18, high: 80 },
+    dealbreakerDim: 'job_market',
     options: [
       { value: 'high_earning', icon: 'mdi-trending-up',      label: 'High-earning market',  description: 'I want access to a large regional job market with strong earning potential' },
       { value: 'stable',       icon: 'mdi-shield-check-outline', label: 'Stable & secure',   description: 'Low unemployment and a steady local economy' },
@@ -99,6 +109,7 @@ const STEPS: QuizStep[] = [
     subtitle: 'Adjusts how restaurants, arts, commute, and transit factor in.',
     importanceKey: 'weight_lifestyle_vibrancy',
     importanceScale: { low: 8, medium: 18, high: 80 },
+    dealbreakerDim: 'lifestyle_vibrancy',
     options: [
       { value: 'urban',      icon: 'mdi-city-variant-outline', label: 'City energy',        description: 'Walkable, vibrant — restaurants, bars, arts, transit' },
       { value: 'urban_edge', icon: 'mdi-home-city-outline',   label: 'Urban edge',         description: 'Close to the city core, walkable but not fully downtown' },
@@ -113,6 +124,7 @@ const STEPS: QuizStep[] = [
     subtitle: "A bonus when a city's dominant industry matches your field — never a penalty if it doesn't.",
     importanceKey: 'weight_opportunity',
     importanceScale: { low: 4, medium: 10, high: 18 },
+    dealbreakerDim: 'opportunity',
     options: [
       { value: 'tech_media_pro',           icon: 'mdi-laptop',                    label: 'Tech, Media & Professional Services', description: 'Software, engineering, consulting, publishing, telecom' },
       { value: 'corporate_finance',        icon: 'mdi-domain',                    label: 'Corporate & Finance',                 description: 'Banking, real estate, corporate HQ & management' },
@@ -133,6 +145,7 @@ const STEPS: QuizStep[] = [
     title: 'How much does air quality matter to you?',
     shortTitle: 'Air Quality',
     subtitle: 'Sets the weight of EPA AQI data in your overall score.',
+    dealbreakerDim: 'air_quality',
     options: [
       { value: 'high',   icon: 'mdi-air-filter',          label: 'Very important',       description: 'Clean air is a dealbreaker for me' },
       { value: 'medium', icon: 'mdi-leaf-circle-outline',  label: 'Somewhat important',   description: 'I care, but it won\'t make or break a city' },
@@ -146,6 +159,7 @@ const STEPS: QuizStep[] = [
     subtitle: 'Weights transit, walkability, and airport access accordingly.',
     importanceKey: 'weight_connectivity',
     importanceScale: { low: 8, medium: 18, high: 80 },
+    dealbreakerDim: 'connectivity',
     options: [
       { value: 'walkable', icon: 'mdi-walk',             label: 'Dense & walkable',       description: 'I want to walk or take transit everywhere' },
       { value: 'balanced', icon: 'mdi-map-marker-radius-outline', label: 'Balanced & accessible', description: 'Good airport, some transit, still drivable' },
@@ -301,42 +315,29 @@ function getSelectedOption(step: QuizStep): QuizOption<string> | null {
   return step.options.find(o => o.value === val) ?? null;
 }
 
-// "Deal breaker" is just this dimension's top importance tier (air quality's own options
-// already ARE its importance dial) — a one-tap shortcut from the card face so marking something
-// as a deal breaker doesn't require opening the popup just to hit "Very important." Any number
-// of dimensions can be a deal breaker at once — nothing here caps it.
-//
-// Political lean has no importance dial of its own (its weight is normally fixed — 20 for a
-// real place-level lean, 8 for a county-level stand-in — see computeAtlasScore). weight_safety
-// is a fully dead column otherwise (breakdown.safety is always null, so it never scores
-// anything and has no UI presence anywhere), so it's repurposed here to flag "political lean is
-// a deal breaker" (weight_safety > 0) rather than adding a new column just for a boolean.
+// "Deal breaker" is fully independent of the importance dial — picking "Very important" does
+// NOT mark something a deal breaker, and marking a deal breaker doesn't change the importance
+// dial's displayed tier. A one-tap shortcut from the card face either way, and any number of
+// dimensions can be a deal breaker at once — nothing here caps it. Political lean is handled
+// separately (weight_safety, a fully dead column otherwise) since it has no importance dial to
+// be independent FROM in the first place; every other dimension uses the shared bitmask in
+// usePreferences.ts (DEALBREAKER_DIMS / isDealbreakerDim / withDealbreakerToggled).
 function supportsDealbreaker(step: QuizStep): boolean {
-  return !!(step.importanceKey && step.importanceScale)
-    || step.key === 'air_quality_priority'
-    || step.key === 'political_lean_preference';
+  return !!step.dealbreakerDim || step.key === 'political_lean_preference';
 }
 
 function isDealbreaker(step: QuizStep): boolean {
-  if (step.importanceKey && step.importanceScale) {
-    return (draft.value as any)[step.importanceKey] === step.importanceScale.high;
-  }
-  if (step.key === 'air_quality_priority') {
-    return draft.value.air_quality_priority === 'high';
-  }
-  if (step.key === 'political_lean_preference') {
-    return draft.value.weight_safety > 0;
-  }
+  if (step.dealbreakerDim) return isDealbreakerDim(draft.value, step.dealbreakerDim);
+  if (step.key === 'political_lean_preference') return draft.value.weight_safety > 0;
   return false;
 }
 
 function toggleDealbreaker(step: QuizStep) {
-  if (step.importanceKey && step.importanceScale) {
-    selectOption(step.importanceKey, isDealbreaker(step) ? step.importanceScale.medium : step.importanceScale.high);
-  } else if (step.key === 'air_quality_priority') {
-    selectOption('air_quality_priority', isDealbreaker(step) ? 'medium' : 'high');
+  if (step.dealbreakerDim) {
+    draft.value = withDealbreakerToggled(draft.value, step.dealbreakerDim);
+    touchedKeys.value.add('weight_education');
   } else if (step.key === 'political_lean_preference') {
-    selectOption('weight_safety', isDealbreaker(step) ? 0 : 80);
+    selectOption('weight_safety', isDealbreaker(step) ? 0 : 90);
   }
 }
 

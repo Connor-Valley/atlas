@@ -29,6 +29,15 @@ export interface UserPreferences {
   weight_air_quality:       number;
   weight_safety:            number;
   weight_connectivity:      number;
+  // Bitmask of which dimensions are marked a "deal breaker" — fully independent of the
+  // importance dial above (picking "Very important" does NOT imply deal breaker, and marking a
+  // deal breaker doesn't change the importance dial's displayed tier either). Repurposes
+  // weight_education (the old education-scoring column — dropped from the app when opportunityScore
+  // started deriving its inputs from profile.educationalAttainment directly, see CLAUDE.md) since
+  // it's otherwise fully dead and has no CHECK constraint. Offset by DEALBREAKER_OFFSET so any
+  // leftover legacy value from when this column meant something else (small, e.g. 15) never gets
+  // misread as a bitmask — see isDealbreakerDim / withDealbreakerToggled below.
+  weight_education:         number;
 
   // Legacy / compat
   persona_id: string;
@@ -56,6 +65,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   weight_air_quality:        18,
   weight_safety:             0,
   weight_connectivity:       18,
+  weight_education:          0,
 
   persona_id: 'custom',
   political_preference_enabled: false,
@@ -71,6 +81,7 @@ const QUIZ_ANSWER_KEYS: Array<keyof UserPreferences> = [
   'weight_affordability', 'weight_job_market', 'weight_climate',
   'weight_lifestyle_vibrancy', 'weight_connectivity', 'weight_opportunity',
   'weight_safety', // repurposed as "political lean is a deal breaker" — see computeAtlasScore
+  'weight_education', // repurposed as the deal-breaker bitmask for the other 7 dimensions
 ];
 
 // A preferences object that merely EXISTS (e.g. `{ ...DEFAULT_PREFERENCES }` after a reset, or
@@ -82,6 +93,47 @@ export function hasRealPreferences(prefs: UserPreferences | null | undefined): b
   if (!prefs) return false;
   return QUIZ_ANSWER_KEYS.some((k) => prefs[k] !== DEFAULT_PREFERENCES[k]);
 }
+
+// ── Deal breakers ──────────────────────────────────────────────────────────────
+// Independent of the importance dial (weight_affordability etc.) and of political lean's own
+// weight_safety flag — a separate on/off per dimension, packed into one bitmask so no new
+// column was needed. Any dimension can be a deal breaker regardless of its importance tier.
+
+export const DEALBREAKER_DIMS = [
+  'affordability', 'job_market', 'climate', 'lifestyle_vibrancy', 'connectivity', 'opportunity', 'air_quality',
+] as const;
+export type DealbreakerDim = typeof DEALBREAKER_DIMS[number];
+
+const DEALBREAKER_BIT: Record<DealbreakerDim, number> = {
+  affordability: 1, job_market: 2, climate: 4, lifestyle_vibrancy: 8,
+  connectivity: 16, opportunity: 32, air_quality: 64,
+};
+
+// Legacy weight_education values (from when this column meant something else) were always a
+// small plain number — offsetting new bitmask writes well above that range means an old
+// leftover value reads as "no deal breakers" instead of being misinterpreted as one.
+const DEALBREAKER_OFFSET = 1000;
+
+function dealbreakerBits(prefs: UserPreferences): number {
+  return prefs.weight_education >= DEALBREAKER_OFFSET ? prefs.weight_education - DEALBREAKER_OFFSET : 0;
+}
+
+export function isDealbreakerDim(prefs: UserPreferences, dim: DealbreakerDim): boolean {
+  return (dealbreakerBits(prefs) & DEALBREAKER_BIT[dim]) !== 0;
+}
+
+export function withDealbreakerToggled(prefs: UserPreferences, dim: DealbreakerDim): UserPreferences {
+  const bit = DEALBREAKER_BIT[dim];
+  const bits = dealbreakerBits(prefs);
+  const next = (bits & bit) !== 0 ? (bits & ~bit) : (bits | bit);
+  return { ...prefs, weight_education: DEALBREAKER_OFFSET + next };
+}
+
+// Weight given to any dimension marked a deal breaker (including political lean's own
+// weight_safety flag) — dominant enough to genuinely swing the score, higher than the normal
+// importance dial's own "Very important" tier so the two remain meaningfully different even if
+// both happen to be set at once.
+export const DEALBREAKER_WEIGHT = 90;
 
 /** Derive weight_air_quality and political settings from quiz answers. Every other weight_*
  *  field is written directly by the importance dial in the UI, so it just passes through
@@ -131,7 +183,7 @@ export function usePreferences() {
         'connectivity_preference', 'political_lean_preference',
         'weight_affordability', 'weight_job_market', 'weight_climate',
         'weight_opportunity', 'weight_lifestyle_vibrancy', 'weight_air_quality',
-        'weight_safety', 'weight_connectivity',
+        'weight_safety', 'weight_connectivity', 'weight_education',
         'political_preference_enabled', 'political_preference',
       ].join(', '))
       .eq('user_id', userId)
