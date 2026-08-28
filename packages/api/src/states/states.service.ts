@@ -1,6 +1,6 @@
 import {STATE_FIPS, SUPPORTED_STATES, SupportedState} from './states.types.js';
 import { getListedPlacesForState } from "../places/place-resolver.js";
-import { getCached } from "../common/cache.js";
+import { getCached, TTL_ACS_YEAR_SECONDS } from "../common/cache.js";
 
 export function getStates() {
     return SUPPORTED_STATES.map(state => ({
@@ -77,5 +77,7 @@ export async function getCitiesForState(
         throw new Error(`Unsupported state: ${stateCode}`);
     }
 
-    return getCached(`state-cities:${year}:${stateCode}`, () => getListedPlacesForState(stateCode, year));
+    return getCached(`state-cities:${year}:${stateCode}`, () => getListedPlacesForState(stateCode, year), {
+        ttlSeconds: TTL_ACS_YEAR_SECONDS,
+    });
 }

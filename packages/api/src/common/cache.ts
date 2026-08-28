@@ -1,8 +1,12 @@
 import { Redis } from "@upstash/redis";
 
-const TTL_SECONDS = 15 * 24 * 60 * 60; // 15 days
-const TTL_MS = TTL_SECONDS * 1000;
-const mem = new Map<string, { data: unknown; ts: number }>();
+const DEFAULT_TTL_SECONDS = 15 * 24 * 60 * 60; // 15 days
+
+// ACS 5-year data is keyed by release year and never changes once published — a long TTL just
+// avoids re-hitting Census for data that's permanently immutable, it doesn't risk staleness.
+export const TTL_ACS_YEAR_SECONDS = 180 * 24 * 60 * 60; // 180 days
+
+const mem = new Map<string, { data: unknown; ts: number; ttlMs: number }>();
 
 // Bump this whenever a change alters what a cached response computes or contains (new/renamed
 // fields, fixed calculation, different data source) — old entries under the previous version
@@ -31,13 +35,15 @@ export function getRedis(): Redis | null {
 export async function getCached<T>(
   rawKey: string,
   fetcher: () => Promise<T>,
-  opts?: { shouldCache?: (result: T) => boolean }
+  opts?: { shouldCache?: (result: T) => boolean; ttlSeconds?: number }
 ): Promise<T> {
   const key = versionedKey(rawKey);
+  const ttlSeconds = opts?.ttlSeconds ?? DEFAULT_TTL_SECONDS;
+  const ttlMs = ttlSeconds * 1000;
 
   // Layer 1: memory
   const hit = mem.get(key);
-  if (hit && Date.now() - hit.ts < TTL_MS) return hit.data as T;
+  if (hit && Date.now() - hit.ts < hit.ttlMs) return hit.data as T;
 
   // Layer 2: Redis (survives restarts, auto-expires)
   const redis = getRedis();
@@ -45,7 +51,7 @@ export async function getCached<T>(
     try {
       const cached = await redis.get<T>(key);
       if (cached !== null) {
-        mem.set(key, { data: cached, ts: Date.now() });
+        mem.set(key, { data: cached, ts: Date.now(), ttlMs });
         return cached;
       }
     } catch {
@@ -58,9 +64,9 @@ export async function getCached<T>(
   const shouldCache = opts?.shouldCache ?? (() => true);
 
   if (shouldCache(fresh)) {
-    mem.set(key, { data: fresh, ts: Date.now() });
+    mem.set(key, { data: fresh, ts: Date.now(), ttlMs });
     if (redis) {
-      redis.set(key, fresh, { ex: TTL_SECONDS }).catch((e: Error) =>
+      redis.set(key, fresh, { ex: ttlSeconds }).catch((e: Error) =>
         console.warn('[cache] write failed for "%s": %s', key, e.message)
       );
     }
