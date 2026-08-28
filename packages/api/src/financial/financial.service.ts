@@ -4,10 +4,17 @@ import { buildCensusGeoQuery, toNumber } from "../common/census.js";
 import { getCityHousing } from "../housing/housing.service.js";
 import type { FinancialDetails, FinancialSummary } from "./financial.types.js";
 import { FINANCIAL_REFERENCE_AS_OF, MINIMUM_WAGE_SOURCE_URL, STATE_FINANCIAL_REFERENCE } from "./financial-reference.js";
+import { getCached, TTL_ACS_YEAR_SECONDS } from "../common/cache.js";
 
 const NATIONAL_MEDIAN_HOUSEHOLD_INCOME = 80610;
 
-export async function getFinancialSummary(city: City, year: number): Promise<FinancialSummary> {
+export function getFinancialSummary(city: City, year: number): Promise<FinancialSummary> {
+  return getCached(`financial:${year}:${city.state}:${city.slug}`, () => fetchFinancialSummary(city, year), {
+    ttlSeconds: TTL_ACS_YEAR_SECONDS,
+  });
+}
+
+async function fetchFinancialSummary(city: City, year: number): Promise<FinancialSummary> {
   const [housing, propertyTaxProxy] = await Promise.all([
     getCityHousing(city, year),
     getPropertyTaxProxy(city, year),
@@ -56,7 +63,13 @@ export async function getFinancialSummary(city: City, year: number): Promise<Fin
   };
 }
 
-export async function getFinancialDetails(city: City, year: number): Promise<FinancialDetails> {
+export function getFinancialDetails(city: City, year: number): Promise<FinancialDetails> {
+  return getCached(`financial-details:${year}:${city.state}:${city.slug}`, () => fetchFinancialDetails(city, year), {
+    ttlSeconds: TTL_ACS_YEAR_SECONDS,
+  });
+}
+
+async function fetchFinancialDetails(city: City, year: number): Promise<FinancialDetails> {
   const summary = await getFinancialSummary(city, year);
   const incomeFactor = clamp(city.medianIncome / NATIONAL_MEDIAN_HOUSEHOLD_INCOME, 0.75, 1.45);
   const groceries = deriveGroceries(incomeFactor);

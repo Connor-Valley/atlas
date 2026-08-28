@@ -5,6 +5,7 @@ import { getCityIncome, getDetailedCityIncome } from "../income/income.service.j
 import { getCityHousing, getDetailedCityHousing } from "../housing/housing.service.js";
 import { STATE_GAS_PREMIUMS, NATIONAL_MEDIAN_HOUSEHOLD_INCOME } from "./gas-price-reference.js";
 import { STATE_ELECTRICITY_PREMIUMS, STATE_EV_CHARGERS_PER_100K, STATE_EV_ADOPTION_PCT } from "./ev-reference.js";
+import { getCached, TTL_ACS_YEAR_SECONDS } from "../common/cache.js";
 
 function classifyAffordability(ratio: number): AffordabilityLevel {
   if (ratio <= 0.25) return "Comfortably Affordable";
@@ -14,7 +15,13 @@ function classifyAffordability(ratio: number): AffordabilityLevel {
   return "Severely Rent Burdened";
 }
 
-export async function getCityAffordability(
+export function getCityAffordability(city: City, year: number): Promise<CityAffordability> {
+  return getCached(`affordability:${year}:${city.state}:${city.slug}`, () => fetchCityAffordability(city, year), {
+    ttlSeconds: TTL_ACS_YEAR_SECONDS,
+  });
+}
+
+async function fetchCityAffordability(
   city: City,
   year: number
 ): Promise<CityAffordability> {
@@ -88,7 +95,15 @@ async function fetchRentBurdenBands(city: City, year: number): Promise<RentBurde
   ];
 }
 
-export async function getDetailedCityAffordability(
+export function getDetailedCityAffordability(city: City, year: number): Promise<DetailedCityAffordability> {
+  return getCached(
+    `affordability-details:${year}:${city.state}:${city.slug}`,
+    () => fetchDetailedCityAffordability(city, year),
+    { ttlSeconds: TTL_ACS_YEAR_SECONDS }
+  );
+}
+
+async function fetchDetailedCityAffordability(
   city: City,
   year: number
 ): Promise<DetailedCityAffordability> {
