@@ -59,6 +59,11 @@ watch(() => [props.city, props.state], ([city, state]) => {
       <div class="data-card__title">
         <span class="data-card__icon mdi mdi-weather-partly-cloudy"></span>
         <span class="data-card__name">Climate</span>
+        <span
+          v-if="data?.weatherApproximate"
+          class="mdi mdi-alert-outline data-card__approx-flag"
+          :title="data.source?.methodologyNote ?? 'Weather values are estimated for this location.'"
+        ></span>
       </div>
       <span v-if="comfortScore !== null" class="data-card__score">{{ comfortScore }}</span>
     </div>
@@ -106,3 +111,11 @@ watch(() => [props.city, props.state], ([city, state]) => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.data-card__approx-flag {
+  font-size: 0.8rem;
+  opacity: 0.7;
+  cursor: help;
+}
+</style>

@@ -1,6 +1,10 @@
 import type { City } from "../cities/cities.types.js";
 import type { ClimateSummary, HazardRisk, NaturalHazardRisks } from "./climate.types.js";
+import type { SourceAttribution } from "../common/source.types.js";
 import { getCached } from "../common/cache.js";
+import { fetchWithRetry } from "../common/http-retry.js";
+import { findNearestStationNormals } from "./climate-fallback.service.js";
+import { getPowerSupplement } from "./climate-power.service.js";
 
 const START_YEAR = 2014;
 const END_YEAR = 2023;
@@ -9,21 +13,81 @@ const SUNSHINE_THRESHOLD_SECONDS = 6 * 3600;
 const HOT_DAY_CELSIUS = 35;      // ≥ 95°F
 const FREEZING_DAY_CELSIUS = 0;  // ≤ 32°F
 
-export function getCityClimate(city: City): Promise<ClimateSummary> {
-  return getCached(`climate:${city.state}:${city.slug}`, () => fetchCityClimate(city));
-}
+// The underlying data (2014–2023 historical average) only shifts when START_YEAR/END_YEAR
+// change, which happens at most once a year — so this can sit far longer than the default
+// TTL without going stale, which also keeps us well clear of upstream rate limits.
+const CLIMATE_TTL_SECONDS = 180 * 24 * 60 * 60; // 180 days
 
-async function fetchCityClimate(city: City): Promise<ClimateSummary> {
+// Weather and hazard risk come from two independent upstream services, so they're cached
+// under separate keys with their own negative-cache guard. Bundling them under one cache
+// entry would let a successful hazard fetch mask (and lock in) a failed weather fetch for
+// the full TTL, or vice versa — each source needs to be free to retry on its own.
+export async function getCityClimate(city: City): Promise<ClimateSummary> {
   const [weatherData, hazardRisks] = await Promise.all([
-    city.lat != null && city.lon != null ? fetchWeatherData(city.lat, city.lon) : null,
-    city.countyFips ? fetchHazardRisks(city.countyFips) : null,
+    city.lat != null && city.lon != null
+      ? getCached(
+          `climate-weather:${city.state}:${city.slug}`,
+          () => fetchWeatherData(city.lat as number, city.lon as number),
+          { shouldCache: (r) => r !== null, ttlSeconds: CLIMATE_TTL_SECONDS },
+        )
+      : null,
+    city.countyFips
+      ? getCached(
+          `climate-hazard:${city.state}:${city.slug}`,
+          () => fetchHazardRisks(city.countyFips),
+          { shouldCache: (r) => r !== null, ttlSeconds: CLIMATE_TTL_SECONDS },
+        )
+      : null,
   ]);
 
-  if (!weatherData) {
-    return buildResult(city, null, hazardRisks);
+  let weather = weatherData ? computeWeatherFromOpenMeteo(weatherData.daily) : null;
+  let source: SourceAttribution = OPEN_METEO_SOURCE;
+
+  // Live weather failed (or the city has no coordinates) — fall back to the nearest station
+  // in the precomputed Meteostat reference data rather than leaving weather fields empty.
+  if (!weather && city.lat != null && city.lon != null) {
+    const fallback = findNearestStationNormals(city.lat, city.lon);
+    if (fallback) {
+      weather = {
+        avgTempF: fallback.normals.avgTempF,
+        summerAvgHighF: fallback.normals.summerAvgHighF,
+        winterAvgLowF: fallback.normals.winterAvgLowF,
+        sunnyDaysPerYear: fallback.normals.sunnyDaysPerYear,
+        annualPrecipitationInches: fallback.normals.annualPrecipitationInches,
+        annualSnowfallInches: null,
+        hotDaysPerYear: fallback.normals.hotDaysPerYear,
+        freezingDaysPerYear: fallback.normals.freezingDaysPerYear,
+        snowDaysPerYear: fallback.normals.snowDaysPerYear,
+        approximate: true,
+      };
+
+      // Most stations don't have a sunshine sensor or snow-depth sensor at all (see
+      // climate-fallback.service.ts), so those two fields are usually still null here.
+      // NASA POWER is gridded (no station gaps), so it can model estimates for exactly
+      // those two gaps without needing its own nearest-neighbor matching.
+      let usedPowerSupplement = false;
+      if (weather.sunnyDaysPerYear == null || weather.annualSnowfallInches == null) {
+        const supplement = await getPowerSupplement(city.lat, city.lon);
+        if (supplement) {
+          if (weather.sunnyDaysPerYear == null && supplement.sunnyDaysPerYear != null) {
+            weather.sunnyDaysPerYear = supplement.sunnyDaysPerYear;
+            usedPowerSupplement = true;
+          }
+          if (weather.annualSnowfallInches == null && supplement.annualSnowfallInches != null) {
+            weather.annualSnowfallInches = supplement.annualSnowfallInches;
+            usedPowerSupplement = true;
+          }
+        }
+      }
+
+      source = meteostatFallbackSource(fallback.distanceMiles, fallback.normals.yearsCovered, usedPowerSupplement);
+    }
   }
 
-  const { daily } = weatherData;
+  return buildResult(city, weather, hazardRisks, source);
+}
+
+function computeWeatherFromOpenMeteo(daily: OpenMeteoDaily): WeatherMetrics | null {
   const temps = daily.temperature_2m_mean;
   const maxTemps = daily.temperature_2m_max;
   const minTemps = daily.temperature_2m_min;
@@ -33,7 +97,7 @@ async function fetchCityClimate(city: City): Promise<ClimateSummary> {
   const times = daily.time;
 
   const validTemps = temps.filter((v): v is number => v != null);
-  if (!validTemps.length) return buildResult(city, null, hazardRisks);
+  if (!validTemps.length) return null;
 
   const avgTempC = validTemps.reduce((s, v) => s + v, 0) / validTemps.length;
 
@@ -65,7 +129,7 @@ async function fetchCityClimate(city: City): Promise<ClimateSummary> {
   const totalHotDays = validMaxes.filter(v => v >= HOT_DAY_CELSIUS).length;
   const totalFreezingDays = validMins.filter(v => v <= FREEZING_DAY_CELSIUS).length;
 
-  return buildResult(city, {
+  return {
     avgTempF: cToF(avgTempC),
     summerAvgHighF: summerAvgHighC != null ? cToF(summerAvgHighC) : null,
     winterAvgLowF: winterAvgLowC != null ? cToF(winterAvgLowC) : null,
@@ -74,24 +138,29 @@ async function fetchCityClimate(city: City): Promise<ClimateSummary> {
     annualSnowfallInches: parseFloat((totalSnowCm / YEAR_COUNT / 2.54).toFixed(1)),
     hotDaysPerYear: Math.round(totalHotDays / YEAR_COUNT),
     freezingDaysPerYear: Math.round(totalFreezingDays / YEAR_COUNT),
-  }, hazardRisks);
+    snowDaysPerYear: null,
+    approximate: false,
+  };
 }
 
 type WeatherMetrics = {
   avgTempF: number;
   summerAvgHighF: number | null;
   winterAvgLowF: number | null;
-  sunnyDaysPerYear: number;
-  annualPrecipitationInches: number;
-  annualSnowfallInches: number;
-  hotDaysPerYear: number;
-  freezingDaysPerYear: number;
+  sunnyDaysPerYear: number | null;
+  annualPrecipitationInches: number | null;
+  annualSnowfallInches: number | null;
+  hotDaysPerYear: number | null;
+  freezingDaysPerYear: number | null;
+  snowDaysPerYear: number | null;
+  approximate: boolean;
 };
 
 function buildResult(
   city: City,
   weather: WeatherMetrics | null,
   hazardRisks: NaturalHazardRisks | null,
+  source: SourceAttribution,
 ): ClimateSummary {
   return {
     city: city.name,
@@ -104,9 +173,11 @@ function buildResult(
     annualSnowfallInches: weather?.annualSnowfallInches ?? null,
     hotDaysPerYear: weather?.hotDaysPerYear ?? null,
     freezingDaysPerYear: weather?.freezingDaysPerYear ?? null,
+    snowDaysPerYear: weather?.snowDaysPerYear ?? null,
+    weatherApproximate: weather?.approximate ?? false,
     hazardRisks,
     dataYearRange: weather ? `${START_YEAR}–${END_YEAR}` : null,
-    source: OPEN_METEO_SOURCE,
+    source,
   };
 }
 
@@ -130,12 +201,14 @@ async function fetchWeatherData(lat: number, lon: number): Promise<{ daily: Open
     `&daily=temperature_2m_mean,temperature_2m_max,temperature_2m_min,sunshine_duration,precipitation_sum,snowfall_sum` +
     `&timezone=America%2FNew_York`;
 
+  const res = await fetchWithRetry(url, "open-meteo");
+  if (!res) return null;
+
   try {
-    const res = await fetch(url);
-    if (!res.ok) return null;
     const data = (await res.json()) as { daily?: OpenMeteoDaily };
     return data.daily ? { daily: data.daily } : null;
-  } catch {
+  } catch (e) {
+    console.error("[climate] failed to parse Open-Meteo response", { lat, lon, error: (e as Error).message });
     return null;
   }
 }
@@ -167,10 +240,10 @@ async function fetchHazardRisks(countyFips: string): Promise<NaturalHazardRisks 
     `${NRI_SERVICE}?where=STCOFIPS+%3D+%27${countyFips}%27` +
     `&outFields=${NRI_FIELDS}&returnGeometry=false&f=json`;
 
-  try {
-    const res = await fetch(url);
-    if (!res.ok) return null;
+  const res = await fetchWithRetry(url, "fema-nri");
+  if (!res) return null;
 
+  try {
     type NriResponse = {
       features?: Array<{ attributes: Record<string, number | string | null> }>;
     };
@@ -197,7 +270,8 @@ async function fetchHazardRisks(countyFips: string): Promise<NaturalHazardRisks 
       drought: risk("DRGT_RISKS", "DRGT_RISKR"),
       source: FEMA_NRI_SOURCE,
     };
-  } catch {
+  } catch (e) {
+    console.error("[climate] failed to parse FEMA NRI response", { countyFips, error: (e as Error).message });
     return null;
   }
 }
@@ -219,6 +293,37 @@ const OPEN_METEO_SOURCE = {
     `Hot days = days ≥95°F. Freezing days = days with low ≤32°F. ` +
     `Sunny days = days with ≥6h sunshine.`,
 };
+
+function meteostatFallbackSource(
+  distanceMiles: number,
+  yearsCovered: number,
+  usedPowerSupplement: boolean,
+): SourceAttribution {
+  const confidence =
+    distanceMiles <= 15
+      ? "This is a close, generally reliable estimate for this location."
+      : distanceMiles <= 50
+        ? "Treat this as an approximate estimate, since the nearest station isn't right on top of this location."
+        : "Treat this as a rough regional estimate, since the nearest available station is far from this location.";
+
+  const supplementNote = usedPowerSupplement
+    ? " Sunny days and/or annual snowfall came from NASA POWER's gridded satellite/reanalysis " +
+      "data instead (most stations don't carry a sunshine or snow-depth sensor); these are " +
+      "modeled estimates (a clearness-index proxy for sunny days, a standard ~10:1 snow-to-" +
+      "liquid ratio for snowfall), not direct measurements."
+    : " Snow days = days with measurable snow on the ground, which is a different measurement " +
+      "than new-snowfall totals.";
+
+  return {
+    sourceName: "Meteostat Weather Station Network (nearest-station estimate)",
+    sourceUrl: "https://meteostat.net/",
+    asOf: `${START_YEAR}–${END_YEAR} average (${yearsCovered}yr station record)`,
+    geographyLevel: "place",
+    methodologyNote:
+      `Live weather data was temporarily unavailable, so these values are estimated from the ` +
+      `nearest weather station, ${distanceMiles}mi away. ${confidence}${supplementNote}`,
+  };
+}
 
 const FEMA_NRI_SOURCE = {
   sourceName: "FEMA National Risk Index",

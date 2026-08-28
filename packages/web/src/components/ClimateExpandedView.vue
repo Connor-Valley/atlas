@@ -178,6 +178,10 @@ const loadingInsightCards = [1, 2];
       </div>
 
       <template v-else-if="data">
+        <p v-if="data.weatherApproximate" class="housing-exp__approx-note">
+          <span class="mdi mdi-alert-outline"></span>
+          {{ data.source?.methodologyNote ?? "Weather values below are estimated, not a live reading for this exact location." }}
+        </p>
         <div class="housing-exp__snapshot-grid">
           <div class="snap-metric snap-metric--primary">
             <span class="snap-metric__label"><span class="mdi mdi-thermometer snap-metric__icon"></span>Average Temp</span>
@@ -199,9 +203,13 @@ const loadingInsightCards = [1, 2];
             <span class="snap-metric__label"><span class="mdi mdi-weather-pouring snap-metric__icon"></span>Annual Precip.</span>
             <span class="snap-metric__value">{{ data.annualPrecipitationInches != null ? data.annualPrecipitationInches.toFixed(1) + '"' : '—' }}</span>
           </div>
-          <div class="snap-metric snap-metric--secondary">
+          <div v-if="data.annualSnowfallInches != null" class="snap-metric snap-metric--secondary">
             <span class="snap-metric__label"><span class="mdi mdi-weather-snowy-heavy snap-metric__icon"></span>Annual Snowfall</span>
-            <span class="snap-metric__value">{{ data.annualSnowfallInches != null ? data.annualSnowfallInches.toFixed(1) + '"' : '—' }}</span>
+            <span class="snap-metric__value">{{ data.annualSnowfallInches.toFixed(1) }}"</span>
+          </div>
+          <div v-else class="snap-metric snap-metric--secondary">
+            <span class="snap-metric__label"><span class="mdi mdi-weather-snowy-heavy snap-metric__icon"></span>Snow Days/Yr</span>
+            <span class="snap-metric__value">{{ data.snowDaysPerYear != null ? Math.round(data.snowDaysPerYear) : '—' }}</span>
           </div>
         </div>
       </template>
@@ -267,7 +275,7 @@ const loadingInsightCards = [1, 2];
           </div>
         </div>
         <p class="muted housing-exp__note">
-          {{ data.dataYearRange ? `Historical average, ${data.dataYearRange}.` : '' }} Source: Open-Meteo Historical Weather Archive.
+          {{ data.dataYearRange ? `Historical average, ${data.dataYearRange}.` : '' }} Source: {{ data.source?.sourceName ?? 'Open-Meteo Historical Weather Archive' }}.
         </p>
       </section>
 
@@ -286,9 +294,13 @@ const loadingInsightCards = [1, 2];
             <span class="metric__label">Annual Snowfall</span>
             <span class="metric__value">{{ data.annualSnowfallInches.toFixed(1) }}"</span>
           </div>
+          <div v-else-if="data.snowDaysPerYear != null" class="metric">
+            <span class="metric__label">Days With Snow on Ground</span>
+            <span class="metric__value">{{ Math.round(data.snowDaysPerYear) }}</span>
+          </div>
         </div>
         <p class="muted housing-exp__note">
-          {{ data.dataYearRange ? `Historical average, ${data.dataYearRange}.` : '' }} Source: Open-Meteo Historical Weather Archive.
+          {{ data.dataYearRange ? `Historical average, ${data.dataYearRange}.` : '' }} Source: {{ data.source?.sourceName ?? 'Open-Meteo Historical Weather Archive' }}.
         </p>
       </section>
 
@@ -326,6 +338,24 @@ const loadingInsightCards = [1, 2];
 </template>
 
 <style scoped>
+.housing-exp__approx-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  background: var(--bg-card-inner);
+  color: var(--text-secondary, inherit);
+}
+
+.housing-exp__approx-note .mdi {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
 .hazard-tier {
   display: flex;
   align-items: baseline;
