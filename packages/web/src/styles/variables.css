@@ -33,6 +33,12 @@
   --city-a: #5B8DB8;
   --city-b: #7A9E7E;
 
+  /* === Compare page: per-slot colors (up to 4 cities) === */
+  --compare-slot-1: #4A76A0;
+  --compare-slot-2: #C17A45;
+  --compare-slot-3: #8368AD;
+  --compare-slot-4: #A08A3F;
+
   /* === Shadows === */
   --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.07), 0 4px 14px rgba(0, 0, 0, 0.06);
   --card-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.11), 0 2px 6px rgba(0, 0, 0, 0.06);
@@ -79,6 +85,10 @@ html.dark {
   --accent-soft-light: #6D62581A;
   --city-a: #5B8DB8;
   --city-b: #7A9E7E;
+  --compare-slot-1: #8FB0CE;
+  --compare-slot-2: #E39A6E;
+  --compare-slot-3: #B4A2D6;
+  --compare-slot-4: #C9B27A;
   --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 4px 14px rgba(0, 0, 0, 0.4);
   --card-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.35);
   --card-shadow-hover: 0 8px 28px rgba(0, 0, 0, 0.65), 0 4px 10px rgba(0, 0, 0, 0.4);

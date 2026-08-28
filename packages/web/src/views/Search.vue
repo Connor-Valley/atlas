@@ -9,6 +9,7 @@ import { useAuth } from '../composables/useAuth';
 import { useRecentSearches } from '../composables/useRecentSearches';
 import { useFavorites } from '../composables/useFavorites';
 import { useComparisons } from '../composables/useComparisons';
+import { buildCompareUrl } from '../lib/compare';
 import { getStates, type StateOption } from '../api/states';
 import { fetchHousing } from '../api/housing';
 
@@ -209,11 +210,12 @@ function openAuth(mode: 'login' | 'register') {
               v-for="cmp in savedComparisons.slice(0, 3)"
               :key="cmp.id"
               class="search-page__row"
-              @click="router.push({ name: 'compare', params: { stateA: cmp.state_a, cityA: cmp.city_a, stateB: cmp.state_b, cityB: cmp.city_b } })"
+              @click="router.push(buildCompareUrl(cmp.cities.map((c) => ({ state: c.state, city: c.city }))))"
             >
-              <span class="search-page__row-name">{{ cmp.city_name_a }}, {{ cmp.state_a }}</span>
-              <span class="search-page__row-vs">vs</span>
-              <span class="search-page__row-name">{{ cmp.city_name_b }}, {{ cmp.state_b }}</span>
+              <template v-for="(c, i) in cmp.cities" :key="`${c.state}-${c.city}`">
+                <span v-if="i > 0" class="search-page__row-vs">vs</span>
+                <span class="search-page__row-name">{{ c.city_name }}, {{ c.state }}</span>
+              </template>
             </button>
           </template>
           <button v-if="user" class="search-page__panel-link" @click="router.push({ name: 'compare-empty' })">

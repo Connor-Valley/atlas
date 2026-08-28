@@ -134,6 +134,29 @@ function rawOpportunityScore(income: any, qol: any): number | null {
   return avg(povertyS, laborS);
 }
 
+// ── Comparison-page-only raw scorers (not part of the composite DimensionScores) ──────────────
+// Exported so the city-comparison page can show distinct Income/Housing subscores. Deliberately
+// kept out of computeAtlasScore's composite: rawAffordabilityScore/rawOpportunityScore already
+// partially encode income and housing signal (rent-to-income, RPP, rent growth, poverty, labor
+// force participation), so folding these in would double-count and skew every dashboard/city-page/
+// quiz-personalized score app-wide. The compare page calls these directly, in parallel with
+// computeAtlasScore, not through it.
+export function rawIncomeScore(income: any): number | null {
+  const incomeS  = score(income?.medianHouseholdIncome, 30000, 120000, 'higher');
+  const povertyS = score(income?.povertyRate, 3, 30, 'lower');
+  return wavg([{ s: incomeS, w: 0.7 }, { s: povertyS, w: 0.3 }]);
+}
+
+export function rawHousingScore(affordability: any, housing: any, costOfLiving: any): number | null {
+  // rentBurdenPercent is a 0–1 ratio despite the name (see affordability.service.ts).
+  const burdenS  = score(affordability?.rentBurdenPercent, 0.2, 0.5, 'lower');
+  const homeValS = score(housing?.medianHomeValue, 100_000, 700_000, 'lower');
+  // Same reasoning as rawAffordabilityScore — a statewide RPP fallback isn't a real signal
+  // about this specific place, so don't score it as one.
+  const rppS     = score(costOfLiving?.level !== 'state' ? costOfLiving?.rppIndex : null, 80, 130, 'lower');
+  return wavg([{ s: burdenS, w: 0.45 }, { s: homeValS, w: 0.30 }, { s: rppS, w: 0.25 }]);
+}
+
 function rawLifestyleScore(lifestyle: any, profile: any): number | null {
   const restaurantS = score(lifestyle?.restaurants?.perTenThousandResidents, 5, 80, 'higher');
   const barsS       = score(lifestyle?.bars?.perTenThousandResidents, 2, 40, 'higher');

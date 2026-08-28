@@ -118,14 +118,11 @@ const router = createRouter({
       component: Contact
     },
     {
-      path: '/compare/:stateA/:cityA/:stateB?/:cityB?',
+      path: '/compare/:cities',
       name: 'compare',
       component: Compare,
       props: (route) => ({
-        stateA: route.params.stateA,
-        cityA: route.params.cityA,
-        stateB: route.params.stateB,
-        cityB: route.params.cityB
+        cities: route.params.cities
       })
     },
     {

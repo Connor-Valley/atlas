@@ -2,7 +2,7 @@
 import { ref, computed, reactive, onMounted, onUnmounted, nextTick, watch } from "vue";
 import { useRouter } from "vue-router";
 import CitySearch from "../components/CitySearch.vue";
-import CompareCitySearch from "../components/CompareCitySearch.vue";
+import { buildCompareUrl } from "../lib/compare";
 import CityInfoSection from "../components/CityInfoSection.vue";
 import CityInfoExpandedView from "../components/CityInfoExpandedView.vue";
 import HousingSection from "../components/HousingSection.vue";
@@ -542,24 +542,16 @@ function onCompareBSearch(p: { city: string; state: string }) {
 
 function submitHeroCompare() {
   if (!comparePartialReady.value) return;
-  router.push({
-    name: 'compare',
-    params: compareReady.value
-      ? { stateA: compareCityA.state, cityA: compareCityA.city, stateB: compareCityB.state, cityB: compareCityB.city }
-      : { stateA: compareCityA.state, cityA: compareCityA.city },
-  });
+  const cities = compareReady.value
+    ? [compareCityA, compareCityB]
+    : [compareCityA];
+  router.push(buildCompareUrl(cities));
 }
 
 function openCompareView() {
   if (!state.value || !city.value) return;
 
-  router.push({
-    name: "compare",
-    params: {
-      stateA: state.value,
-      cityA: city.value,
-    },
-  });
+  router.push(buildCompareUrl([{ state: state.value, city: city.value }]));
 }
 
 function cityLabel(citySlug: string, stateCode: string) {
@@ -1273,21 +1265,13 @@ async function closeExpandedSection() {
           @search="onSearch"
         />
         <div v-else class="hero-compare-picker">
-          <CompareCitySearch
-            label="Choose City"
-            tone="a"
-            variant="card"
-            :button-label="compareCityA.city ? 'Update' : 'Add'"
+          <CitySearch
             :initial-city="compareCityA.city"
             :initial-state="compareCityA.state"
             @search="onCompareASearch"
           />
           <div class="hero-compare-picker__divider"></div>
-          <CompareCitySearch
-            label="Choose City"
-            tone="b"
-            variant="card"
-            :button-label="compareCityB.city ? 'Update' : 'Add'"
+          <CitySearch
             :initial-city="compareCityB.city"
             :initial-state="compareCityB.state"
             @search="onCompareBSearch"

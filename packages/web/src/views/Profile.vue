@@ -8,6 +8,7 @@ import { useAuth } from '../composables/useAuth';
 import { useAuthModal } from '../composables/useAuthModal';
 import { useFavorites } from '../composables/useFavorites';
 import { useComparisons } from '../composables/useComparisons';
+import { buildCompareUrl } from '../lib/compare';
 import { useFriends } from '../composables/useFriends';
 import { useRecentSearches } from '../composables/useRecentSearches';
 import { PROFILE_VISIBILITY_OPTIONS, getProfileVisibilityMeta, type ProfileVisibility } from '../lib/profilePrivacy';
@@ -558,10 +559,10 @@ onBeforeUnmount(() => {
               v-for="comparison in recentComparisons"
               :key="comparison.id"
               class="profile-list__item"
-              @click="router.push({ name: 'compare', params: { stateA: comparison.state_a, cityA: comparison.city_a, stateB: comparison.state_b, cityB: comparison.city_b } })"
+              @click="router.push(buildCompareUrl(comparison.cities.map((c) => ({ state: c.state, city: c.city }))))"
             >
-              <span class="profile-list__title">{{ comparison.city_name_a }} vs {{ comparison.city_name_b }}</span>
-              <span class="profile-list__meta">{{ comparison.state_a.toUpperCase() }} / {{ comparison.state_b.toUpperCase() }}</span>
+              <span class="profile-list__title">{{ comparison.cities.map((c) => c.city_name).join(' vs ') }}</span>
+              <span class="profile-list__meta">{{ comparison.cities.map((c) => c.state.toUpperCase()).join(' / ') }}</span>
             </button>
           </div>
           <p v-else class="profile-card__empty">No saved comparisons yet.</p>
