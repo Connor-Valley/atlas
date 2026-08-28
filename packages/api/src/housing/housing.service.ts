@@ -1,7 +1,7 @@
 import type { City } from "../cities/cities.types.js";
 import type { CityHousing, DetailedCityHousing, HousingStructure, FhfaData } from "./housing.types.js";
 import { buildCensusGeoQuery, toNumber } from "../common/census.js";
-import { getCached } from "../common/cache.js";
+import { getCached, TTL_ACS_YEAR_SECONDS } from "../common/cache.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -252,7 +252,9 @@ function prioritizeDataQuality(): void {
  * Fetches basic housing data for a city from the US Census API
  */
 export function getCityHousing(city: City, year: number): Promise<CityHousing> {
-  return getCached(`housing:${year}:${city.state}:${city.slug}`, () => fetchCityHousing(city, year));
+  return getCached(`housing:${year}:${city.state}:${city.slug}`, () => fetchCityHousing(city, year), {
+    ttlSeconds: TTL_ACS_YEAR_SECONDS,
+  });
 }
 
 async function fetchCityHousing(city: City, year: number): Promise<CityHousing> {
@@ -284,7 +286,9 @@ async function fetchCityHousing(city: City, year: number): Promise<CityHousing> 
  * structure breakdown, and home price trends
  */
 export function getDetailedCityHousing(city: City, year: number): Promise<DetailedCityHousing> {
-  return getCached(`housing-details:${year}:${city.state}:${city.slug}`, () => fetchDetailedCityHousing(city, year));
+  return getCached(`housing-details:${year}:${city.state}:${city.slug}`, () => fetchDetailedCityHousing(city, year), {
+    ttlSeconds: TTL_ACS_YEAR_SECONDS,
+  });
 }
 
 async function fetchDetailedCityHousing(city: City, year: number): Promise<DetailedCityHousing> {

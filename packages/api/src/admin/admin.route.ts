@@ -29,8 +29,10 @@ router.delete("/cache/:prefix?", async (req, res) => {
 router.get("/cache/prefixes", (_req, res) => {
   res.json({
     prefixes: [
-      "climate",
       "city",
+      "resolved-places",
+      "state-cities",
+      "climate",
       "profile",
       "profile-details",
       "income",
@@ -40,7 +42,13 @@ router.get("/cache/prefixes", (_req, res) => {
       "affordability",
       "affordability-details",
       "financial",
-      "quality-of-life",
+      "financial-details",
+      "qol",
+      "qol-details",
+      "education",
+      "location",
+      "lifestyle",
+      "photo",
     ],
     usage: "DELETE /admin/cache/:prefix  or  DELETE /admin/cache  (clears all)",
   });

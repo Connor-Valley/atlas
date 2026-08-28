@@ -1,10 +1,12 @@
 import type { City } from "../cities/cities.types.js";
 import type { EducationAttainment } from "./education.types.js";
 import { buildCensusGeoQuery } from "../common/census.js";
-import { getCached } from "../common/cache.js";
+import { getCached, TTL_ACS_YEAR_SECONDS } from "../common/cache.js";
 
 export function getCityEducation(city: City, year: number): Promise<EducationAttainment> {
-  return getCached(`education:${year}:${city.state}:${city.slug}`, () => fetchCityEducation(city, year));
+  return getCached(`education:${year}:${city.state}:${city.slug}`, () => fetchCityEducation(city, year), {
+    ttlSeconds: TTL_ACS_YEAR_SECONDS,
+  });
 }
 
 async function fetchCityEducation(city: City, year: number): Promise<EducationAttainment> {

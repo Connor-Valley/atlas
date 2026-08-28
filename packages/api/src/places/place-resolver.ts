@@ -1,5 +1,6 @@
 import { STATE_FIPS, type SupportedState } from "../states/states.types.js";
 import { toNumber } from "../common/census.js";
+import { getCached, TTL_ACS_YEAR_SECONDS } from "../common/cache.js";
 
 export type PlaceType =
   | "city"
@@ -60,8 +61,6 @@ const SUFFIX_PATTERNS: Array<{ regex: RegExp; placeType: PlaceType; priority: nu
   { regex: /\s+urban county$/i, placeType: "urban-county", priority: 5 },
 ];
 
-const placeCache = new Map<string, Promise<ResolvedPlace[]>>();
-
 export async function getResolvedPlacesForState(
   state: string,
   year: number,
@@ -73,21 +72,11 @@ export async function getResolvedPlacesForState(
     throw new Error(`Unsupported state: ${stateCode}`);
   }
 
-  const cacheKey = `${year}:${stateCode}`;
-  const cached = placeCache.get(cacheKey);
-  if (cached) {
-    return cached;
-  }
-
-  const request = fetchResolvedPlaces(stateCode, stateFips, year);
-  placeCache.set(cacheKey, request);
-
-  try {
-    return await request;
-  } catch (error) {
-    placeCache.delete(cacheKey);
-    throw error;
-  }
+  return getCached(
+    `resolved-places:${year}:${stateCode}`,
+    () => fetchResolvedPlaces(stateCode, stateFips, year),
+    { ttlSeconds: TTL_ACS_YEAR_SECONDS }
+  );
 }
 
 export async function getListedPlacesForState(

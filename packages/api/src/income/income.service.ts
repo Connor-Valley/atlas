@@ -1,11 +1,13 @@
 import type { City } from '../cities/cities.types.js';
 import type { CityIncome, DetailedCityIncome, EarningsByEducation, IncomeAffordabilityMetrics, IndustrySector, PovertyDepth, RawIncomeDistribution } from './income.types.js'
 import { buildCensusGeoQuery, toNumber } from "../common/census.js";
-import { getCached } from "../common/cache.js";
+import { getCached, TTL_ACS_YEAR_SECONDS } from "../common/cache.js";
 import { getJobsWithinRadius } from "./regional-jobs.service.js";
 
 export function getCityIncome(city: City, year: number): Promise<CityIncome> {
-  return getCached(`income:${year}:${city.state}:${city.slug}`, () => fetchCityIncome(city, year));
+  return getCached(`income:${year}:${city.state}:${city.slug}`, () => fetchCityIncome(city, year), {
+    ttlSeconds: TTL_ACS_YEAR_SECONDS,
+  });
 }
 
 async function fetchCityIncome(city: City, year: number): Promise<CityIncome> {
@@ -146,7 +148,9 @@ const INDUSTRY_NAMES = [
 ] as const;
 
 export function getDetailedCityIncome(city: City, year: number): Promise<DetailedCityIncome> {
-  return getCached(`income-details:${year}:${city.state}:${city.slug}`, () => fetchDetailedCityIncome(city, year));
+  return getCached(`income-details:${year}:${city.state}:${city.slug}`, () => fetchDetailedCityIncome(city, year), {
+    ttlSeconds: TTL_ACS_YEAR_SECONDS,
+  });
 }
 
 async function fetchDetailedCityIncome(city: City, year: number): Promise<DetailedCityIncome> {

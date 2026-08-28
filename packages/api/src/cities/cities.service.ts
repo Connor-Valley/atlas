@@ -2,14 +2,16 @@ import type { City } from './cities.types.js';
 import { STATE_FIPS, type SupportedState } from '../states/states.types.js';
 import { buildCensusGeoQuery } from "../common/census.js";
 import { resolvePlace } from "../places/place-resolver.js";
-import { getCached } from "../common/cache.js";
+import { getCached, TTL_ACS_YEAR_SECONDS } from "../common/cache.js";
 
 export async function getCity(
   state: string,
   citySlug: string,
   year: number,
 ): Promise<City> {
-  return getCached(`city:${year}:${state}:${citySlug}`, () => fetchCity(state, citySlug, year));
+  return getCached(`city:${year}:${state}:${citySlug}`, () => fetchCity(state, citySlug, year), {
+    ttlSeconds: TTL_ACS_YEAR_SECONDS,
+  });
 }
 
 async function fetchCity(
