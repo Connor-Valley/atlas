@@ -3,7 +3,7 @@ import { buildCensusGeoQuery, toNumber } from "../common/census.js";
 import type { SourceAttribution } from "../common/source.types.js";
 import type { CityProfileDetails, CityProfileSummary, PercentageBreakdown, UrbanCharacter } from "./city-profile.types.js";
 import { getPoliticalAffiliation } from "./politics-reference.js";
-import { getCached } from "../common/cache.js";
+import { getCached, TTL_ACS_YEAR_SECONDS } from "../common/cache.js";
 
 const ACS_SOURCE = (year: number): SourceAttribution => ({
   sourceName: "U.S. Census Bureau ACS 5-year",
@@ -13,7 +13,9 @@ const ACS_SOURCE = (year: number): SourceAttribution => ({
 });
 
 export function getCityProfileSummary(city: City, year: number): Promise<CityProfileSummary> {
-  return getCached(`profile:${year}:${city.state}:${city.slug}`, () => fetchCityProfileSummary(city, year));
+  return getCached(`profile:${year}:${city.state}:${city.slug}`, () => fetchCityProfileSummary(city, year), {
+    ttlSeconds: TTL_ACS_YEAR_SECONDS,
+  });
 }
 
 async function fetchCityProfileSummary(city: City, year: number): Promise<CityProfileSummary> {
@@ -79,7 +81,9 @@ async function fetchCityProfileSummary(city: City, year: number): Promise<CityPr
 }
 
 export function getCityProfileDetails(city: City, year: number): Promise<CityProfileDetails> {
-  return getCached(`profile-details:${year}:${city.state}:${city.slug}`, () => fetchCityProfileDetails(city, year));
+  return getCached(`profile-details:${year}:${city.state}:${city.slug}`, () => fetchCityProfileDetails(city, year), {
+    ttlSeconds: TTL_ACS_YEAR_SECONDS,
+  });
 }
 
 async function fetchCityProfileDetails(city: City, year: number): Promise<CityProfileDetails> {
