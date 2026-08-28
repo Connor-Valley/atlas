@@ -838,9 +838,12 @@ html:not(.dark) .snap-metric--secondary {
 
 .bar-list__label {
   flex: 1;
+  min-width: 0;
   font-size: 0.81rem;
   color: var(--text-secondary);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .bar-list__track {
