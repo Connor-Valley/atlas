@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import DashboardHeader from "../components/DashboardHeader.vue";
 import AuthModal from "../components/AuthModal.vue";
@@ -200,6 +200,78 @@ async function share() {
 function resetToSearch() {
   router.push({ name: "search" });
 }
+
+// ── Sticky header offset ────────────────────────────────────────────────────
+// DashboardHeader is itself sticky (top: 0). If the comparison table's header row
+// also sticks at top: 0, the two fight for the same spot and the table header
+// visually glitches under/behind the site header instead of stacking below it.
+// Track the site header's live height and stick the table header right under it.
+//
+// Queried directly by class rather than via a template ref: DashboardHeader has a
+// multi-root template (<header> plus a sibling <AuthModal v-if>), so its component
+// instance's $el resolves to Vue's internal fragment anchor (a comment node, no
+// getBoundingClientRect) rather than the actual <header> element.
+// 60 matches .dashboard-hdr's fixed desktop height (see comparePage.css) — used as the
+// correct value up front instead of 0, in case the live measurement below is ever delayed
+// or unavailable (e.g. SSR, ResizeObserver support). Updated to the real height once measured.
+const stickyOffset = ref(60);
+
+function measureStickyOffset() {
+  const el = document.querySelector<HTMLElement>(".dashboard-hdr");
+  const height = el?.getBoundingClientRect().height;
+  // Ignore 0/undefined reads (element not yet laid out) — keep the last-known-good value
+  // rather than collapsing the offset to 0, which would re-introduce the header overlap bug.
+  if (height) stickyOffset.value = height;
+}
+
+const resizeObserver = typeof ResizeObserver !== "undefined"
+  ? new ResizeObserver(() => measureStickyOffset())
+  : null;
+
+onMounted(() => {
+  measureStickyOffset();
+  const el = document.querySelector(".dashboard-hdr");
+  if (el) resizeObserver?.observe(el);
+});
+
+// ── Sticky header shrink ────────────────────────────────────────────────────
+// A 1px sentinel sits right above the sticky header row. Once its top edge scrolls up
+// past the point where the header row starts sticking (stickyOffset), the header has
+// begun sticking — shrink it so it doesn't dominate the screen while scrolling through
+// the metric rows below it. Driven directly off scroll position (rather than an
+// IntersectionObserver) so it can't fall out of sync with the dynamic stickyOffset.
+const headerSentinel = ref<HTMLElement | null>(null);
+const headerStuck = ref(false);
+let scrollRaf = 0;
+
+function updateHeaderStuck() {
+  const el = headerSentinel.value;
+  headerStuck.value = !!el && el.getBoundingClientRect().top <= stickyOffset.value;
+}
+
+function onScroll() {
+  if (scrollRaf) return;
+  scrollRaf = requestAnimationFrame(() => {
+    scrollRaf = 0;
+    updateHeaderStuck();
+  });
+}
+
+onMounted(() => {
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll, { passive: true });
+});
+
+onUnmounted(() => {
+  window.removeEventListener("scroll", onScroll);
+  window.removeEventListener("resize", onScroll);
+  if (scrollRaf) cancelAnimationFrame(scrollRaf);
+  resizeObserver?.disconnect();
+});
+
+// Re-check whenever the sentinel mounts/unmounts (table toggles in/out) or the site
+// header's measured height changes.
+watch([headerSentinel, stickyOffset], () => updateHeaderStuck(), { flush: "post" });
 </script>
 
 <template>
@@ -339,9 +411,14 @@ function resetToSearch() {
     </section>
 
     <template v-else-if="bundles.length >= 2">
+      <div ref="headerSentinel" class="cmp-table__sentinel"></div>
       <div class="cmp-table">
-        <div class="cmp-table__header-row">
-          <div class="cmp-table__header-spacer">
+        <div
+          class="cmp-table__header-row"
+          :class="{ 'cmp-table__header-row--compact': headerStuck }"
+          :style="{ top: `${stickyOffset}px` }"
+        >
+          <div class="cmp-table__header-spacer" :class="{ 'cmp-table__header-spacer--compact': headerStuck }">
             <span class="cmp-table__header-label">METRIC</span>
           </div>
           <CompareCityColumn
@@ -353,6 +430,7 @@ function resetToSearch() {
             :county="b.county"
             :population="b.population"
             :atlas-score="b.atlasScore"
+            :compact="headerStuck"
             @remove="removeSlot(i)"
           />
         </div>

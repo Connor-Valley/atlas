@@ -189,16 +189,31 @@
   border: 1px solid var(--border-card);
   border-radius: 18px;
   background: var(--bg-card);
-  overflow: hidden;
+  /* No overflow: hidden here — it would establish this element as the sticky header's
+     scrolling ancestor instead of the viewport, breaking/glitching position: sticky.
+     Rounded corners are instead applied directly to the first/last child below. */
+}
+
+.cmp-table__sentinel {
+  height: 1px;
 }
 
 .cmp-table__header-row {
   position: sticky;
-  top: 0;
+  /* Matches .dashboard-hdr's fixed 60px height so this row sticks right below the site
+     header instead of underneath it. The inline `top` style (set from JS, which measures
+     the real header height for the mobile-wrap case) overrides this when it applies. */
+  top: 60px;
   z-index: 30;
   display: flex;
   background: var(--bg-card-subtle);
   border-bottom: 1px solid var(--border-card);
+  border-radius: 18px 18px 0 0;
+  transition: box-shadow 0.15s ease;
+}
+
+.cmp-table__header-row--compact {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
 }
 
 .cmp-table__header-spacer {
@@ -207,6 +222,11 @@
   padding: 18px 16px;
   display: flex;
   align-items: flex-end;
+  transition: padding 0.15s ease;
+}
+
+.cmp-table__header-spacer--compact {
+  padding: 10px 16px;
 }
 
 .cmp-table__header-label {
