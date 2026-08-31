@@ -2,6 +2,7 @@
 import { ref } from "vue";
 import type { CompareGroup } from "../lib/compare";
 import CompareMetricRow from "./CompareMetricRow.vue";
+import CompareCharMetricRow from "./CompareCharMetricRow.vue";
 
 defineProps<{
   group: CompareGroup;
@@ -21,13 +22,15 @@ const open = ref(true);
       <span class="cmp-group__count">{{ group.rows.length }} metrics</span>
     </button>
     <div v-if="open">
-      <CompareMetricRow
-        v-for="row in group.rows"
-        :key="row.key"
-        :row="row"
-        :mode="mode"
-        :highlight-leaders="highlightLeaders"
-      />
+      <template v-for="row in group.rows" :key="row.key">
+        <CompareCharMetricRow v-if="row.kind === 'char'" :row="row" />
+        <CompareMetricRow
+          v-else
+          :row="row"
+          :mode="mode"
+          :highlight-leaders="highlightLeaders"
+        />
+      </template>
     </div>
   </div>
 </template>

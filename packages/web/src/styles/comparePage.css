@@ -6,6 +6,14 @@
    page must not override max-width/padding itself (that previously caused the header's
    search box to overflow past the viewport edge). */
 
+/* Dark mode's global --positive (bright mint) and --text-muted (near-black gray) read as
+   too harsh / too low-contrast against this page's dense tables of small text — softened
+   here rather than in variables.css to avoid touching those tokens site-wide. */
+html.dark .cmp-page {
+  --positive: #8FCBA8;
+  --text-muted: #86786A;
+}
+
 /* ── Page header ─────────────────────────────────────── */
 .cmp-page__header {
   display: flex;
@@ -231,7 +239,7 @@
 
 .cmp-table__header-label {
   font-family: var(--font-mono);
-  font-size: 0.62rem;
+  font-size: 0.78rem;
   letter-spacing: 0.1em;
   color: var(--text-muted);
 }

@@ -2,14 +2,15 @@ import { fetchCity } from "../api/cities";
 import { fetchIncome, fetchDetailedIncome } from "../api/income";
 import { fetchHousing } from "../api/housing";
 import { fetchAffordability, fetchDetailedAffordability } from "../api/affordability";
-import { fetchQualityOfLife } from "../api/qualityOfLife";
-import { fetchCityProfile } from "../api/cityProfile";
+import { fetchDetailedQualityOfLife } from "../api/qualityOfLife";
+import { fetchDetailedCityProfile } from "../api/cityProfile";
 import { fetchClimate } from "../api/climate";
 import { fetchAirQuality } from "../api/airQuality";
 import { fetchCostOfLiving } from "../api/costOfLiving";
 import { fetchLifestyle } from "../api/lifestyle";
+import { fetchPoliticalLean } from "../api/politicalLean";
 import { fetchCityPhoto } from "./cityPhotos";
-import { computeAtlasScore, rawIncomeScore, rawHousingScore } from "./atlasScore";
+import { computeAtlasScore, dimTier } from "./atlasScore";
 import type { UserPreferences } from "../composables/usePreferences";
 import {
   rankCells,
@@ -56,6 +57,11 @@ export function parseCompareCitiesParam(param: string | string[] | undefined): C
 
 // ── Per-city data loading ──────────────────────────────────────────────────────
 
+export type DimDisplay = {
+  char: string | null;
+  tier: 'good' | 'average' | 'below' | null;
+};
+
 export type CompareCityBundle = {
   state: string;
   city: string;
@@ -66,11 +72,17 @@ export type CompareCityBundle = {
 
   atlasScore: number | null;
   personalizedAtlasScore: number | null;
-  incomeScore: number | null;
-  housingScore: number | null;
-  jobMarketScore: number | null;
-  climateScore: number | null;
-  lifestyleScore: number | null;
+  // Each dimension pairs a 0-100 score (used only to derive the good/average/below tier
+  // color) with the same human-readable characteristic label AtlasScoreCard.vue shows in its
+  // cubes (e.g. "Mild year-round", "Urban edge") — both read from the identical breakdown/
+  // cityChars produced by the one computeAtlasScore() call above.
+  affordability: DimDisplay;
+  jobMarket: DimDisplay;
+  climate: DimDisplay;
+  opportunity: DimDisplay;
+  lifestyleVibrancy: DimDisplay;
+  airQuality: DimDisplay;
+  connectivity: DimDisplay;
 
   medianHouseholdIncome: number | null;
   medianRenterIncome: number | null;
@@ -96,6 +108,11 @@ export type CompareCityBundle = {
 };
 
 export async function loadCompareCity(state: string, city: string, prefs?: UserPreferences | null): Promise<CompareCityBundle> {
+  // Must fetch the /details variants of profile and qol, not the summary ones — computeAtlasScore's
+  // personalized dimension matching (cityLifestyleChar/cityConnectivityChar) reads profile.urbanCharacter
+  // and qol.airportDistanceMiles, which only exist on the /details responses. Using the summary
+  // versions silently drops those signals and produces a different score than AtlasScoreCard.vue,
+  // which does fetch the /details versions, for the same city/prefs.
   const [
     cityInfo,
     income,
@@ -109,6 +126,7 @@ export async function loadCompareCity(state: string, city: string, prefs?: UserP
     airQuality,
     costOfLiving,
     lifestyle,
+    politicalLean,
     photoUrl,
   ] = await Promise.all([
     fetchCity(state, city),
@@ -117,12 +135,16 @@ export async function loadCompareCity(state: string, city: string, prefs?: UserP
     fetchHousing(state, city),
     fetchAffordability(state, city).catch(() => null),
     fetchDetailedAffordability(state, city).catch(() => null),
-    fetchQualityOfLife(state, city).catch(() => null),
-    fetchCityProfile(state, city).catch(() => null),
+    fetchDetailedQualityOfLife(state, city).catch(() => null),
+    fetchDetailedCityProfile(state, city).catch(() => null),
     fetchClimate(state, city).catch(() => null),
     fetchAirQuality(state, city).catch(() => null),
     fetchCostOfLiving(state, city).catch(() => null),
     fetchLifestyle(state, city).catch(() => null),
+    // Real political lean, not null — when the viewer has a saved political-lean preference,
+    // AtlasScoreCard.vue folds a weighted political-match term into the total score; omitting
+    // it here (as this used to) silently produced a different total for the same city/prefs.
+    fetchPoliticalLean(state, city).catch(() => null),
     fetchCityPhoto(state, city).catch(() => null),
   ]);
 
@@ -137,7 +159,7 @@ export async function loadCompareCity(state: string, city: string, prefs?: UserP
     climate,
     airQuality,
     lifestyle,
-    politicalLean: null,
+    politicalLean,
     housing,
   });
 
@@ -151,10 +173,24 @@ export async function loadCompareCity(state: string, city: string, prefs?: UserP
         climate,
         airQuality,
         lifestyle,
-        politicalLean: null,
+        politicalLean,
         housing,
       }, prefs)
     : null;
+
+  // Every subscore below is read straight from this one computeAtlasScore() result — the
+  // same call, same breakdown/cityChars, AtlasScoreCard.vue uses for the single-city view —
+  // so the compare page can never drift out of sync with it the way the old Income/Housing
+  // raw-only subscores (a compare-page-only concept with no AtlasScoreCard equivalent) did.
+  // Personalized when the viewer is logged in with real preferences, else the generic
+  // national-scale score, exactly like AtlasScoreCard.
+  const primaryResult = personalizedScore ?? atlasResult;
+  const chars = primaryResult.cityChars;
+  const breakdown = primaryResult.breakdown;
+  const dim = (char: string | null, score: number | null | undefined): DimDisplay => ({
+    char: char ?? null,
+    tier: dimTier(score),
+  });
 
   return {
     state,
@@ -164,13 +200,15 @@ export async function loadCompareCity(state: string, city: string, prefs?: UserP
     population: cityInfo.population,
     photoUrl,
 
-    atlasScore: Math.round(atlasResult.score),
+    atlasScore: Math.round(primaryResult.score),
     personalizedAtlasScore: personalizedScore ? Math.round(personalizedScore.score) : null,
-    incomeScore: roundOrNull(rawIncomeScore(income)),
-    housingScore: roundOrNull(rawHousingScore(detailedAffordability, housing, costOfLiving)),
-    jobMarketScore: roundOrNull(atlasResult.breakdown.jobMarket),
-    climateScore: roundOrNull(atlasResult.breakdown.climate),
-    lifestyleScore: roundOrNull(atlasResult.breakdown.lifestyleVibrancy),
+    affordability: dim(chars.affordability, breakdown.affordability),
+    jobMarket: dim(chars.jobMarket, breakdown.jobMarket),
+    climate: dim(chars.climate, breakdown.climate),
+    opportunity: dim(chars.opportunity, breakdown.opportunity),
+    lifestyleVibrancy: dim(chars.lifestyleVibrancy, breakdown.lifestyleVibrancy),
+    airQuality: dim(chars.airQuality, breakdown.airQuality),
+    connectivity: dim(chars.connectivity, breakdown.connectivity),
 
     medianHouseholdIncome: income?.medianHouseholdIncome ?? null,
     medianRenterIncome: income?.medianRenterIncome ?? null,
@@ -196,13 +234,10 @@ export async function loadCompareCity(state: string, city: string, prefs?: UserP
   };
 }
 
-function roundOrNull(v: number | null): number | null {
-  return v == null ? null : Math.round(v);
-}
-
 // ── Grouped metric table ───────────────────────────────────────────────────────
 
 export type CompareRow = {
+  kind: "numeric";
   key: string;
   label: string;
   subLabel: string;
@@ -213,10 +248,22 @@ export type CompareRow = {
   cells: CompareCell[];
 };
 
+// Atlas Score dimension rows (Climate, Cost of Living, Job Market, ...) show the same
+// word + color-coded tier as AtlasScoreCard's cubes instead of a bare number — there's no
+// meaningful "US average" or ranked-bar reading for a characteristic like "Urban edge".
+export type CompareCharCell = DimDisplay;
+
+export type CompareCharRow = {
+  kind: "char";
+  key: string;
+  label: string;
+  cells: CompareCharCell[];
+};
+
 export type CompareGroup = {
   key: string;
   label: string;
-  rows: CompareRow[];
+  rows: Array<CompareRow | CompareCharRow>;
 };
 
 type MetricDef = {
@@ -270,11 +317,6 @@ const GROUP_DEFS: Array<{ key: string; label: string; metrics: MetricDef[] }> = 
     label: "ATLAS SCORE",
     metrics: [
       { key: "atlasScore", label: "Atlas Score", direction: "higher", us: null, format: fmtScore, pick: (b) => b.atlasScore },
-      { key: "incomeScore", label: "Income", direction: "higher", us: null, format: fmtScore, pick: (b) => b.incomeScore },
-      { key: "housingScore", label: "Housing", direction: "higher", us: null, format: fmtScore, pick: (b) => b.housingScore },
-      { key: "jobMarketScore", label: "Job market", direction: "higher", us: null, format: fmtScore, pick: (b) => b.jobMarketScore },
-      { key: "climateScore", label: "Climate", direction: "higher", us: null, format: fmtScore, pick: (b) => b.climateScore },
-      { key: "lifestyleScore", label: "Lifestyle", direction: "higher", us: null, format: fmtScore, pick: (b) => b.lifestyleScore },
     ],
   },
   {
@@ -324,11 +366,22 @@ const GROUP_DEFS: Array<{ key: string; label: string; metrics: MetricDef[] }> = 
   },
 ];
 
+// The 7 scored Atlas Score dimensions (everything but Political Lean, which — per the rest
+// of the app — stays opt-in-only rather than default-visible) shown as word + tier color,
+// same as AtlasScoreCard's cubes. Order matches that card's cube grid.
+const CHAR_DIM_DEFS: Array<{ key: string; label: string; pick: (b: CompareCityBundle) => DimDisplay }> = [
+  { key: "climate", label: "Climate", pick: (b) => b.climate },
+  { key: "affordability", label: "Cost of Living", pick: (b) => b.affordability },
+  { key: "jobMarket", label: "Job Market", pick: (b) => b.jobMarket },
+  { key: "lifestyleVibrancy", label: "Lifestyle", pick: (b) => b.lifestyleVibrancy },
+  { key: "opportunity", label: "Opportunity", pick: (b) => b.opportunity },
+  { key: "airQuality", label: "Air Quality", pick: (b) => b.airQuality },
+  { key: "connectivity", label: "Getting Around", pick: (b) => b.connectivity },
+];
+
 export function buildCompareGroups(bundles: CompareCityBundle[]): CompareGroup[] {
-  return GROUP_DEFS.map((group) => ({
-    key: group.key,
-    label: group.label,
-    rows: group.metrics.map((metric) => {
+  return GROUP_DEFS.map((group) => {
+    const numericRows: Array<CompareRow | CompareCharRow> = group.metrics.map((metric) => {
       // "context" metrics (e.g. summer high, rainfall) have no better/worse direction — treat
       // as "higher" for rank/bar bookkeeping but the UI never shows a best/worst highlight for them.
       const direction: MetricDirection = metric.direction === "context" ? "higher" : metric.direction;
@@ -341,6 +394,7 @@ export function buildCompareGroups(bundles: CompareCityBundle[]): CompareGroup[]
         };
       });
       return {
+        kind: "numeric",
         key: metric.key,
         label: metric.label,
         subLabel: metric.us != null ? `US AVG ${metric.format(metric.us)}` : "ATLAS SUBSCORE",
@@ -349,8 +403,21 @@ export function buildCompareGroups(bundles: CompareCityBundle[]): CompareGroup[]
         usValue: metric.us,
         cells,
       };
-    }),
-  }));
+    });
+
+    if (group.key !== "atlas-score") {
+      return { key: group.key, label: group.label, rows: numericRows };
+    }
+
+    const charRows: CompareCharRow[] = CHAR_DIM_DEFS.map((dim) => ({
+      kind: "char",
+      key: dim.key,
+      label: dim.label,
+      cells: bundles.map((b) => dim.pick(b)),
+    }));
+
+    return { key: group.key, label: group.label, rows: [...numericRows, ...charRows] };
+  });
 }
 
 export { rankCells, bestIndex, barWidth, deltaVsFirst, leaderTally };

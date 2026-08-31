@@ -282,15 +282,6 @@ watch([headerSentinel, stickyOffset], () => updateHeaderStuck(), { flush: "post"
       <div>
         <div class="cmp-page__eyebrow">SIDE BY SIDE</div>
         <h1 class="cmp-page__title">Compare up to four cities</h1>
-        <p v-if="slots.length >= MIN_COMPARE_CITIES" class="cmp-page__subtitle">
-          Comparing {{ slots.length }} of {{ MAX_COMPARE_CITIES }} cities · {{ rankedRows.length }} metrics · ranked, with US averages for reference
-        </p>
-        <p v-else-if="slots.length === 1" class="cmp-page__subtitle">
-          Add a second city to unlock ranked metrics, Atlas Score subscores, and side-by-side comparisons for up to four cities.
-        </p>
-        <p v-else class="cmp-page__subtitle">
-          Search for two cities above to unlock ranked metrics, Atlas Score subscores, and side-by-side comparisons for up to four cities.
-        </p>
       </div>
       <div v-if="slots.length >= 2" class="cmp-page__actions">
         <button class="cmp-page__action-btn" @click="share">{{ shareCopied ? "Copied" : "Share" }}</button>

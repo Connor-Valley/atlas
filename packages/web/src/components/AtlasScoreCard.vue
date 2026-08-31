@@ -13,7 +13,7 @@ import { fetchPoliticalLean } from '../api/politicalLean';
 import { fetchCostOfLiving } from '../api/costOfLiving';
 import { useAuth } from '../composables/useAuth';
 import { usePreferences, hasRealPreferences } from '../composables/usePreferences';
-import { computeAtlasScore, scoreTier, politicalDimTier, evaluateOpportunityMatch } from '../lib/atlasScore';
+import { computeAtlasScore, scoreTier, dimTier, politicalDimTier, evaluateOpportunityMatch } from '../lib/atlasScore';
 import { DIMS, PREF_LABELS } from '../lib/atlasScoreDims';
 
 const props = defineProps<{ city: string; state: string }>();
@@ -128,13 +128,6 @@ const isStrongCountyLean = computed(() => politicalLean.value?.lean === 'Strong 
 const showRealPoliticalTier = computed(() => isPlaceLevelPoliticalLean.value || isStrongCountyLean.value);
 const politicalTier = computed(() => politicalDimTier(politicalLean.value, preferences.value.political_lean_preference));
 const opportunityMatch = computed(() => evaluateOpportunityMatch(preferences.value.opportunity_preference, income.value));
-
-function dimTier(value: number | null | undefined): 'good' | 'average' | 'below' | null {
-  if (value == null) return null;
-  if (value >= 65) return 'good';
-  if (value >= 45) return 'average';
-  return 'below';
-}
 
 function dimTierLabel(value: number | null | undefined): string {
   const t = dimTier(value);

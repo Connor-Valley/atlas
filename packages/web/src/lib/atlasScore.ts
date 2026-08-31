@@ -797,6 +797,16 @@ export function computeAtlasScore(inputs: ScoreInputs, prefs?: UserPreferences |
   return { score: finalScore, breakdown, cityChars, politicalScore, isPersonalized, dataCoverage, hasEnoughData };
 }
 
+// Per-dimension tier (distinct from scoreTier's 5-tier overall-score scale) — shared so the
+// compare page's dimension rows use the exact same good/average/below cutoffs and colors as
+// AtlasScoreCard's cubes.
+export function dimTier(value: number | null | undefined): 'good' | 'average' | 'below' | null {
+  if (value == null) return null;
+  if (value >= 65) return 'good';
+  if (value >= 45) return 'average';
+  return 'below';
+}
+
 export function scoreTier(score: number): { label: string; tier: 'excellent' | 'good' | 'average' | 'below' | 'poor' } {
   if (score >= 80) return { label: 'Excellent',     tier: 'excellent' };
   if (score >= 65) return { label: 'Good',          tier: 'good' };
