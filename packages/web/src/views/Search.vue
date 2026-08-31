@@ -12,6 +12,7 @@ import { useComparisons } from '../composables/useComparisons';
 import { buildCompareUrl } from '../lib/compare';
 import { getStates, type StateOption } from '../api/states';
 import { fetchHousing } from '../api/housing';
+import { TILE_IMAGE } from '../lib/tileAsset';
 
 const router = useRouter();
 const { user, displayName } = useAuth();
@@ -369,7 +370,7 @@ function onTileLeave(el: HTMLElement) {
           @mousemove="onTileMove($event, $event.currentTarget as HTMLElement)"
           @mouseleave="onTileLeave($event.currentTarget as HTMLElement)"
         >
-          <img src="/spark.webp" alt="" class="sp-tile__img" />
+          <img :src="TILE_IMAGE" alt="" class="sp-tile__img" />
           <div class="sp-tile__shine"></div>
         </div>
       </div>
