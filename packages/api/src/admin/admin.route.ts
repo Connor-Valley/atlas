@@ -49,6 +49,8 @@ router.get("/cache/prefixes", (_req, res) => {
       "location",
       "lifestyle",
       "photo",
+      "income-by-industry",
+      "income-by-industry-msa",
     ],
     usage: "DELETE /admin/cache/:prefix  or  DELETE /admin/cache  (clears all)",
   });
