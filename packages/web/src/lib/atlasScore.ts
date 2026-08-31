@@ -48,6 +48,11 @@ export type AtlasScoreResult = {
   // confident score is misleading, not a real assessment of the city.
   dataCoverage: number;
   hasEnoughData: boolean;
+  // Dimensions marked a deal breaker whose city characteristic matched NONE of the user's
+  // selected preference values — these get capped to a clearly-poor score (see applyDealbreaker)
+  // on top of their weight already dominating the total, and the UI should flag them distinctly
+  // from an ordinarily-low score rather than let them blend into "this city just isn't great."
+  dealbreakerFailures: DealbreakerDim[];
 };
 
 // ── Normalization (used for non-personalized raw scoring) ─────────────────────
@@ -386,13 +391,34 @@ const MATCH_SCORES: Record<string, Record<string, Record<string, number>>> = {
   },
 };
 
+// A city counts as a full match for ANY of the user's selected values — checking two options
+// means "either is fine," not an average of them. Adjacent-but-unselected options still fall
+// through to MATCH_SCORES' own existing partial-credit rows for whichever value scored highest.
 function lookupMatchScore(
   dim: keyof typeof MATCH_SCORES,
-  pref: string,
+  prefs: string[],
   cityChar: string | null,
 ): number | null {
-  if (!cityChar) return null;
-  return MATCH_SCORES[dim]?.[pref]?.[cityChar] ?? null;
+  if (!cityChar || !prefs.length) return null;
+  const scores = prefs
+    .map((pref) => MATCH_SCORES[dim]?.[pref]?.[cityChar])
+    .filter((s): s is number => s != null);
+  return scores.length ? Math.max(...scores) : null;
+}
+
+// Whether a city's classified characteristic satisfies at least one of the user's selected
+// preference values — the definition of "matches" a deal breaker requires, reusing MATCH_SCORES'
+// own exact-match cells (score === 100) rather than any partial-credit threshold. "any" always
+// satisfies (no real preference was expressed), and missing city data can't fail a deal breaker
+// it has no signal for.
+function dealbreakerSatisfied(
+  dim: keyof typeof MATCH_SCORES,
+  prefs: string[],
+  cityChar: string | null,
+): boolean {
+  if (cityChar == null) return true;
+  if (prefs.includes('any')) return true;
+  return prefs.some((pref) => MATCH_SCORES[dim]?.[pref]?.[cityChar] === 100);
 }
 
 // ── City characteristic classifiers ───────────────────────────────────────────
@@ -554,13 +580,16 @@ const NO_OPPORTUNITY_MATCH = {
 
 // Looks past just the single dominant sector — finds wherever the user's field actually ranks
 // among this city's sectors, however far down that is, rather than giving up after the top 3.
-export function evaluateOpportunityMatch(preference: string, income: any): OpportunityMatchDetail | null {
+// `preferences` may name more than one field (multi-select) — the match set is the UNION of every
+// selected field's matching industries, so the city is scored against whichever selected field it
+// ranks best in, not an average across all of them.
+export function evaluateOpportunityMatch(preferences: string[], income: any): OpportunityMatchDetail | null {
   const sectors = income?.industryBreakdown as Array<{ name: string; share: number }> | undefined;
   if (!sectors?.length) return null;
-  if (preference === 'any') return { score: 100, tier: 'good', ...NO_OPPORTUNITY_MATCH };
+  if (!preferences.length || preferences.includes('any')) return { score: 100, tier: 'good', ...NO_OPPORTUNITY_MATCH };
 
-  const matches = OPPORTUNITY_FIELD_MATCHES[preference];
-  if (!matches) return { score: 100, tier: 'good', ...NO_OPPORTUNITY_MATCH }; // unrecognized value — don't penalize
+  const matches = preferences.flatMap((pref) => OPPORTUNITY_FIELD_MATCHES[pref] ?? []);
+  if (!matches.length) return { score: 100, tier: 'good', ...NO_OPPORTUNITY_MATCH }; // unrecognized value(s) — don't penalize
 
   const label = (sectorName: string) => INDUSTRY_LABELS[sectorName] ?? sectorName;
   const isMatch = (sectorName: string) => matches.includes(label(sectorName));
@@ -591,8 +620,19 @@ export function evaluateOpportunityMatch(preference: string, income: any): Oppor
   };
 }
 
-function opportunityMatchScore(preference: string, income: any): number | null {
-  return evaluateOpportunityMatch(preference, income)?.score ?? null;
+function opportunityMatchScore(preferences: string[], income: any): number | null {
+  return evaluateOpportunityMatch(preferences, income)?.score ?? null;
+}
+
+// Opportunity's own tiering already stands in for "matches" here — `tier === 'poor'` (field
+// ranks 7th or lower, or wasn't found in the city's data at all) is the deal-breaker fail case.
+// This deliberately overrides Opportunity's usual "bonus, never a penalty" design: that's the
+// point of opting a dimension into deal breaker at all.
+function opportunityDealbreakerSatisfied(preferences: string[], income: any): boolean {
+  if (!preferences.length || preferences.includes('any')) return true;
+  const match = evaluateOpportunityMatch(preferences, income);
+  if (!match) return true; // no industry data for this city — can't fail what we can't measure
+  return match.tier !== 'poor';
 }
 
 function cityLifestyleChar(lifestyle: any, profile: any): string | null {
@@ -684,17 +724,21 @@ export function computeAtlasScore(inputs: ScoreInputs, prefs?: UserPreferences |
   };
 
   let breakdown: DimensionScores;
+  // affordability_preference and air_quality_priority are still single-value (importance
+  // dials, not "type" choices — see MULTI_SELECT_KEYS in usePreferences.ts), so they're wrapped
+  // in a one-element array here to match lookupMatchScore/dealbreakerSatisfied's array signature.
 
   if (isPersonalized) {
     // Personalized: score = how well this city's characteristics match your preferences.
-    // Exact match = 100, similar = ~75, partial = ~55, mismatch = ~25–35.
+    // Exact match = 100, similar = ~75, partial = ~55, mismatch = ~25–35. Multi-select fields
+    // score against whichever selected value the city matches best (see lookupMatchScore).
     breakdown = {
-      affordability:     lookupMatchScore('affordability', p.affordability_preference, cityChars.affordability),
+      affordability:     lookupMatchScore('affordability', [p.affordability_preference], cityChars.affordability),
       jobMarket:         lookupMatchScore('jobMarket',     p.job_market_preference,    cityChars.jobMarket),
       climate:           lookupMatchScore('climate',       p.climate_preference,       cityChars.climate),
       opportunity:       opportunityMatchScore(p.opportunity_preference, inputs.income),
       lifestyleVibrancy: lookupMatchScore('lifestyle',     p.lifestyle_preference,     cityChars.lifestyleVibrancy),
-      airQuality:        lookupMatchScore('airQuality',    p.air_quality_priority,     cityChars.airQuality),
+      airQuality:        lookupMatchScore('airQuality',    [p.air_quality_priority],   cityChars.airQuality),
       safety:            null,
       connectivity:      lookupMatchScore('connectivity',  p.connectivity_preference,  cityChars.connectivity),
     };
@@ -720,6 +764,38 @@ export function computeAtlasScore(inputs: ScoreInputs, prefs?: UserPreferences |
   // dimension is set to Low/Medium/High, marking it a deal breaker always dominates the weight.
   function dimWeight(base: number, dim: DealbreakerDim): number {
     return isDealbreakerDim(raw, dim) ? Math.max(base, DEALBREAKER_WEIGHT) : base;
+  }
+
+  // A deal breaker used to only inflate weight — it never actually penalized a mismatch beyond
+  // that. Now it's a real "must match one of your picks": a dimension marked a deal breaker whose
+  // city characteristic satisfies NONE of the selected preference values gets capped to a clearly-
+  // poor score, on top of the weight bump above, and gets flagged in dealbreakerFailures so the UI
+  // can call it out explicitly rather than let it blend into an ordinarily-low score. Opportunity
+  // is included here too — marking it a deal breaker is an explicit opt-in override of its usual
+  // "bonus, never a penalty" design. Only meaningful when personalized; raw/unpersonalized scoring
+  // has no user preference to satisfy or fail.
+  const dealbreakerFailures: DealbreakerDim[] = [];
+  function applyDealbreaker(score: number | null, dim: DealbreakerDim, satisfied: boolean): number | null {
+    if (score == null || !isPersonalized || !isDealbreakerDim(raw, dim) || satisfied) return score;
+    dealbreakerFailures.push(dim);
+    return Math.min(score, 15);
+  }
+
+  if (isPersonalized) {
+    breakdown.affordability     = applyDealbreaker(breakdown.affordability, 'affordability',
+      dealbreakerSatisfied('affordability', [p.affordability_preference], cityChars.affordability));
+    breakdown.jobMarket         = applyDealbreaker(breakdown.jobMarket, 'job_market',
+      dealbreakerSatisfied('jobMarket', p.job_market_preference, cityChars.jobMarket));
+    breakdown.climate           = applyDealbreaker(breakdown.climate, 'climate',
+      dealbreakerSatisfied('climate', p.climate_preference, cityChars.climate));
+    breakdown.opportunity       = applyDealbreaker(breakdown.opportunity, 'opportunity',
+      opportunityDealbreakerSatisfied(p.opportunity_preference, inputs.income));
+    breakdown.lifestyleVibrancy = applyDealbreaker(breakdown.lifestyleVibrancy, 'lifestyle_vibrancy',
+      dealbreakerSatisfied('lifestyle', p.lifestyle_preference, cityChars.lifestyleVibrancy));
+    breakdown.airQuality        = applyDealbreaker(breakdown.airQuality, 'air_quality',
+      dealbreakerSatisfied('airQuality', [p.air_quality_priority], cityChars.airQuality));
+    breakdown.connectivity      = applyDealbreaker(breakdown.connectivity, 'connectivity',
+      dealbreakerSatisfied('connectivity', p.connectivity_preference, cityChars.connectivity));
   }
 
   const weighted: Array<{ score: number | null; weight: number }> = [
@@ -771,7 +847,7 @@ export function computeAtlasScore(inputs: ScoreInputs, prefs?: UserPreferences |
   const populationTooSmall = population != null && population < MIN_RELIABLE_POPULATION;
   const hasEnoughData = dataCoverage >= 0.5 && !populationTooSmall;
   const finalScore = totalWeight > 0 ? Math.round(total / totalWeight) : 50;
-  return { score: finalScore, breakdown, cityChars, politicalScore, isPersonalized, dataCoverage, hasEnoughData };
+  return { score: finalScore, breakdown, cityChars, politicalScore, isPersonalized, dataCoverage, hasEnoughData, dealbreakerFailures };
 }
 
 export function scoreTier(score: number): { label: string; tier: 'excellent' | 'good' | 'average' | 'below' | 'poor' } {

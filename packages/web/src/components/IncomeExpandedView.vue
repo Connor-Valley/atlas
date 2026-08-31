@@ -48,8 +48,10 @@ watch([user, authLoading], ([, isAuthLoading]) => {
 
 watch(preferences, (p) => {
   if (industryAutoSelected || selectedIndustry.value) return;
-  const preferred = p.opportunity_preference;
-  if (preferred && preferred !== 'any' && INDUSTRY_OPTIONS.some((opt) => opt.value === preferred)) {
+  // opportunity_preference is multi-select now — this dropdown is single-select, so just take
+  // the first specific (non-"any") industry the user picked.
+  const preferred = p.opportunity_preference.find((v) => v !== 'any');
+  if (preferred && INDUSTRY_OPTIONS.some((opt) => opt.value === preferred)) {
     selectedIndustry.value = preferred;
     industryAutoSelected = true;
   }

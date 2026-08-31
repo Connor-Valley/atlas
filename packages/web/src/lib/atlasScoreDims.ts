@@ -1,5 +1,5 @@
 import type { DimensionScores, CityCharacteristics } from './atlasScore';
-import type { UserPreferences } from '../composables/usePreferences';
+import type { UserPreferences, DealbreakerDim } from '../composables/usePreferences';
 
 export type DimMeta = {
   key: keyof DimensionScores;
@@ -48,6 +48,30 @@ export const PREF_LABELS: Record<string, string> = {
   open: 'Open to any', not_a_factor: 'Not a factor',
   // any
   any: 'No preference',
+};
+
+// Several preference fields are multi-select (see MULTI_SELECT_KEYS in usePreferences.ts) —
+// this joins every selected value's label for display (e.g. "City energy or Urban edge") instead
+// of assuming a single scalar value. Also accepts a plain scalar for the fields that stay
+// single-select (affordability_preference, air_quality_priority, political_lean_preference).
+export function prefLabelFor(values: string[] | string | null | undefined): string {
+  const list = Array.isArray(values) ? values : values != null ? [values] : [];
+  const labels = list.map((v) => PREF_LABELS[v] ?? v).filter(Boolean);
+  return labels.length ? labels.join(' or ') : '—';
+}
+
+// Maps a DimensionScores key (camelCase) to its DealbreakerDim name (snake_case) — the two enums
+// diverge in naming (jobMarket vs job_market, etc.), so AtlasScoreResult.dealbreakerFailures
+// (typed DealbreakerDim[]) needs this to check against a DIMS entry's `key`. `safety` has no
+// deal-breaker dimension (it's never scored — see computeAtlasScore).
+export const DIM_KEY_TO_DEALBREAKER: Partial<Record<keyof DimensionScores, DealbreakerDim>> = {
+  affordability:     'affordability',
+  jobMarket:         'job_market',
+  climate:           'climate',
+  opportunity:       'opportunity',
+  lifestyleVibrancy: 'lifestyle_vibrancy',
+  airQuality:        'air_quality',
+  connectivity:      'connectivity',
 };
 
 const DIM_BY_KEY = new Map(DIMS.map(d => [d.key, d]));

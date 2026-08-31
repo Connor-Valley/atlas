@@ -3,17 +3,24 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from './useAuth';
 
 export interface UserPreferences {
-  // Quiz answers — drive both weights and sub-preference signals
-  climate_preference:      'warm' | 'hot_dry' | 'mild' | 'four_seasons' | 'cool' | 'any';
+  // Quiz answers — drive both weights and sub-preference signals. The five "type" questions
+  // (climate, job market, lifestyle, opportunity, connectivity) are multi-select: a user can pick
+  // more than one acceptable option and a city matching ANY of them scores as a full match (see
+  // lookupMatchScore / evaluateOpportunityMatch in atlasScore.ts). affordability_preference and
+  // air_quality_priority stay single-value — they're importance-level dials in disguise
+  // (cost_low/medium/high, low/medium/high), not "type" choices, so multi-select doesn't apply.
+  // political_lean_preference also stays single-value (explicitly out of scope).
+  climate_preference:      Array<'warm' | 'hot_dry' | 'mild' | 'four_seasons' | 'cool' | 'any'>;
   affordability_preference: 'cost_high' | 'cost_medium' | 'cost_low';
-  job_market_preference:   'high_earning' | 'stable' | 'growth' | 'remote' | 'any';
-  lifestyle_preference:    'urban' | 'urban_edge' | 'suburban' | 'nature' | 'any';
-  opportunity_preference:
+  job_market_preference:   Array<'high_earning' | 'stable' | 'growth' | 'remote' | 'any'>;
+  lifestyle_preference:    Array<'urban' | 'urban_edge' | 'suburban' | 'nature' | 'any'>;
+  opportunity_preference: Array<
     | 'tech_media_pro' | 'corporate_finance' | 'manufacturing' | 'construction_trades'
     | 'transportation_logistics' | 'education_healthcare' | 'government_services' | 'retail'
-    | 'hospitality_arts' | 'agriculture' | 'nonprofit' | 'any';
+    | 'hospitality_arts' | 'agriculture' | 'nonprofit' | 'any'
+  >;
   air_quality_priority:    'high' | 'medium' | 'low';
-  connectivity_preference: 'walkable' | 'balanced' | 'car' | 'airport' | 'any';
+  connectivity_preference: Array<'walkable' | 'balanced' | 'car' | 'airport' | 'any'>;
   political_lean_preference: 'progressive' | 'conservative' | 'open' | 'not_a_factor';
 
   // Weights double as the "how much should this count" importance dial — the UI writes a
@@ -47,13 +54,13 @@ export interface UserPreferences {
 }
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
-  climate_preference:       'any',
+  climate_preference:       ['any'],
   affordability_preference: 'cost_medium',
-  job_market_preference:    'any',
-  lifestyle_preference:     'any',
-  opportunity_preference:   'any',
+  job_market_preference:    ['any'],
+  lifestyle_preference:     ['any'],
+  opportunity_preference:   ['any'],
   air_quality_priority:     'medium',
-  connectivity_preference:  'any',
+  connectivity_preference:  ['any'],
   political_lean_preference: 'not_a_factor',
 
   // "Medium" tier of each dimension's low/medium/high scale (see deriveWeightsFromQuiz) —
@@ -85,6 +92,19 @@ const QUIZ_ANSWER_KEYS: Array<keyof UserPreferences> = [
   'weight_education', // repurposed as the deal-breaker bitmask for the other 7 dimensions
 ];
 
+// The five multi-select "type" questions store arrays, so a plain `!==` against
+// DEFAULT_PREFERENCES (reference equality) would always read as "changed" even when both are
+// `['any']`. Compare contents instead — order doesn't carry meaning here.
+function prefValueChanged(a: unknown, b: unknown): boolean {
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return true;
+    const sortedA = [...a].sort();
+    const sortedB = [...b].sort();
+    return sortedA.some((v, i) => v !== sortedB[i]);
+  }
+  return a !== b;
+}
+
 // A preferences object that merely EXISTS (e.g. `{ ...DEFAULT_PREFERENCES }` after a reset, or
 // the fallback used before any row has loaded) isn't the same as a user having actually chosen
 // anything — every quiz answer being left at its default is indistinguishable from "no
@@ -92,7 +112,49 @@ const QUIZ_ANSWER_KEYS: Array<keyof UserPreferences> = [
 // (the Atlas Score card, the "Personalized" badge, etc.), not just on the profile quiz itself.
 export function hasRealPreferences(prefs: UserPreferences | null | undefined): boolean {
   if (!prefs) return false;
-  return QUIZ_ANSWER_KEYS.some((k) => prefs[k] !== DEFAULT_PREFERENCES[k]);
+  return QUIZ_ANSWER_KEYS.some((k) => prefValueChanged(prefs[k], DEFAULT_PREFERENCES[k]));
+}
+
+// Which quiz fields let a user pick more than one acceptable option — a city matching ANY
+// selected value counts as a full match for that dimension (see lookupMatchScore /
+// evaluateOpportunityMatch in atlasScore.ts). affordability_preference and air_quality_priority
+// are excluded even though they're quiz options: both are importance-level dials in disguise
+// (cost_low/medium/high, low/medium/high), not "type" choices. political_lean_preference is
+// excluded too, explicitly out of scope.
+export const MULTI_SELECT_KEYS = new Set<keyof UserPreferences>([
+  'climate_preference', 'job_market_preference', 'lifestyle_preference',
+  'opportunity_preference', 'connectivity_preference',
+]);
+
+// Toggles `value` in/out of a multi-select preference array. Selecting "any" clears every other
+// selection (it means the same thing as selecting all of them); selecting a specific option
+// un-checks "any". Never leaves a question with zero selections — removing the last selected
+// value falls back to "any" rather than an empty array.
+export function toggleMultiSelectValue(current: string[], value: string): string[] {
+  if (value === 'any') return ['any'];
+  const withoutAny = current.filter((v) => v !== 'any');
+  const next = withoutAny.includes(value)
+    ? withoutAny.filter((v) => v !== value)
+    : [...withoutAny, value];
+  return next.length ? next : ['any'];
+}
+
+// A row saved before the multi-select migration ran (or by an old cached client) still has these
+// columns as a plain scalar string rather than an array. Without this guard, a stale value like
+// "urban_edge" would get duck-typed as an array everywhere downstream — JS's shared `.includes()`
+// method "works" on a string too, but as a SUBSTRING check, so "urban_edge".includes('urban')
+// is true and both "City energy" and "Urban edge" would silently show as selected — and
+// toggleMultiSelectValue's `.filter()` call throws outright, since a string has no `.filter`,
+// which is what breaks clicking any option. Coerce defensively right where fetched data enters.
+function normalizeFetchedRow(data: Record<string, unknown>): Record<string, unknown> {
+  const normalized = { ...data };
+  for (const key of MULTI_SELECT_KEYS) {
+    const raw = normalized[key];
+    if (!Array.isArray(raw)) {
+      normalized[key] = typeof raw === 'string' && raw ? [raw] : ['any'];
+    }
+  }
+  return normalized;
 }
 
 // ── Deal breakers ──────────────────────────────────────────────────────────────
@@ -195,25 +257,41 @@ export function usePreferences() {
       .maybeSingle();
 
     if (!error && data) {
-      preferences.value = { ...DEFAULT_PREFERENCES, ...data };
+      preferences.value = { ...DEFAULT_PREFERENCES, ...normalizeFetchedRow(data) };
     }
     loaded.value        = true;
     loadedForUser.value = userId;
   }
 
-  async function savePreferences(updates: UserPreferences) {
-    if (!user.value) return;
+  // Returns whether the write actually succeeded — callers must check this before treating the
+  // save as done. A failed upsert (e.g. a schema/type mismatch) used to be swallowed here with no
+  // signal at all, so the UI showed "Saved!" and switched to the read-only view even though
+  // nothing was persisted, which reads as real data loss on the next visit/refresh.
+  async function savePreferences(updates: UserPreferences): Promise<{ success: boolean; error?: string }> {
+    if (!user.value) return { success: false, error: 'Not signed in.' };
     const derived = deriveWeightsFromQuiz(updates);
-    const { error } = await supabase
+    const payload = {
+      user_id: user.value.id,
+      ...derived,
+      updated_at: new Date().toISOString(),
+    };
+    // .select() forces PostgREST to return the row it actually persisted, so a mismatch between
+    // what was sent and what's now stored (e.g. a column whose real type doesn't match what the
+    // client assumes) surfaces here instead of silently diverging until the next fetch.
+    // TEMPORARY diagnostic logging — printed as a plain string (not a collapsible object) so it's
+    // fully visible in a screenshot with nothing to click or expand. Remove once the multi-select
+    // save issue is confirmed fixed.
+    console.log('[savePreferences] sending:\n' + JSON.stringify(payload, null, 2));
+    const { data: written, error } = await supabase
       .from('user_preferences')
-      .upsert({
-        user_id: user.value.id,
-        ...derived,
-        updated_at: new Date().toISOString(),
-      });
-    if (!error) {
-      preferences.value = derived;
+      .upsert(payload)
+      .select();
+    console.log('[savePreferences] result:\n' + JSON.stringify({ error, written }, null, 2));
+    if (error) {
+      return { success: false, error: error.message };
     }
+    preferences.value = derived;
+    return { success: true };
   }
 
   return { preferences, loaded, loadedForUser, fetchPreferences, savePreferences };

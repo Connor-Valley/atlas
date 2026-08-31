@@ -4,6 +4,7 @@ import { useAuth } from '../composables/useAuth';
 import {
   usePreferences, DEFAULT_PREFERENCES, hasRealPreferences, type UserPreferences,
   isDealbreakerDim, withDealbreakerToggled, type DealbreakerDim,
+  MULTI_SELECT_KEYS, toggleMultiSelectValue,
 } from '../composables/usePreferences';
 
 const props = defineProps<{ flat?: boolean }>();
@@ -185,6 +186,7 @@ const draft = ref<UserPreferences>({ ...DEFAULT_PREFERENCES });
 const currentStep = ref(0);
 const saving = ref(false);
 const saved = ref(false);
+const saveError = ref<string | null>(null);
 const initialized = ref(false);
 const touchedKeys = ref<Set<keyof UserPreferences>>(new Set());
 
@@ -218,13 +220,20 @@ watch(loaded, (isLoaded) => {
 
 const totalSteps = STEPS.length;
 
+// Multi-select fields (see MULTI_SELECT_KEYS) toggle `value` in/out of the stored array instead
+// of overwriting it — checking a second option keeps the first, rather than replacing it.
 function selectOption(key: keyof UserPreferences, value: string | number) {
-  (draft.value as any)[key] = value;
+  if (MULTI_SELECT_KEYS.has(key)) {
+    (draft.value as any)[key] = toggleMultiSelectValue((draft.value as any)[key], value as string);
+  } else {
+    (draft.value as any)[key] = value;
+  }
   touchedKeys.value.add(key);
 }
 
 function isSelected(key: keyof UserPreferences, value: string | number): boolean {
-  return (draft.value as any)[key] === value;
+  const current = (draft.value as any)[key];
+  return MULTI_SELECT_KEYS.has(key) ? (current as string[]).includes(value as string) : current === value;
 }
 
 function next() {
@@ -242,8 +251,16 @@ function goToStep(i: number) {
 async function save() {
   saving.value = true;
   saved.value = false;
-  await savePreferences(draft.value);
+  saveError.value = null;
+  const result = await savePreferences(draft.value);
   saving.value = false;
+  if (!result.success) {
+    // Never claim success on a failed write — the old code always showed "Saved!" and switched
+    // to the read-only view regardless of the actual result, which reads as data loss on the
+    // next visit when the failed write never actually persisted anything.
+    saveError.value = result.error ?? 'Something went wrong saving your preferences.';
+    return;
+  }
   saved.value = true;
   hasSavedPreferences.value = true;
   mode.value = 'saved';
@@ -273,7 +290,10 @@ function closeCategory() {
 
 function selectFlatOption(key: keyof UserPreferences, value: string) {
   selectOption(key, value);
-  maybeCloseCategory();
+  // Multi-select fields never auto-close on a single pick — the popup should stay open so the
+  // user can check additional options. It still closes once they set the importance dial (see
+  // selectFlatImportance below), same as today's "everything's been picked" close condition.
+  if (!MULTI_SELECT_KEYS.has(key)) maybeCloseCategory();
 }
 
 function selectFlatImportance(key: keyof UserPreferences, value: number) {
@@ -302,15 +322,22 @@ function resetPreferences() {
 function randomizePreferences() {
   for (const step of STEPS) {
     const random = step.options[Math.floor(Math.random() * step.options.length)];
-    (draft.value as any)[step.key] = random.value;
+    (draft.value as any)[step.key] = MULTI_SELECT_KEYS.has(step.key) ? [random.value] : random.value;
     touchedKeys.value.add(step.key);
   }
 }
 
+// Multi-select steps can have more than one selected option — this returns all of them (in
+// option-list order) so the flat card can join their labels ("City energy + Urban edge").
+function getSelectedOptions(step: QuizStep): QuizOption<string>[] {
+  if (!touchedKeys.value.has(step.key)) return [];
+  const raw = (draft.value as any)[step.key];
+  const values: string[] = MULTI_SELECT_KEYS.has(step.key) ? (raw as string[]) : [raw as string];
+  return step.options.filter(o => values.includes(o.value));
+}
+
 function getSelectedOption(step: QuizStep): QuizOption<string> | null {
-  if (!touchedKeys.value.has(step.key)) return null;
-  const val = (draft.value as any)[step.key] as string;
-  return step.options.find(o => o.value === val) ?? null;
+  return getSelectedOptions(step)[0] ?? null;
 }
 
 // "Deal breaker" is fully independent of the importance dial — picking "Very important" does
@@ -337,6 +364,14 @@ function toggleDealbreaker(step: QuizStep) {
   } else if (step.key === 'political_lean_preference') {
     selectOption('weight_safety', isDealbreaker(step) ? 0 : 90);
   }
+}
+
+// Deal breaker now actually fails a city that matches none of the selected options (see
+// applyDealbreaker in atlasScore.ts) rather than just weighing the dimension heavily — spell that
+// out once more than one option is checked, so "Deal breaker" doesn't read as "must match my
+// single pick" when it really means "must match at least one of these."
+function dealbreakerLabel(step: QuizStep): string {
+  return getSelectedOptions(step).length > 1 ? 'Must match one of your picks' : 'Deal breaker';
 }
 
 defineExpose({ save, saving, saved });
@@ -379,14 +414,14 @@ defineExpose({ save, saving, saved });
               <label
                 class="quiz__flat-card-dealbreaker-toggle"
                 :class="{ 'quiz__flat-card-dealbreaker-toggle--active': isDealbreaker(step) }"
-                :title="isDealbreaker(step) ? 'Deal breaker — click to unmark' : 'Mark as deal breaker'"
+                :title="isDealbreaker(step) ? `${dealbreakerLabel(step)} — click to unmark` : 'Mark as deal breaker'"
                 @click.stop
               >
                 <input type="checkbox" :checked="isDealbreaker(step)" @change="toggleDealbreaker(step)">
                 <span class="quiz__flat-card-dealbreaker-slider"></span>
               </label>
             </div>
-            <span v-else-if="isDealbreaker(step)" class="quiz__flat-card-dealbreaker-badge" title="Deal breaker"></span>
+            <span v-else-if="isDealbreaker(step)" class="quiz__flat-card-dealbreaker-badge" :title="dealbreakerLabel(step)"></span>
 
             <div class="quiz__flat-card-top">
               <span
@@ -398,11 +433,14 @@ defineExpose({ save, saving, saved });
             <span class="quiz__flat-card-label">{{ step.shortTitle }}</span>
             <span
               class="quiz__flat-card-value"
-              :class="{ 'quiz__flat-card-value--unset': !getSelectedOption(step) }"
-            >{{ getSelectedOption(step)?.label ?? 'No preference set' }}</span>
-            <span class="quiz__flat-card-desc">{{ getSelectedOption(step)?.description ?? 'Tap to set your preference' }}</span>
+              :class="{ 'quiz__flat-card-value--unset': !getSelectedOptions(step).length }"
+            >{{ getSelectedOptions(step).map(o => o.label).join(' + ') || 'No preference set' }}</span>
+            <span class="quiz__flat-card-desc">{{ getSelectedOptions(step).length > 1 ? `${getSelectedOptions(step).length} options selected` : (getSelectedOption(step)?.description ?? 'Tap to set your preference') }}</span>
           </div>
         </div>
+        <p v-if="saveError" class="quiz__flat-save-error">
+          <span class="mdi mdi-alert-circle-outline"></span> Couldn't save: {{ saveError }} — your changes are still here, try again.
+        </p>
         <div class="quiz__flat-footer">
           <template v-if="mode === 'editing'">
             <button
@@ -564,6 +602,10 @@ defineExpose({ save, saving, saved });
       </div>
 
       <!-- Navigation -->
+      <p v-if="saveError" class="quiz__flat-save-error" style="padding: 0 28px;">
+        <span class="mdi mdi-alert-circle-outline"></span> Couldn't save: {{ saveError }} — your changes are still here, try again.
+      </p>
+
       <div class="quiz__nav">
         <button
           class="quiz__nav-btn quiz__nav-btn--prev"
@@ -1110,6 +1152,18 @@ defineExpose({ save, saving, saved });
   flex-shrink: 0;
   display: flex;
   gap: 8px;
+}
+
+.quiz__flat-save-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 8px 14px 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--danger);
+  flex-shrink: 0;
 }
 
 .quiz__flat-reset {

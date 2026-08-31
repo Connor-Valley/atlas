@@ -14,7 +14,8 @@ import { fetchCostOfLiving } from '../api/costOfLiving';
 import { useAuth } from '../composables/useAuth';
 import { usePreferences, hasRealPreferences } from '../composables/usePreferences';
 import { computeAtlasScore, scoreTier, politicalDimTier, evaluateOpportunityMatch } from '../lib/atlasScore';
-import { DIMS, PREF_LABELS } from '../lib/atlasScoreDims';
+import { DIMS, PREF_LABELS, prefLabelFor, DIM_KEY_TO_DEALBREAKER } from '../lib/atlasScoreDims';
+import type { DimensionScores } from '../lib/atlasScore';
 
 const props = defineProps<{ city: string; state: string }>();
 const emit = defineEmits<{ (e: 'auth-required'): void }>();
@@ -144,6 +145,14 @@ function dimTierLabel(value: number | null | undefined): string {
   return '—';
 }
 
+// A deal breaker now actually fails a city, not just weighs the dimension heavily (see
+// applyDealbreaker in atlasScore.ts) — this needs to read as a distinct "doesn't meet your
+// must-have" flag, not blend into an ordinarily-low/red cube.
+function dealbreakerFailed(key: keyof DimensionScores): boolean {
+  const dbDim = DIM_KEY_TO_DEALBREAKER[key];
+  return !!dbDim && !!result.value?.dealbreakerFailures.includes(dbDim);
+}
+
 
 const narrative = computed(() => {
   if (!result.value) return null;
@@ -250,10 +259,13 @@ function handlePersonalizeClick(e: MouseEvent) {
                tied to their selection; the rank badge still reflects wherever that raw sector
                actually landed among the city's industries. -->
           <div v-if="dim.key === 'opportunity' && result.isPersonalized && opportunityMatch?.matchedLabel" class="atlas-card__cube-char atlas-card__cube-char--with-badge">
-            <span class="atlas-card__cube-char-text">{{ PREF_LABELS[preferences.opportunity_preference] ?? opportunityMatch.matchedLabel }}</span>
+            <span class="atlas-card__cube-char-text">{{ prefLabelFor(preferences.opportunity_preference) }}</span>
             <span class="atlas-card__rank-badge">#{{ opportunityMatch.matchedRank }}</span>
           </div>
           <div v-else class="atlas-card__cube-char">{{ result.cityChars[dim.charKey] ?? '—' }}</div>
+          <div v-if="result.isPersonalized && dealbreakerFailed(dim.key)" class="atlas-card__dealbreaker-fail">
+            <span class="mdi mdi-close-octagon-outline"></span> Doesn't meet your must-have
+          </div>
           <!-- Opportunity gets one second-line slot, not two: when there's a real match, the
                headline already shows the matched industry (which is just the user's own stated
                preference, restated), so "You: X" there is pure duplication — swap it for the
@@ -266,7 +278,7 @@ function handlePersonalizeClick(e: MouseEvent) {
             City's #1: {{ opportunityMatch.cityTopLabel }}
           </div>
           <div v-else-if="result.isPersonalized && dim.prefKey" class="atlas-card__cube-pref">
-            You: {{ PREF_LABELS[(preferences as any)[dim.prefKey!]] ?? '—' }}
+            You: {{ prefLabelFor((preferences as any)[dim.prefKey!]) }}
           </div>
         </div>
         <!-- Political lean cube: a county-level result that ISN'T already a landslide is forced
@@ -570,6 +582,17 @@ function handlePersonalizeClick(e: MouseEvent) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.atlas-card__dealbreaker-fail {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--danger);
+  margin-top: 5px;
+  line-height: 1.3;
 }
 
 @media (max-width: 700px) {
