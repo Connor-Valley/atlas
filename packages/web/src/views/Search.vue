@@ -89,6 +89,91 @@ function openAuth(mode: 'login' | 'register') {
   authModalMode.value = mode;
   showAuthModal.value = true;
 }
+
+const iconRef = ref<HTMLElement | null>(null);
+const pulsing = ref(false);
+const panelOpen = ref(false);
+const hits: number[] = [];
+const THRESHOLD = 15;
+const WINDOW_MS = 30_000;
+const originPt = ref({ x: 0, y: 0 });
+
+function onIconClick() {
+  pulse();
+  registerHit();
+}
+
+function pulse() {
+  pulsing.value = false;
+  requestAnimationFrame(() => { pulsing.value = true; });
+}
+
+function registerHit() {
+  const now = Date.now();
+  hits.push(now);
+  while (hits.length && now - hits[0] > WINDOW_MS) {
+    hits.shift();
+  }
+  if (hits.length >= THRESHOLD) {
+    hits.length = 0;
+    openPanel();
+  }
+}
+
+function openPanel() {
+  const rect = iconRef.value?.getBoundingClientRect();
+  originPt.value = rect
+    ? { x: rect.left + rect.width / 2 - window.innerWidth / 2, y: rect.top + rect.height / 2 - window.innerHeight / 2 }
+    : { x: 0, y: 0 };
+  panelOpen.value = true;
+}
+
+function closePanel() {
+  panelOpen.value = false;
+}
+
+function onPanelBeforeEnter(el: Element) {
+  const tile = (el as HTMLElement).querySelector<HTMLElement>(".sp-tile");
+  if (!tile) return;
+  tile.style.transform = `translate(${originPt.value.x}px, ${originPt.value.y}px) scale(0.05) rotate(-25deg)`;
+  tile.style.opacity = "0";
+}
+
+function onPanelEnter(el: Element, done: () => void) {
+  const tile = (el as HTMLElement).querySelector<HTMLElement>(".sp-tile");
+  if (!tile) { done(); return; }
+  void tile.offsetWidth;
+  tile.style.transition = "transform 0.75s cubic-bezier(0.2, 1.4, 0.4, 1), opacity 0.35s ease";
+  tile.style.transform = "translate(0, 0) scale(1) rotate(720deg)";
+  tile.style.opacity = "1";
+  tile.addEventListener("transitionend", () => done(), { once: true });
+}
+
+function onPanelAfterEnter(el: Element) {
+  const tile = (el as HTMLElement).querySelector<HTMLElement>(".sp-tile");
+  if (!tile) return;
+  tile.style.transition = "";
+  tile.style.transform = "";
+}
+
+function onTileMove(e: MouseEvent, el: HTMLElement) {
+  const rect = el.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const cx = rect.width / 2;
+  const cy = rect.height / 2;
+  el.style.setProperty("--rx", `${((y - cy) / cy) * -10}deg`);
+  el.style.setProperty("--ry", `${((x - cx) / cx) * 10}deg`);
+  el.style.setProperty("--shine-x", `${(x / rect.width) * 100}%`);
+  el.style.setProperty("--shine-y", `${(y / rect.height) * 100}%`);
+}
+
+function onTileLeave(el: HTMLElement) {
+  el.style.setProperty("--rx", "0deg");
+  el.style.setProperty("--ry", "0deg");
+  el.style.setProperty("--shine-x", "50%");
+  el.style.setProperty("--shine-y", "50%");
+}
 </script>
 
 <template>
@@ -103,7 +188,15 @@ function openAuth(mode: 'login' | 'register') {
 
     <div class="container search-page__body">
       <div ref="heroRef" class="search-page__heading">
-        <span class="search-page__heading-icon"><span class="mdi mdi-magnify"></span></span>
+        <button
+          ref="iconRef"
+          type="button"
+          class="search-page__heading-icon"
+          :class="{ 'search-page__heading-icon--active': pulsing }"
+          aria-label="Search"
+          @click="onIconClick"
+          @animationend="pulsing = false"
+        ><span class="mdi mdi-magnify"></span></button>
         <div class="search-page__search">
           <CitySearch @search="onSearch" />
         </div>
@@ -262,6 +355,26 @@ function openAuth(mode: 'login' | 'register') {
 
     <AuthModal v-if="showAuthModal" :mode="authModalMode" @close="showAuthModal = false" />
   </div>
+
+  <Teleport to="body">
+    <Transition
+      name="sp-tile"
+      @before-enter="onPanelBeforeEnter"
+      @enter="onPanelEnter"
+      @after-enter="onPanelAfterEnter"
+    >
+      <div v-if="panelOpen" class="sp-tile-overlay" @click="closePanel">
+        <div
+          class="sp-tile"
+          @mousemove="onTileMove($event, $event.currentTarget as HTMLElement)"
+          @mouseleave="onTileLeave($event.currentTarget as HTMLElement)"
+        >
+          <img src="/spark.webp" alt="" class="sp-tile__img" />
+          <div class="sp-tile__shine"></div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -310,10 +423,24 @@ function openAuth(mode: 'login' | 'register') {
   flex-shrink: 0;
   width: 46px;
   height: 46px;
+  border: none;
   border-radius: 10px;
   background: color-mix(in srgb, var(--accent) 16%, transparent);
   color: var(--accent);
   font-size: 1.1rem;
+  cursor: default;
+}
+
+@keyframes sp-heading-icon-pulse {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(0.82); }
+  55%  { transform: scale(1.16); }
+  75%  { transform: scale(0.94); }
+  100% { transform: scale(1); }
+}
+
+.search-page__heading-icon--active {
+  animation: sp-heading-icon-pulse 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .search-page__heading .breadcrumb {
@@ -678,5 +805,114 @@ function openAuth(mode: 'login' | 'register') {
     flex-basis: 100%;
     order: 1;
   }
+}
+
+.sp-tile-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+}
+
+.sp-tile-enter-active,
+.sp-tile-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.sp-tile-enter-from,
+.sp-tile-leave-to {
+  opacity: 0;
+}
+
+.sp-tile-leave-active .sp-tile {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.sp-tile-leave-to .sp-tile {
+  transform: scale(0.7);
+  opacity: 0;
+}
+
+.sp-tile {
+  position: relative;
+  width: 260px;
+  aspect-ratio: 2 / 3;
+  border-radius: 20px;
+  overflow: hidden;
+  cursor: default;
+  transform:
+    perspective(800px)
+    rotateX(var(--rx, 0deg))
+    rotateY(var(--ry, 0deg));
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  background: var(--bg-card);
+}
+
+.sp-tile__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.15);
+}
+
+.sp-tile__shine {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: 20px;
+  background:
+    radial-gradient(
+      circle at var(--shine-x, 50%) var(--shine-y, 50%),
+      rgba(255, 255, 255, 0.35) 0%,
+      color-mix(in srgb, var(--accent-hover) 20%, transparent) 20%,
+      color-mix(in srgb, var(--accent) 16%, transparent) 40%,
+      transparent 75%
+    ),
+    linear-gradient(
+      115deg,
+      transparent 30%,
+      color-mix(in srgb, var(--accent-hover) 10%, transparent) 45%,
+      color-mix(in srgb, var(--accent) 10%, transparent) 55%,
+      transparent 70%
+    );
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+html.dark .sp-tile::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background: rgba(0, 0, 0, 0.15);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+html.dark .sp-tile__shine {
+  background:
+    radial-gradient(
+      circle at var(--shine-x, 50%) var(--shine-y, 50%),
+      rgba(255, 255, 255, 0.18) 0%,
+      color-mix(in srgb, var(--accent-hover) 14%, transparent) 20%,
+      color-mix(in srgb, var(--accent) 10%, transparent) 40%,
+      transparent 75%
+    ),
+    linear-gradient(
+      115deg,
+      transparent 30%,
+      color-mix(in srgb, var(--accent-hover) 6%, transparent) 45%,
+      color-mix(in srgb, var(--accent) 6%, transparent) 55%,
+      transparent 70%
+    );
 }
 </style>
