@@ -16,6 +16,7 @@ import {
   loadCompareCity,
   parseCompareCitiesParam,
   leaderTally,
+  slugToDisplay,
   type CompareCityBundle,
   type CompareCityRef,
 } from "../lib/compare";
@@ -82,12 +83,14 @@ async function loadBundles() {
     bundles.value = [];
     error.value = null;
     loading.value = false;
+    stopLoadingTips();
     return;
   }
 
   const token = ++requestToken;
   loading.value = true;
   error.value = null;
+  startLoadingTips();
 
   try {
     const loaded = await Promise.all(slots.value.map((s) => loadCompareCity(s.state, s.city, personalized.value)));
@@ -98,9 +101,43 @@ async function loadBundles() {
     bundles.value = [];
     error.value = err instanceof Error ? err.message : "Failed to load comparison data";
   } finally {
-    if (token === requestToken) loading.value = false;
+    if (token === requestToken) {
+      loading.value = false;
+      stopLoadingTips();
+    }
   }
 }
+
+// ── Loading tips ─────────────────────────────────────────────────────────────
+// Uncached cities can take a few seconds to load (multiple Census/FHFA/EPA lookups per
+// city) — this rotating status line is the loading screen's only content, so it starts
+// immediately rather than waiting to see if the load is "slow enough to bother".
+const loadingTip = ref("");
+const LOADING_TIPS = [
+  "Pulling Census data…",
+  "Comparing rent, income, and job markets…",
+  "Crunching climate and air quality stats…",
+  "Double-checking the numbers…",
+  "Good things take a moment (so does good data)…",
+  "Almost there, lining it all up…",
+];
+let tipRotateTimer: ReturnType<typeof setInterval> | undefined;
+
+function startLoadingTips() {
+  clearInterval(tipRotateTimer);
+  let i = 0;
+  loadingTip.value = LOADING_TIPS[i];
+  tipRotateTimer = setInterval(() => {
+    i = (i + 1) % LOADING_TIPS.length;
+    loadingTip.value = LOADING_TIPS[i];
+  }, 1900);
+}
+
+function stopLoadingTips() {
+  clearInterval(tipRotateTimer);
+}
+
+onUnmounted(stopLoadingTips);
 
 function syncRoute() {
   const desired = slots.value.map((c) => `${c.state.toLowerCase()}-${c.city}`).join("_");
@@ -356,8 +393,21 @@ watch([headerSentinel, stickyOffset], () => updateHeaderStuck(), { flush: "post"
       </div>
     </section>
 
-    <section v-else-if="loading" class="cmp-loading">
-      <div v-for="i in (slots.length || 2)" :key="i" class="cmp-loading__card"></div>
+    <section v-else-if="loading" class="cmp-loading-screen">
+      <div class="cmp-loading-screen__pins">
+        <span
+          v-for="(s, i) in (slots.length ? slots : [{}, {}])"
+          :key="i"
+          class="cmp-loading-screen__pin mdi mdi-map-marker"
+          :style="{ '--slot-color': `var(--compare-slot-${i + 1})`, animationDelay: `${i * 0.15}s` }"
+        ></span>
+      </div>
+      <h2 class="cmp-loading-screen__title">
+        Comparing {{ slots.map((s) => slugToDisplay(s.city)).join(' vs ') }}
+      </h2>
+      <Transition name="cmp-tip-fade" mode="out-in">
+        <p :key="loadingTip" class="cmp-loading-screen__tip">{{ loadingTip || "Loading…" }}</p>
+      </Transition>
     </section>
 
     <section v-else-if="error" class="cmp-empty">
