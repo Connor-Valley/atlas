@@ -22,17 +22,28 @@ import {
 import { useAuth } from "../composables/useAuth";
 import { useComparisons } from "../composables/useComparisons";
 import { useRecentSearches } from "../composables/useRecentSearches";
+import { usePreferences, hasRealPreferences } from "../composables/usePreferences";
 
 const props = defineProps<{ cities?: string }>();
 
 const route = useRoute();
 const router = useRouter();
 const { recordRecentSearch } = useRecentSearches();
-const { user } = useAuth();
+const { user, loading: authLoading } = useAuth();
 const { addComparison, removeComparison, isComparisonSaved, fetchComparisons } = useComparisons();
+const { preferences, fetchPreferences } = usePreferences();
 
 void fetchComparisons();
 watch(user, () => void fetchComparisons());
+
+// Wait for auth to finish restoring the session before fetching preferences — mirrors
+// AtlasScoreCard.vue's guard against locking preferences to defaults on a transient null user.
+watch([user, authLoading], ([, isAuthLoading]) => {
+  if (!isAuthLoading) void fetchPreferences();
+}, { immediate: true });
+
+const personalized = computed(() => (user.value && hasRealPreferences(preferences.value) ? preferences.value : null));
+watch(personalized, () => void loadBundles());
 
 function onHeaderSearch(payload: { city: string; state: string }) {
   void recordRecentSearch(payload.city, payload.state);
@@ -67,7 +78,7 @@ watch(
 
 let requestToken = 0;
 async function loadBundles() {
-  if (slots.value.length < MIN_COMPARE_CITIES) {
+  if (!slots.value.length) {
     bundles.value = [];
     error.value = null;
     loading.value = false;
@@ -79,7 +90,7 @@ async function loadBundles() {
   error.value = null;
 
   try {
-    const loaded = await Promise.all(slots.value.map((s) => loadCompareCity(s.state, s.city)));
+    const loaded = await Promise.all(slots.value.map((s) => loadCompareCity(s.state, s.city, personalized.value)));
     if (token !== requestToken) return;
     bundles.value = loaded;
   } catch (err) {
@@ -199,8 +210,14 @@ function resetToSearch() {
       <div>
         <div class="cmp-page__eyebrow">SIDE BY SIDE</div>
         <h1 class="cmp-page__title">Compare up to four cities</h1>
-        <p class="cmp-page__subtitle">
+        <p v-if="slots.length >= MIN_COMPARE_CITIES" class="cmp-page__subtitle">
           Comparing {{ slots.length }} of {{ MAX_COMPARE_CITIES }} cities · {{ rankedRows.length }} metrics · ranked, with US averages for reference
+        </p>
+        <p v-else-if="slots.length === 1" class="cmp-page__subtitle">
+          Add a second city to unlock ranked metrics, Atlas Score subscores, and side-by-side comparisons for up to four cities.
+        </p>
+        <p v-else class="cmp-page__subtitle">
+          Search for two cities above to unlock ranked metrics, Atlas Score subscores, and side-by-side comparisons for up to four cities.
         </p>
       </div>
       <div v-if="slots.length >= 2" class="cmp-page__actions">
@@ -211,9 +228,9 @@ function resetToSearch() {
       </div>
     </div>
 
-    <CompareKeyDifferences v-if="bundles.length" :items="keyDifferences" />
+    <CompareKeyDifferences v-if="bundles.length >= 2" :items="keyDifferences" />
 
-    <div v-if="slots.length" class="cmp-toolbar">
+    <div v-if="slots.length >= MIN_COMPARE_CITIES" class="cmp-toolbar">
       <div class="cmp-toolbar__mode">
         <button
           class="cmp-toolbar__mode-btn"
@@ -249,28 +266,35 @@ function resetToSearch() {
       <button class="cmp-toolbar__reset" @click="resetAll">Reset</button>
     </div>
 
-    <section v-if="!slots.length" class="cmp-empty">
-      <span class="mdi mdi-map-search cmp-empty__icon"></span>
-      <h2 class="cmp-empty__title">Choose two cities to compare</h2>
-      <p class="cmp-empty__body">Search for a city above to unlock ranked metrics, Atlas Score subscores, and side-by-side comparisons for up to four cities.</p>
-      <div class="cmp-toolbar__add-wrap">
-        <button class="cmp-page__action-btn cmp-page__action-btn--primary" @click="pickerOpen = true">+ Add city</button>
+    <section v-if="!slots.length" class="cmp-staging">
+      <div class="cmp-staging__add-wrap">
+        <button class="cmp-staging__add" type="button" @click="pickerOpen = true">
+          <span class="mdi mdi-plus-circle-outline cmp-staging__add-icon"></span>
+          <span class="cmp-staging__add-title">Add a city</span>
+          <span class="cmp-staging__add-body">Search above or click here to pick your first city.</span>
+        </button>
         <CompareAddCityPicker
           v-if="pickerOpen"
           @select="addCity"
           @close="pickerOpen = false"
         />
       </div>
-    </section>
 
-    <section v-else-if="slots.length < MIN_COMPARE_CITIES" class="cmp-empty">
-      <span class="mdi mdi-map-search cmp-empty__icon"></span>
-      <h2 class="cmp-empty__title">Choose a second city to begin</h2>
-      <p class="cmp-empty__body">Add another city to unlock ranked metrics and side-by-side comparisons.</p>
+      <div class="cmp-staging__divider">
+        <span class="cmp-staging__divider-label">VS</span>
+      </div>
+
+      <div class="cmp-staging__add-wrap">
+        <button class="cmp-staging__add" type="button" @click="pickerOpen = true">
+          <span class="mdi mdi-plus-circle-outline cmp-staging__add-icon"></span>
+          <span class="cmp-staging__add-title">Add a city</span>
+          <span class="cmp-staging__add-body">Then pick a second city to compare it against.</span>
+        </button>
+      </div>
     </section>
 
     <section v-else-if="loading" class="cmp-loading">
-      <div v-for="i in 3" :key="i" class="cmp-loading__card"></div>
+      <div v-for="i in (slots.length || 2)" :key="i" class="cmp-loading__card"></div>
     </section>
 
     <section v-else-if="error" class="cmp-empty">
@@ -279,7 +303,42 @@ function resetToSearch() {
       <p class="cmp-empty__body">{{ error }}</p>
     </section>
 
-    <template v-else-if="bundles.length">
+    <section v-else-if="bundles.length === 1" class="cmp-staging">
+      <div
+        class="cmp-staging__card"
+        :style="bundles[0].photoUrl ? { backgroundImage: `linear-gradient(140deg, color-mix(in srgb, var(--compare-slot-1) 46%, transparent) 0%, color-mix(in srgb, var(--compare-slot-1) 34%, transparent) 55%, rgba(18,16,15,0.55) 100%), url(${bundles[0].photoUrl})` } : undefined"
+      >
+        <span class="cmp-staging__badge">A</span>
+        <button class="cmp-staging__remove" type="button" aria-label="Remove city" @click="removeSlot(0)">×</button>
+        <div class="cmp-staging__content">
+          <h2 class="cmp-staging__name">{{ bundles[0].name }}</h2>
+          <p class="cmp-staging__meta">{{ bundles[0].state.toUpperCase() }} · {{ bundles[0].county }} · {{ bundles[0].population.toLocaleString() }}</p>
+          <div v-if="bundles[0].personalizedAtlasScore != null" class="cmp-staging__score-row">
+            <span class="cmp-staging__score">{{ bundles[0].personalizedAtlasScore }}</span>
+            <span class="cmp-staging__score-label">/100 Atlas Score</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="cmp-staging__divider">
+        <span class="cmp-staging__divider-label">VS</span>
+      </div>
+
+      <div class="cmp-staging__add-wrap">
+        <button class="cmp-staging__add" type="button" @click="pickerOpen = true">
+          <span class="mdi mdi-plus-circle-outline cmp-staging__add-icon"></span>
+          <span class="cmp-staging__add-title">Who's competing with {{ bundles[0].name }}?</span>
+          <span class="cmp-staging__add-body">Search above or click here to pick a city.</span>
+        </button>
+        <CompareAddCityPicker
+          v-if="pickerOpen"
+          @select="addCity"
+          @close="pickerOpen = false"
+        />
+      </div>
+    </section>
+
+    <template v-else-if="bundles.length >= 2">
       <div class="cmp-table">
         <div class="cmp-table__header-row">
           <div class="cmp-table__header-spacer">

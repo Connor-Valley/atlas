@@ -309,6 +309,200 @@
   50% { opacity: 1; }
 }
 
+/* ── Staging (one city selected, waiting on a second) ───── */
+.cmp-staging {
+  display: flex;
+  align-items: stretch;
+  gap: 20px;
+  min-height: 232px;
+}
+
+.cmp-staging__card {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 24px 28px;
+  border-radius: 20px;
+  overflow: clip;
+  color: #fff;
+  background-color: var(--compare-slot-1);
+  background-image: linear-gradient(
+    140deg,
+    color-mix(in srgb, var(--compare-slot-1) 78%, transparent) 0%,
+    color-mix(in srgb, var(--compare-slot-1) 55%, transparent) 55%,
+    rgba(18, 16, 15, 0.6) 100%
+  );
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 8px 32px color-mix(in srgb, var(--compare-slot-1) 24%, transparent), 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Dark bottom-up scrim, independent of the photo overlay above, so name/meta/score
+   stay legible even over bright or low-contrast source photos (e.g. snow scenes). */
+.cmp-staging__card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.32) 45%, rgba(0, 0, 0, 0) 75%);
+  pointer-events: none;
+}
+
+.cmp-staging__badge,
+.cmp-staging__remove {
+  position: absolute;
+  top: 16px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  z-index: 1;
+}
+
+.cmp-staging__badge {
+  left: 16px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #12100F;
+  background: #fff;
+}
+
+.cmp-staging__remove {
+  right: 16px;
+  border: none;
+  background: rgba(0, 0, 0, 0.32);
+  color: #fff;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.cmp-staging__remove:hover {
+  background: rgba(0, 0, 0, 0.48);
+}
+
+.cmp-staging__content {
+  position: relative;
+  z-index: 1;
+}
+
+.cmp-staging__name {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.5);
+}
+
+.cmp-staging__meta {
+  margin: 6px 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.88);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.5);
+}
+
+.cmp-staging__score-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 14px;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.5);
+}
+
+.cmp-staging__score {
+  font-size: 1.9rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.cmp-staging__score-label {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.cmp-staging__divider {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+}
+
+.cmp-staging__divider-label {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.cmp-staging__add-wrap {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.cmp-staging__add {
+  width: 100%;
+  height: 100%;
+  min-height: 232px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  border-radius: 20px;
+  border: 1.5px dashed var(--border-card);
+  background: var(--bg-card-subtle);
+  cursor: pointer;
+  text-align: center;
+}
+
+.cmp-staging__add:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border-card));
+  background: color-mix(in srgb, var(--accent) 6%, var(--bg-card-subtle));
+}
+
+.cmp-staging__add-icon {
+  font-size: 1.8rem;
+  color: var(--accent);
+}
+
+.cmp-staging__add-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.cmp-staging__add-body {
+  max-width: 260px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 720px) {
+  .cmp-staging {
+    flex-direction: column;
+  }
+
+  .cmp-staging__divider {
+    width: auto;
+    height: 20px;
+  }
+
+  .cmp-staging__add {
+    min-height: 160px;
+  }
+}
+
 /* ── Mobile: horizontal scroll, sticky label column ─────── */
 @media (max-width: 900px) {
   .cmp-table {

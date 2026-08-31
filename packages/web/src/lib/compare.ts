@@ -10,6 +10,7 @@ import { fetchCostOfLiving } from "../api/costOfLiving";
 import { fetchLifestyle } from "../api/lifestyle";
 import { fetchCityPhoto } from "./cityPhotos";
 import { computeAtlasScore, rawIncomeScore, rawHousingScore } from "./atlasScore";
+import type { UserPreferences } from "../composables/usePreferences";
 import {
   rankCells,
   bestIndex,
@@ -64,6 +65,7 @@ export type CompareCityBundle = {
   photoUrl: string | null;
 
   atlasScore: number | null;
+  personalizedAtlasScore: number | null;
   incomeScore: number | null;
   housingScore: number | null;
   jobMarketScore: number | null;
@@ -93,7 +95,7 @@ export type CompareCityBundle = {
   aqiCategory: string | null;
 };
 
-export async function loadCompareCity(state: string, city: string): Promise<CompareCityBundle> {
+export async function loadCompareCity(state: string, city: string, prefs?: UserPreferences | null): Promise<CompareCityBundle> {
   const [
     cityInfo,
     income,
@@ -139,6 +141,21 @@ export async function loadCompareCity(state: string, city: string): Promise<Comp
     housing,
   });
 
+  const personalizedScore = prefs
+    ? computeAtlasScore({
+        income: detailedIncome ?? income,
+        affordability,
+        costOfLiving,
+        profile,
+        qol,
+        climate,
+        airQuality,
+        lifestyle,
+        politicalLean: null,
+        housing,
+      }, prefs)
+    : null;
+
   return {
     state,
     city,
@@ -148,6 +165,7 @@ export async function loadCompareCity(state: string, city: string): Promise<Comp
     photoUrl,
 
     atlasScore: Math.round(atlasResult.score),
+    personalizedAtlasScore: personalizedScore ? Math.round(personalizedScore.score) : null,
     incomeScore: roundOrNull(rawIncomeScore(income)),
     housingScore: roundOrNull(rawHousingScore(detailedAffordability, housing, costOfLiving)),
     jobMarketScore: roundOrNull(atlasResult.breakdown.jobMarket),
