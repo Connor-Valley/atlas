@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { CompareCell, MetricDirection } from "../lib/compare";
-import { barWidth, deltaVsFirst } from "../lib/compareMetrics";
+import { deltaVsFirst } from "../lib/compareMetrics";
 
 const props = defineProps<{
   cell: CompareCell;
@@ -18,11 +18,6 @@ const props = defineProps<{
   isFirstColumn: boolean;
   format: (v: number) => string;
 }>();
-
-const width = computed(() => Math.max(6, Math.round(barWidth(props.cell, props.cells, props.direction) * 100)));
-const barColor = computed(() =>
-  props.highlightLeaders && props.isBest ? "var(--positive)" : undefined,
-);
 
 const delta = computed(() => {
   if (props.isFirstColumn || props.mode !== "delta") return null;
@@ -48,9 +43,10 @@ const vsUsText = computed(() => {
         class="cmp-cell__value"
         :class="{ 'cmp-cell__value--best': ranked && highlightLeaders && isBest, 'cmp-cell__value--worst': ranked && highlightLeaders && isWorst }"
       >{{ cell.display }}</span>
-    </div>
-    <div class="cmp-cell__bar-track">
-      <div class="cmp-cell__bar-fill" :style="{ width: `${width}%`, background: barColor }"></div>
+      <span v-if="cell.note" class="cmp-cell__note">
+        <span class="mdi mdi-information-outline cmp-cell__note-icon"></span>
+        <span class="cmp-cell__note-tooltip">{{ cell.note }}</span>
+      </span>
     </div>
     <div class="cmp-cell__sub-row">
       <span v-if="mode === 'values' && vsUsText" class="cmp-cell__us">{{ vsUsText }}</span>
@@ -69,8 +65,8 @@ const vsUsText = computed(() => {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 5px;
-  padding: 10px 16px;
+  gap: 6px;
+  padding: 17px 16px;
   min-width: 0;
 }
 
@@ -85,7 +81,7 @@ const vsUsText = computed(() => {
 .cmp-cell__rank {
   flex: none;
   font-family: var(--font-mono);
-  font-size: 0.62rem;
+  font-size: 0.68rem;
   padding: 2px 6px;
   border-radius: 5px;
   background: color-mix(in srgb, var(--text-muted) 12%, transparent);
@@ -98,7 +94,7 @@ const vsUsText = computed(() => {
 }
 
 .cmp-cell__value {
-  font-size: 0.92rem;
+  font-size: 1.15rem;
   font-weight: 600;
   color: var(--text-primary);
   white-space: nowrap;
@@ -113,17 +109,43 @@ const vsUsText = computed(() => {
   color: var(--text-muted);
 }
 
-.cmp-cell__bar-track {
-  height: 3px;
-  border-radius: 99px;
-  background: color-mix(in srgb, var(--text-muted) 16%, transparent);
-  overflow: hidden;
+.cmp-cell__note {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: none;
 }
 
-.cmp-cell__bar-fill {
-  height: 3px;
-  border-radius: 99px;
-  background: var(--accent-soft);
+.cmp-cell__note-icon {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  cursor: default;
+  line-height: 1;
+}
+
+.cmp-cell__note-tooltip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  background: var(--bg-card-inner);
+  color: var(--text-secondary);
+  border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.71rem;
+  font-weight: 400;
+  line-height: 1.5;
+  white-space: normal;
+  text-align: left;
+  width: 220px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  pointer-events: none;
+}
+
+.cmp-cell__note:hover .cmp-cell__note-tooltip {
+  display: block;
 }
 
 .cmp-cell__sub-row {
@@ -134,14 +156,14 @@ const vsUsText = computed(() => {
 
 .cmp-cell__us {
   font-family: var(--font-mono);
-  font-size: 0.62rem;
+  font-size: 0.7rem;
   color: var(--text-muted);
   white-space: nowrap;
 }
 
 .cmp-cell__delta {
   font-family: var(--font-mono);
-  font-size: 0.62rem;
+  font-size: 0.7rem;
   padding: 2px 7px;
   border-radius: 99px;
   white-space: nowrap;

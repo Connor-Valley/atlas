@@ -85,6 +85,9 @@ const meta = computed(() => `${props.state.toUpperCase()} · ${props.county} · 
   flex: none;
   width: 22px;
   height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: none;
   border-radius: 6px;
   background: transparent;

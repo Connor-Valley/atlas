@@ -62,10 +62,10 @@ const worst = computed(() => {
 .cmp-row__label-col {
   width: 240px;
   flex: none;
-  padding: 11px 16px;
+  padding: 18px 16px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 
 .cmp-row__label-line {
@@ -75,13 +75,13 @@ const worst = computed(() => {
 }
 
 .cmp-row__label {
-  font-size: 0.86rem;
+  font-size: 1rem;
   color: var(--text-primary);
 }
 
 .cmp-row__sub-label {
   font-family: var(--font-mono);
-  font-size: 0.6rem;
+  font-size: 0.68rem;
   letter-spacing: 0.06em;
   color: var(--text-muted);
 }

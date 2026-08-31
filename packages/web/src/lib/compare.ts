@@ -227,6 +227,8 @@ type MetricDef = {
   us: number | null;
   format: (v: number) => string;
   pick: (b: CompareCityBundle) => number | null;
+  // Called only when pick() returns null, to explain the missing value as a tooltip.
+  note?: (b: CompareCityBundle) => string | null;
 };
 
 const fmtUsd = (v: number) => `$${Math.round(v).toLocaleString()}`;
@@ -296,7 +298,17 @@ const GROUP_DEFS: Array<{ key: string; label: string; metrics: MetricDef[] }> = 
       { key: "rentBurdenPercent", label: "Rent burden", direction: "lower", us: US_REFERENCE.rentBurdenPercent, format: fmtPct1, pick: (b) => b.rentBurdenPercent },
       { key: "priceToIncomeRatio", label: "Price to income", direction: "lower", us: US_REFERENCE.priceToIncomeRatio, format: fmtX, pick: (b) => b.priceToIncomeRatio },
       { key: "ownerShare", label: "Owner-occupied", direction: "higher", us: US_REFERENCE.ownerShare, format: fmtPct1, pick: (b) => b.ownerShare },
-      { key: "rppIndex", label: "Cost of living", direction: "lower", us: US_REFERENCE.rppIndex, format: fmtIdx, pick: (b) => (b.rppIsStateLevel ? null : b.rppIndex) },
+      {
+        key: "rppIndex",
+        label: "Cost of living",
+        direction: "lower",
+        us: US_REFERENCE.rppIndex,
+        format: fmtIdx,
+        pick: (b) => (b.rppIsStateLevel ? null : b.rppIndex),
+        note: (b) => (b.rppIsStateLevel
+          ? "Only state-level cost-of-living data is available for this city, so it's hidden here to avoid comparing a whole-state average against another city's metro-specific number."
+          : null),
+      },
     ],
   },
   {
@@ -322,7 +334,11 @@ export function buildCompareGroups(bundles: CompareCityBundle[]): CompareGroup[]
       const direction: MetricDirection = metric.direction === "context" ? "higher" : metric.direction;
       const cells: CompareCell[] = bundles.map((b) => {
         const value = metric.pick(b);
-        return { value, display: value == null ? "—" : metric.format(value) };
+        return {
+          value,
+          display: value == null ? "—" : metric.format(value),
+          note: value == null ? (metric.note?.(b) ?? null) : null,
+        };
       });
       return {
         key: metric.key,

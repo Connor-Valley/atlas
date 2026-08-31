@@ -6,6 +6,9 @@ export type MetricDirection = "higher" | "lower";
 export type CompareCell = {
   value: number | null;
   display: string;
+  // Explains why a cell has no value (e.g. only lower-fidelity data was available), shown as a
+  // tooltip on the "—" placeholder. Null when the cell simply has no explanation to offer.
+  note: string | null;
 };
 
 // Fraction below which a delta-vs-first is treated as "no real difference" rather than a
