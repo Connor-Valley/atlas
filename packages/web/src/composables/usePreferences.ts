@@ -10,7 +10,20 @@ export interface UserPreferences {
   // air_quality_priority stay single-value — they're importance-level dials in disguise
   // (cost_low/medium/high, low/medium/high), not "type" choices, so multi-select doesn't apply.
   // political_lean_preference also stays single-value (explicitly out of scope).
-  climate_preference:      Array<'warm' | 'hot_dry' | 'mild' | 'four_seasons' | 'cool' | 'any'>;
+  // Nine distinct climate archetypes rather than a coarser split — dry desert heat (hot_dry)
+  // reads differently from humid Gulf Coast heat (hot_humid); a sunny, stable Mediterranean
+  // climate (sunny_mild, e.g. LA/San Diego) is distinct from a foggy, minimal-swing coastal one
+  // (misty, e.g. San Francisco), which is distinct from a cooler, real-rain real-snow Pacific
+  // climate (cool_wet, e.g. Seattle); a dry, sunny, snowy Rocky Mountain winter (mountain_snow,
+  // e.g. Denver) is distinct from a wet Midwest/Northeast one with the same hot-summer/cold-winter
+  // swing (four_seasons, e.g. Chicago), which is distinct from the Southeast's milder version of
+  // that same swing, without the hard freezes (mild_seasons, e.g. Atlanta); and a warm-but-not-hot,
+  // humid coastal climate (humid_coast, e.g. Charleston) is distinct from both the drier warmth of
+  // sunny_mild and the more consistent heat of hot_humid. See cityClimateChar in atlasScore.ts.
+  climate_preference: Array<
+    | 'hot_dry' | 'mountain_snow' | 'four_seasons' | 'mild_seasons' | 'hot_humid'
+    | 'humid_coast' | 'sunny_mild' | 'misty' | 'cool_wet' | 'any'
+  >;
   affordability_preference: 'cost_high' | 'cost_medium' | 'cost_low';
   job_market_preference:   Array<'high_earning' | 'stable' | 'growth' | 'remote' | 'any'>;
   lifestyle_preference:    Array<'urban' | 'urban_edge' | 'suburban' | 'nature' | 'any'>;
@@ -37,9 +50,10 @@ export interface UserPreferences {
   weight_air_quality:       number;
   weight_safety:            number;
   weight_connectivity:      number;
-  // Bitmask of which dimensions are marked a "deal breaker" — fully independent of the
-  // importance dial above (picking "Very important" does NOT imply deal breaker, and marking a
-  // deal breaker doesn't change the importance dial's displayed tier either). Repurposes
+  // Bitmask of which dimensions are marked a "deal breaker" — stored independently of the
+  // importance dial above (picking "Very important" does NOT imply deal breaker), but marking a
+  // deal breaker DOES push that dimension's importance dial to "high" (see toggleDealbreaker in
+  // PreferencesSetup.vue), so the two don't visually contradict each other. Repurposes
   // weight_education (the old education-scoring column — dropped from the app when opportunityScore
   // started deriving its inputs from profile.educationalAttainment directly, see CLAUDE.md) since
   // it's otherwise fully dead and has no CHECK constraint. Offset by DEALBREAKER_OFFSET so any
@@ -154,13 +168,29 @@ function normalizeFetchedRow(data: Record<string, unknown>): Record<string, unkn
       normalized[key] = typeof raw === 'string' && raw ? [raw] : ['any'];
     }
   }
+  const climate = normalized.climate_preference;
+  if (Array.isArray(climate)) {
+    normalized.climate_preference = climate.map((v) => LEGACY_CLIMATE_MAP[v as string] ?? v);
+  }
   return normalized;
 }
 
+// climate_preference used to be a coarser warm/mild/cool split — remap a previously-saved value
+// to its closest equivalent under the new 6-archetype taxonomy (see the UserPreferences comment
+// above) so an existing selection keeps meaning something instead of silently no longer matching
+// any quiz option.
+const LEGACY_CLIMATE_MAP: Record<string, string> = {
+  warm: 'hot_humid',
+  mild: 'sunny_mild',
+  cool: 'cool_wet',
+};
+
 // ── Deal breakers ──────────────────────────────────────────────────────────────
-// Independent of the importance dial (weight_affordability etc.) and of political lean's own
-// weight_safety flag — a separate on/off per dimension, packed into one bitmask so no new
-// column was needed. Any dimension can be a deal breaker regardless of its importance tier.
+// Stored independently of the importance dial (weight_affordability etc.) and of political lean's
+// own weight_safety flag — a separate on/off per dimension, packed into one bitmask so no new
+// column was needed. Any dimension can be marked a deal breaker regardless of its importance
+// tier, though PreferencesSetup.vue's toggleDealbreaker bumps the tier to "high" the moment a
+// dimension is marked, so the two stay visually consistent going forward.
 
 export const DEALBREAKER_DIMS = [
   'affordability', 'job_market', 'climate', 'lifestyle_vibrancy', 'connectivity', 'opportunity', 'air_quality',

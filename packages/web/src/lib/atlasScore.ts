@@ -279,47 +279,115 @@ const MATCH_SCORES: Record<string, Record<string, Record<string, number>>> = {
   // mismatch never scores below a neutral baseline. See OPPORTUNITY_FIELD_MATCHES.
 
   climate: {
-    warm: {
-      'Warm & sunny':    100,
-      'Hot & dry':       70,
-      'Mild year-round': 65,
-      'Four seasons':    45,
-      'Cool & crisp':    25,
-    },
     hot_dry: {
-      'Hot & dry':       100,
-      'Warm & sunny':    65,
-      'Mild year-round': 45,
-      'Four seasons':    30,
-      'Cool & crisp':    15,
+      'Desert Heat':     100,
+      'Endless Summer':   55,
+      'Tropical Heat':    55,
+      'Warm Winters':     35,
+      'Mountain Snow':    40,
+      'Four seasons':     25,
+      'Humid Coast':      30,
+      'Foggy Coast':      15,
+      'Rainy & Cool':     15,
     },
-    cool: {
-      'Cool & crisp':    100,
-      'Four seasons':    70,
-      'Mild year-round': 55,
-      'Warm & sunny':    30,
-      'Hot & dry':       15,
-    },
-    mild: {
-      'Mild year-round': 100,
-      'Warm & sunny':    50,
-      'Cool & crisp':    65,
-      'Four seasons':    60,
-      'Hot & dry':       20,
+    mountain_snow: {
+      'Mountain Snow':   100,
+      'Four seasons':     65,
+      'Rainy & Cool':     35,
+      'Warm Winters':     40,
+      'Endless Summer':   35,
+      'Desert Heat':      40,
+      'Foggy Coast':      15,
+      'Humid Coast':      15,
+      'Tropical Heat':    10,
     },
     four_seasons: {
       'Four seasons':    100,
-      'Mild year-round': 65,
-      'Cool & crisp':    65,
-      'Warm & sunny':    55,
-      'Hot & dry':       35,
+      'Warm Winters':     70,
+      'Mountain Snow':    65,
+      'Rainy & Cool':     55,
+      'Humid Coast':      45,
+      'Tropical Heat':    40,
+      'Endless Summer':   30,
+      'Desert Heat':      25,
+      'Foggy Coast':      20,
+    },
+    mild_seasons: {
+      'Warm Winters':    100,
+      'Four seasons':     70,
+      'Tropical Heat':    60,
+      'Humid Coast':      55,
+      'Endless Summer':   45,
+      'Mountain Snow':    40,
+      'Rainy & Cool':     40,
+      'Desert Heat':      35,
+      'Foggy Coast':      20,
+    },
+    hot_humid: {
+      'Tropical Heat':   100,
+      'Humid Coast':      65,
+      'Warm Winters':     60,
+      'Endless Summer':   50,
+      'Desert Heat':      55,
+      'Four seasons':     40,
+      'Rainy & Cool':     25,
+      'Mountain Snow':    10,
+      'Foggy Coast':      15,
+    },
+    humid_coast: {
+      'Humid Coast':     100,
+      'Tropical Heat':    65,
+      'Warm Winters':     55,
+      'Endless Summer':   50,
+      'Rainy & Cool':     45,
+      'Four seasons':     40,
+      'Foggy Coast':      35,
+      'Desert Heat':      25,
+      'Mountain Snow':    15,
+    },
+    sunny_mild: {
+      'Endless Summer':  100,
+      'Foggy Coast':      60,
+      'Desert Heat':      55,
+      'Humid Coast':      50,
+      'Tropical Heat':    50,
+      'Warm Winters':     40,
+      'Rainy & Cool':     35,
+      'Four seasons':     30,
+      'Mountain Snow':    30,
+    },
+    misty: {
+      'Foggy Coast':     100,
+      'Rainy & Cool':     65,
+      'Endless Summer':   60,
+      'Humid Coast':      35,
+      'Four seasons':     20,
+      'Warm Winters':     25,
+      'Desert Heat':      15,
+      'Tropical Heat':    15,
+      'Mountain Snow':    15,
+    },
+    cool_wet: {
+      'Rainy & Cool':    100,
+      'Foggy Coast':      65,
+      'Four seasons':     55,
+      'Humid Coast':      45,
+      'Warm Winters':     40,
+      'Mountain Snow':    35,
+      'Endless Summer':   35,
+      'Tropical Heat':    25,
+      'Desert Heat':      15,
     },
     any: {
-      'Warm & sunny':    100,
-      'Hot & dry':       100,
-      'Cool & crisp':    100,
-      'Mild year-round': 100,
+      'Desert Heat':     100,
+      'Mountain Snow':   100,
       'Four seasons':    100,
+      'Warm Winters':    100,
+      'Tropical Heat':   100,
+      'Humid Coast':     100,
+      'Endless Summer':  100,
+      'Foggy Coast':     100,
+      'Rainy & Cool':    100,
     },
   },
 
@@ -443,18 +511,86 @@ function cityAffordabilityChar(costOfLiving: any, affordability: any): string | 
   return 'Expensive';
 }
 
+// Classifies a city into one of 9 climate archetypes (see the UserPreferences.climate_preference
+// comment in usePreferences.ts for the full list). Built around summerAvgHighF/winterAvgLowF and
+// precipitation/snowfall/freezing-day counts rather than just the annual average temp — an
+// average blends a city's summer and winter together, which is exactly how very different
+// climates end up looking alike: a hot humid summer averaged against a cold snowy winter reads
+// the same as "just mild" (Minneapolis), and a big hot-summer/cold-winter swing looks identical
+// whether that winter is a dry, sunny, snowy one (Denver) or a wet, gray one (Chicago) unless you
+// also check precipitation.
 function cityClimateChar(climate: any): string | null {
   if (!climate) return null;
-  const avgT = climate.avgTempF;
-  const hotD = climate.hotDaysPerYear;
-  const frzD = climate.freezingDaysPerYear;
+  const avgT     = climate.avgTempF;
+  const summerHi = climate.summerAvgHighF;
+  const winterLo = climate.winterAvgLowF;
+  const precip   = climate.annualPrecipitationInches;
+  const snow     = climate.annualSnowfallInches;
+  const frzD     = climate.freezingDaysPerYear;
   if (avgT == null) return null;
-  if (Math.abs(avgT - 65) < 10 && (hotD ?? 100) < 20 && (frzD ?? 100) < 20) return 'Mild year-round';
-  if (avgT < 52) return 'Cool & crisp';
-  if (avgT > 72 && (hotD ?? 0) > 60 && (frzD ?? 100) < 15) return 'Hot & dry';
-  if (avgT > 65 && (frzD ?? 100) < 25) return 'Warm & sunny';
-  if ((hotD ?? 0) > 20 && (frzD ?? 0) > 30) return 'Four seasons';
-  return 'Mild year-round';
+
+  const gap        = (summerHi != null && winterLo != null) ? summerHi - winterLo : null;
+  const bigSwing    = gap != null && gap > 45;
+  const realWinter  = (frzD ?? 0) >= 40;
+  const dry         = (precip ?? 100) < 25;
+
+  // Extreme, bone-dry summer heat — the desert Southwest (Phoenix, Las Vegas). avgTempF alone
+  // can't tell this apart from a merely warm city, since a scorching, arid summer averaged
+  // against a mild desert winter still lands mid-range on its own.
+  if (summerHi != null && summerHi >= 95 && dry && (frzD ?? 100) < 15) return 'Desert Heat';
+
+  if (bigSwing && realWinter) {
+    // Same hot-summer/cold-winter swing and the same real, sub-freezing winter, but a dry, sunny,
+    // snowy Rocky Mountain winter (Denver, Salt Lake City, Reno) is a different climate from a
+    // wet, gray Midwest/Northeast one (Chicago, Boston, NYC) even with matching temperatures.
+    return dry ? 'Mountain Snow' : 'Four seasons';
+  }
+  // Same big seasonal swing, but a winter that rarely sees real cold (under 40 freezing days) —
+  // the Southeast's version of four seasons (Charlotte, Atlanta, Dallas): a genuinely cooler,
+  // shorter winter than the Northeast/Midwest, without the hard freezes or snow.
+  if (bigSwing) return 'Warm Winters';
+
+  // Whether summer actually gets hot enough, and winter stays mild enough, to count as a warm
+  // climate at all — gating on the annual average alone let San Leandro (Bay Area, fog-cooled
+  // 73°F summer highs) get called "Endless Summer" right alongside Los Angeles (78°F summer
+  // highs), since both average out to a similar-looking ~58–63°F. Requiring the summer AND
+  // winter numbers themselves to clear the bar (not just their average) keeps a genuinely warm
+  // climate distinct from a merely mild one, and also keeps a warm-summer/real-winter-chill place
+  // like Portland (summer highs 81°F, but winter lows 36°F with real freezing days) out of the
+  // warm-climate bucket it would otherwise slip into.
+  // A genuinely hot summer (LA, Miami) qualifies on its own — but so does a merely warm, DRY
+  // summer paired with a mild winter (Santa Barbara: 74°F summer highs, only 14in/yr rain), since
+  // low rainfall despite a cooler summer signals the same dry Mediterranean climate as LA/San
+  // Diego, not the wetter fog belt (San Francisco/Oakland/San Leandro sit at 20–25in/yr) that a
+  // summerHi-only cutoff would otherwise lump it in with. The cutoff sits at 77°F rather than a
+  // rounder 75/76 specifically to keep Berkeley (76°F summer highs, but 22in/yr rain — the same
+  // East Bay fog belt as Oakland at 73°F and Richmond at 74°F) out of this branch: at 76°F it
+  // would clear the bar by pure coincidence and get grouped with LA/San Diego instead of its own
+  // immediate, numerically near-identical neighbors one degree cooler.
+  // The dry-fallback only applies above a 72°F summer-high floor — otherwise a genuinely
+  // fog-suppressed, cool-summer coastal town (Monterey: 72°F summer highs) qualifies purely
+  // because its rainfall is also fog-suppressed, even though it's climatically the same "cool,
+  // stable, minimal swing" coastal fog belt as San Francisco, not a warm Mediterranean one.
+  const warmClimate = winterLo != null && winterLo >= 40 && (
+    (summerHi != null && summerHi >= 77) ||
+    (summerHi != null && summerHi >= 72 && (precip ?? 100) < 18)
+  );
+  if (warmClimate) {
+    if (avgT >= 68) {
+      // Same warm temperature range as coastal Southern California, but wet — Gulf Coast/Florida
+      // humidity instead of a dry Mediterranean climate.
+      return (precip ?? 0) >= 30 ? 'Tropical Heat' : 'Endless Summer';
+    }
+    // Same idea one notch cooler: a warm-but-not-hot, humid coastal climate (Charleston) is a
+    // different climate from LA/San Diego's dry Mediterranean warmth, even at a similar average
+    // temperature.
+    return (precip ?? 0) >= 45 ? 'Humid Coast' : 'Endless Summer';
+  }
+
+  // Not warm enough for the branch above, and no big seasonal swing: split a nearly snow-free,
+  // minimal-swing coastal fog belt (San Francisco, San Leandro) from a genuinely wetter, snowier,
+  // or colder-wintered Pacific climate (Seattle, Portland).
+  return (snow ?? 0) < 2 && gap != null && gap < 32 ? 'Foggy Coast' : 'Rainy & Cool';
 }
 
 // Maps the Census C24030 industry-of-employment sectors (income.industryBreakdown, workers'

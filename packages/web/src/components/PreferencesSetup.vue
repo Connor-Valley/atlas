@@ -64,13 +64,20 @@ const STEPS: QuizStep[] = [
     importanceKey: 'weight_climate',
     importanceScale: { low: 8, medium: 18, high: 80 },
     dealbreakerDim: 'climate',
+    // Ordered hot → cold by the average annual temp of each type's example cities (Desert Heat's
+    // Phoenix ~74°F down to Mountain Snow's Denver ~50°F), not alphabetically — climate is the
+    // one dimension where a temperature-ordered list is more scannable than an arbitrary one.
     options: [
-      { value: 'warm',         icon: 'mdi-weather-sunny',           label: 'Warm & sunny',    description: 'Hot summers, mild winters, lots of sun',                   tooltip: 'e.g. Florida' },
-      { value: 'hot_dry',      icon: 'mdi-sun-thermometer-outline', label: 'Hot & dry',       description: 'Arid heat with low humidity — desert and inland climates', tooltip: 'e.g. Arizona' },
-      { value: 'cool',         icon: 'mdi-snowflake',               label: 'Cool & crisp',    description: 'Cold winters, mild summers, refreshing air',               tooltip: 'e.g. Minnesota' },
-      { value: 'mild',         icon: 'mdi-weather-partly-cloudy',   label: 'Mild year-round', description: 'Comfortable temps with minimal extremes',                  tooltip: 'e.g. San Diego' },
-      { value: 'four_seasons', icon: 'mdi-leaf',                    label: 'Four seasons',    description: 'Distinct spring, summer, fall, and winter',                tooltip: 'e.g. New York' },
-      { value: 'any',          icon: 'mdi-earth',                   label: 'No preference',   description: 'Climate won\'t heavily influence my score' },
+      { value: 'hot_dry',       icon: 'mdi-sun-thermometer-outline', label: 'Desert Heat',    description: 'Arid heat with low humidity — desert and inland climates', tooltip: 'e.g. Arizona' },
+      { value: 'hot_humid',     icon: 'mdi-weather-sunny',           label: 'Tropical Heat',  description: 'Warm and muggy year-round — Gulf Coast and Southeast heat', tooltip: 'e.g. Miami, Houston' },
+      { value: 'humid_coast',   icon: 'mdi-waves',                   label: 'Humid Coast',    description: 'Warm, not hot, and humid — mild winters with barely any frost', tooltip: 'e.g. Charleston' },
+      { value: 'sunny_mild',    icon: 'mdi-white-balance-sunny',     label: 'Endless Summer', description: 'Dry, comfortable temps with abundant sunshine — rarely extreme', tooltip: 'e.g. Los Angeles, San Diego' },
+      { value: 'mild_seasons',  icon: 'mdi-leaf-maple',              label: 'Warm Winters',   description: 'A real seasonal swing, but winters that rarely see hard freezes or snow', tooltip: 'e.g. Atlanta, Charlotte' },
+      { value: 'misty',         icon: 'mdi-weather-fog',             label: 'Foggy Coast',    description: 'Cool and steady with coastal fog — barely any seasonal swing', tooltip: 'e.g. San Francisco' },
+      { value: 'cool_wet',      icon: 'mdi-weather-rainy',           label: 'Rainy & Cool',   description: 'Cool with real rain and some snow — a noticeable winter chill', tooltip: 'e.g. Seattle' },
+      { value: 'four_seasons',  icon: 'mdi-leaf',                    label: 'Four seasons',   description: 'Distinct spring, summer, fall, and winter, with real snow and cold', tooltip: 'e.g. New York, Chicago' },
+      { value: 'mountain_snow', icon: 'mdi-image-filter-hdr',        label: 'Mountain Snow',  description: 'Cold, dry, and snowy, but lots of sun — real winter without the gray', tooltip: 'e.g. Denver, Salt Lake City' },
+      { value: 'any',           icon: 'mdi-earth',                   label: 'No preference',  description: 'Climate won\'t heavily influence my score' },
     ],
   },
   {
@@ -340,13 +347,17 @@ function getSelectedOption(step: QuizStep): QuizOption<string> | null {
   return getSelectedOptions(step)[0] ?? null;
 }
 
-// "Deal breaker" is fully independent of the importance dial — picking "Very important" does
-// NOT mark something a deal breaker, and marking a deal breaker doesn't change the importance
-// dial's displayed tier. A one-tap shortcut from the card face either way, and any number of
-// dimensions can be a deal breaker at once — nothing here caps it. Political lean is handled
-// separately (weight_safety, a fully dead column otherwise) since it has no importance dial to
-// be independent FROM in the first place; every other dimension uses the shared bitmask in
-// usePreferences.ts (DEALBREAKER_DIMS / isDealbreakerDim / withDealbreakerToggled).
+// "Deal breaker" is stored independently of the importance dial — picking "Very important" does
+// NOT mark something a deal breaker on its own. But marking something a deal breaker DOES bump
+// its importance dial to "high" (see toggleDealbreaker) — a deal breaker that still visually read
+// "Not very important" was confusing, since under the hood it already scores at DEALBREAKER_WEIGHT
+// regardless of the dial. Unmarking a deal breaker leaves the dial where it is rather than pulling
+// it back down, since the user may have deliberately raised it separately. A one-tap shortcut from
+// the card face either way, and any number of dimensions can be a deal breaker at once — nothing
+// here caps it. Political lean is handled separately (weight_safety, a fully dead column
+// otherwise) since it has no importance dial to begin with — the flag itself already forces
+// DEALBREAKER_WEIGHT when set (see atlasScore.ts). Every other dimension uses the shared bitmask
+// in usePreferences.ts (DEALBREAKER_DIMS / isDealbreakerDim / withDealbreakerToggled).
 function supportsDealbreaker(step: QuizStep): boolean {
   return !!step.dealbreakerDim || step.key === 'political_lean_preference';
 }
@@ -359,8 +370,25 @@ function isDealbreaker(step: QuizStep): boolean {
 
 function toggleDealbreaker(step: QuizStep) {
   if (step.dealbreakerDim) {
+    const turningOn = !isDealbreaker(step);
     draft.value = withDealbreakerToggled(draft.value, step.dealbreakerDim);
     touchedKeys.value.add('weight_education');
+    if (turningOn) {
+      if (step.importanceKey && step.importanceScale) {
+        // Dimensions with a separate dial (climate, job market, lifestyle, opportunity,
+        // connectivity) — snap it to the "high" tier.
+        (draft.value as any)[step.importanceKey] = step.importanceScale.high;
+        touchedKeys.value.add(step.importanceKey);
+      } else if (step.key === 'affordability_preference') {
+        // Affordability's own answer IS its importance dial (cost_low/medium/high) — see the
+        // comment on UserPreferences in usePreferences.ts.
+        draft.value.affordability_preference = 'cost_high';
+        touchedKeys.value.add('affordability_preference');
+      } else if (step.key === 'air_quality_priority') {
+        draft.value.air_quality_priority = 'high';
+        touchedKeys.value.add('air_quality_priority');
+      }
+    }
   } else if (step.key === 'political_lean_preference') {
     selectOption('weight_safety', isDealbreaker(step) ? 0 : 90);
   }

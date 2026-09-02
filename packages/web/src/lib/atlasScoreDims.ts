@@ -22,8 +22,9 @@ export const DIMS: DimMeta[] = [
 
 export const PREF_LABELS: Record<string, string> = {
   // climate
-  warm: 'Warm & sunny', hot_dry: 'Hot & dry', cool: 'Cool & crisp',
-  mild: 'Mild year-round', four_seasons: 'Four seasons',
+  hot_dry: 'Desert Heat', mountain_snow: 'Mountain Snow', four_seasons: 'Four seasons',
+  mild_seasons: 'Warm Winters', hot_humid: 'Tropical Heat', humid_coast: 'Humid Coast',
+  sunny_mild: 'Endless Summer', misty: 'Foggy Coast', cool_wet: 'Rainy & Cool',
   // affordability
   cost_high: 'Very important', cost_medium: 'Somewhat important', cost_low: 'Not very important',
   // job market
