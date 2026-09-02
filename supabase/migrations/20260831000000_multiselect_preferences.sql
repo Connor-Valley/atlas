@@ -6,6 +6,11 @@
 -- low/medium/high), not "type" choices, so multi-select doesn't apply to them. political_lean_preference
 -- also stays single-value (explicitly out of scope).
 alter table user_preferences
+  alter column climate_preference      drop default,
+  alter column job_market_preference   drop default,
+  alter column lifestyle_preference    drop default,
+  alter column opportunity_preference  drop default,
+  alter column connectivity_preference drop default,
   alter column climate_preference      type text[] using array[climate_preference],
   alter column job_market_preference   type text[] using array[job_market_preference],
   alter column lifestyle_preference    type text[] using array[lifestyle_preference],
