@@ -175,7 +175,7 @@ const narrative = computed(() => {
   }
   if (score >= 45) {
     if (spread > 25) return `${best.label} stands out positively, but ${worst.label.toLowerCase()} pulls the overall score down.`;
-    return `A fairly balanced city — no major strengths or weaknesses stand out.`;
+    return `A fairly balanced city, with no major strengths or weaknesses standing out.`;
   }
   return `${worst.label} and ${scored[scored.length - 2].label.toLowerCase()} are significant weak spots holding this score back.`;
 });
@@ -198,7 +198,7 @@ function handlePersonalizeClick(e: MouseEvent) {
     @click="handlePersonalizeClick"
   >
     <span class="mdi mdi-tune-variant"></span>
-    <span class="atlas-card__personalize-bar-text">Personalize your experience — get a score tailored to you</span>
+    <span class="atlas-card__personalize-bar-text">Personalize your experience: get a score tailored to you</span>
     <span class="mdi mdi-arrow-right atlas-card__personalize-bar-arrow"></span>
   </router-link>
 
@@ -218,7 +218,7 @@ function handlePersonalizeClick(e: MouseEvent) {
          real assessment of it, so don't present a confident 0–100 number for it at all. -->
     <div v-if="result && result.isPersonalized && !result.hasEnoughData" class="atlas-card__insufficient">
       <span class="mdi mdi-database-alert-outline atlas-card__insufficient-icon"></span>
-      <p class="atlas-card__insufficient-text">Not enough reliable data available to score this city — it's either too small for confident Census estimates or missing too many key metrics.</p>
+      <p class="atlas-card__insufficient-text">Not enough reliable data available to score this city. It's either too small for confident Census estimates or missing too many key metrics.</p>
     </div>
 
     <!-- Loaded + personalized state — the raw/objective score (no preferences) isn't something

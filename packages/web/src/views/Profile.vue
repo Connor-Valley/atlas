@@ -467,7 +467,7 @@ onBeforeUnmount(() => {
         <div v-if="atlasExpanded" class="atlas-feature__inner">
           <div class="atlas-feature__left">
             <p class="atlas-feature__desc">
-              Every city gets a 0–100 match score tailored to your priorities — so you can instantly see which cities fit your life.
+              Every city gets a 0-100 match score tailored to your priorities, so you can instantly see which cities fit your life.
             </p>
           </div>
 

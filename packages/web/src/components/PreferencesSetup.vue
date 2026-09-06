@@ -68,15 +68,15 @@ const STEPS: QuizStep[] = [
     // Phoenix ~74°F down to Mountain Snow's Denver ~50°F), not alphabetically — climate is the
     // one dimension where a temperature-ordered list is more scannable than an arbitrary one.
     options: [
-      { value: 'hot_dry',       icon: 'mdi-sun-thermometer-outline', label: 'Desert Heat',    description: 'Arid heat with low humidity — desert and inland climates', tooltip: 'e.g. Arizona' },
-      { value: 'hot_humid',     icon: 'mdi-weather-sunny',           label: 'Tropical Heat',  description: 'Warm and muggy year-round — Gulf Coast and Southeast heat', tooltip: 'e.g. Miami, Houston' },
-      { value: 'humid_coast',   icon: 'mdi-waves',                   label: 'Humid Coast',    description: 'Warm, not hot, and humid — mild winters with barely any frost', tooltip: 'e.g. Charleston' },
-      { value: 'sunny_mild',    icon: 'mdi-white-balance-sunny',     label: 'Endless Summer', description: 'Dry, comfortable temps with abundant sunshine — rarely extreme', tooltip: 'e.g. Los Angeles, San Diego' },
+      { value: 'hot_dry',       icon: 'mdi-sun-thermometer-outline', label: 'Desert Heat',    description: 'Arid heat with low humidity: desert and inland climates', tooltip: 'e.g. Arizona' },
+      { value: 'hot_humid',     icon: 'mdi-weather-sunny',           label: 'Tropical Heat',  description: 'Warm and muggy year-round: Gulf Coast and Southeast heat', tooltip: 'e.g. Miami, Houston' },
+      { value: 'humid_coast',   icon: 'mdi-waves',                   label: 'Humid Coast',    description: 'Warm, not hot, and humid, with mild winters and barely any frost', tooltip: 'e.g. Charleston' },
+      { value: 'sunny_mild',    icon: 'mdi-white-balance-sunny',     label: 'Endless Summer', description: 'Dry, comfortable temps with abundant sunshine, rarely extreme', tooltip: 'e.g. Los Angeles, San Diego' },
       { value: 'mild_seasons',  icon: 'mdi-leaf-maple',              label: 'Warm Winters',   description: 'A real seasonal swing, but winters that rarely see hard freezes or snow', tooltip: 'e.g. Atlanta, Charlotte' },
-      { value: 'misty',         icon: 'mdi-weather-fog',             label: 'Foggy Coast',    description: 'Cool and steady with coastal fog — barely any seasonal swing', tooltip: 'e.g. San Francisco' },
-      { value: 'cool_wet',      icon: 'mdi-weather-rainy',           label: 'Rainy & Cool',   description: 'Cool with real rain and some snow — a noticeable winter chill', tooltip: 'e.g. Seattle' },
+      { value: 'misty',         icon: 'mdi-weather-fog',             label: 'Foggy Coast',    description: 'Cool and steady with coastal fog, barely any seasonal swing', tooltip: 'e.g. San Francisco' },
+      { value: 'cool_wet',      icon: 'mdi-weather-rainy',           label: 'Rainy & Cool',   description: 'Cool with real rain and some snow, plus a noticeable winter chill', tooltip: 'e.g. Seattle' },
       { value: 'four_seasons',  icon: 'mdi-leaf',                    label: 'Four seasons',   description: 'Distinct spring, summer, fall, and winter, with real snow and cold', tooltip: 'e.g. New York, Chicago' },
-      { value: 'mountain_snow', icon: 'mdi-image-filter-hdr',        label: 'Mountain Snow',  description: 'Cold, dry, and snowy, but lots of sun — real winter without the gray', tooltip: 'e.g. Denver, Salt Lake City' },
+      { value: 'mountain_snow', icon: 'mdi-image-filter-hdr',        label: 'Mountain Snow',  description: 'Cold, dry, and snowy, but lots of sun: real winter without the gray', tooltip: 'e.g. Denver, Salt Lake City' },
       { value: 'any',           icon: 'mdi-earth',                   label: 'No preference',  description: 'Climate won\'t heavily influence my score' },
     ],
   },
@@ -84,7 +84,7 @@ const STEPS: QuizStep[] = [
     key: 'affordability_preference',
     title: 'How much does cost of living matter to you?',
     shortTitle: 'Cost of Living',
-    subtitle: 'Cheaper always scores higher — this sets how heavily that pulls on your total score.',
+    subtitle: 'Cheaper always scores higher. This sets how heavily that pulls on your total score.',
     dealbreakerDim: 'affordability',
     options: [
       { value: 'cost_low',    icon: 'mdi-minus-circle-outline', label: 'Not very important', description: "Cost won't heavily influence my score" },
@@ -117,7 +117,7 @@ const STEPS: QuizStep[] = [
     importanceScale: { low: 8, medium: 18, high: 80 },
     dealbreakerDim: 'lifestyle_vibrancy',
     options: [
-      { value: 'urban',      icon: 'mdi-city-variant-outline', label: 'City energy',        description: 'Walkable, vibrant — restaurants, bars, arts, transit' },
+      { value: 'urban',      icon: 'mdi-city-variant-outline', label: 'City energy',        description: 'Walkable and vibrant: restaurants, bars, arts, transit' },
       { value: 'urban_edge', icon: 'mdi-home-city-outline',   label: 'Urban edge',         description: 'Close to the city core, walkable but not fully downtown' },
       { value: 'suburban',   icon: 'mdi-home-outline',        label: 'Quiet & suburban',   description: 'Short commutes, space, and a calmer pace' },
       { value: 'nature',   icon: 'mdi-hiking',               label: 'Outdoors & nature', description: 'Access to parks, trails, and open space' },
@@ -127,7 +127,7 @@ const STEPS: QuizStep[] = [
     key: 'opportunity_preference',
     title: 'What industry are you in?',
     shortTitle: 'Opportunity',
-    subtitle: "A bonus when a city's dominant industry matches your field — never a penalty if it doesn't.",
+    subtitle: "A bonus when a city's dominant industry matches your field, never a penalty if it doesn't.",
     importanceKey: 'weight_opportunity',
     importanceScale: { low: 4, medium: 10, high: 18 },
     dealbreakerDim: 'opportunity',
@@ -143,7 +143,7 @@ const STEPS: QuizStep[] = [
       { value: 'hospitality_arts',         icon: 'mdi-palette-outline',           label: 'Hospitality, Arts & Entertainment',   description: 'Food service, arts, recreation, tourism' },
       { value: 'agriculture',              icon: 'mdi-tractor-variant',           label: 'Agriculture & Natural Resources',     description: 'Farming, forestry, mining' },
       { value: 'nonprofit',                icon: 'mdi-hand-heart-outline',        label: 'Nonprofit & Community Organizations', description: 'Nonprofits, religious orgs, foundations & civic groups' },
-      { value: 'any',                      icon: 'mdi-equal-box',                 label: "Doesn't matter to me",                description: 'Open to any industry — no bonus applied' },
+      { value: 'any',                      icon: 'mdi-equal-box',                 label: "Doesn't matter to me",                description: 'Open to any industry, no bonus applied' },
     ],
   },
   {
@@ -169,8 +169,8 @@ const STEPS: QuizStep[] = [
     options: [
       { value: 'walkable', icon: 'mdi-walk',             label: 'Dense & walkable',       description: 'I want to walk or take transit everywhere' },
       { value: 'balanced', icon: 'mdi-map-marker-radius-outline', label: 'Balanced & accessible', description: 'Good airport, some transit, still drivable' },
-      { value: 'car',      icon: 'mdi-car-outline',      label: 'Suburban & drivable',    description: 'Car-dependent is fine — highways and parking matter' },
-      { value: 'airport',  icon: 'mdi-airplane',         label: 'Airport proximity',      description: 'I travel frequently — being near a major hub is key' },
+      { value: 'car',      icon: 'mdi-car-outline',      label: 'Suburban & drivable',    description: 'Car-dependent is fine: highways and parking matter' },
+      { value: 'airport',  icon: 'mdi-airplane',         label: 'Airport proximity',      description: 'I travel frequently, so being near a major hub is key' },
     ],
   },
   {
@@ -236,6 +236,15 @@ function selectOption(key: keyof UserPreferences, value: string | number) {
     (draft.value as any)[key] = value;
   }
   touchedKeys.value.add(key);
+}
+
+// Once a step's answer is "any"/"doesn't matter" (the dedicated card on climate, job market,
+// and opportunity — or just deselecting every specific pick on lifestyle/connectivity, which
+// falls back to "any" too, see toggleMultiSelectValue), there's nothing left to weight, so the
+// "how much should this matter?" dial slides away rather than sitting there moot. Gated on
+// touchedKeys so the untouched default (also "any") still shows the dial normally on first view.
+function isImportanceCollapsed(step: QuizStep): boolean {
+  return !!step.importanceKey && touchedKeys.value.has(step.key) && isSelected(step.key, 'any');
 }
 
 function isSelected(key: keyof UserPreferences, value: string | number): boolean {
@@ -442,7 +451,7 @@ defineExpose({ save, saving, saved });
               <label
                 class="quiz__flat-card-dealbreaker-toggle"
                 :class="{ 'quiz__flat-card-dealbreaker-toggle--active': isDealbreaker(step) }"
-                :title="isDealbreaker(step) ? `${dealbreakerLabel(step)} — click to unmark` : 'Mark as deal breaker'"
+                :title="isDealbreaker(step) ? `${dealbreakerLabel(step)}: click to unmark` : 'Mark as deal breaker'"
                 @click.stop
               >
                 <input type="checkbox" :checked="isDealbreaker(step)" @change="toggleDealbreaker(step)">
@@ -467,7 +476,7 @@ defineExpose({ save, saving, saved });
           </div>
         </div>
         <p v-if="saveError" class="quiz__flat-save-error">
-          <span class="mdi mdi-alert-circle-outline"></span> Couldn't save: {{ saveError }} — your changes are still here, try again.
+          <span class="mdi mdi-alert-circle-outline"></span> Couldn't save: {{ saveError }}. Your changes are still here, try again.
         </p>
         <div class="quiz__flat-footer">
           <template v-if="mode === 'editing'">
@@ -535,18 +544,26 @@ defineExpose({ save, saving, saved });
               </button>
             </div>
 
-            <div v-if="activeCategoryStep.importanceKey" class="quiz__importance">
-              <p class="quiz__importance-label">How much should this matter?</p>
-              <div class="quiz__importance-options">
-                <button
-                  v-for="level in IMPORTANCE_LEVELS"
-                  :key="level.value"
-                  class="quiz__importance-btn"
-                  :class="{ 'quiz__importance-btn--selected': isSelected(activeCategoryStep.importanceKey, activeCategoryStep.importanceScale![level.value]) }"
-                  @click="selectFlatImportance(activeCategoryStep.importanceKey, activeCategoryStep.importanceScale![level.value])"
-                >
-                  {{ level.label }}
-                </button>
+            <div
+              v-if="activeCategoryStep.importanceKey"
+              class="quiz__importance-collapse"
+              :class="{ 'quiz__importance-collapse--collapsed': isImportanceCollapsed(activeCategoryStep) }"
+            >
+              <div class="quiz__importance-collapse-inner">
+                <div class="quiz__importance">
+                  <p class="quiz__importance-label">How much should this matter?</p>
+                  <div class="quiz__importance-options">
+                    <button
+                      v-for="level in IMPORTANCE_LEVELS"
+                      :key="level.value"
+                      class="quiz__importance-btn"
+                      :class="{ 'quiz__importance-btn--selected': isSelected(activeCategoryStep.importanceKey, activeCategoryStep.importanceScale![level.value]) }"
+                      @click="selectFlatImportance(activeCategoryStep.importanceKey, activeCategoryStep.importanceScale![level.value])"
+                    >
+                      {{ level.label }}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -613,25 +630,33 @@ defineExpose({ save, saving, saved });
           </button>
         </div>
 
-        <div v-if="STEPS[currentStep].importanceKey" class="quiz__importance">
-          <p class="quiz__importance-label">How much should this matter?</p>
-          <div class="quiz__importance-options">
-            <button
-              v-for="level in IMPORTANCE_LEVELS"
-              :key="level.value"
-              class="quiz__importance-btn"
-              :class="{ 'quiz__importance-btn--selected': isSelected(STEPS[currentStep].importanceKey, STEPS[currentStep].importanceScale![level.value]) }"
-              @click="selectOption(STEPS[currentStep].importanceKey, STEPS[currentStep].importanceScale![level.value])"
-            >
-              {{ level.label }}
-            </button>
+        <div
+          v-if="STEPS[currentStep].importanceKey"
+          class="quiz__importance-collapse"
+          :class="{ 'quiz__importance-collapse--collapsed': isImportanceCollapsed(STEPS[currentStep]) }"
+        >
+          <div class="quiz__importance-collapse-inner">
+            <div class="quiz__importance">
+              <p class="quiz__importance-label">How much should this matter?</p>
+              <div class="quiz__importance-options">
+                <button
+                  v-for="level in IMPORTANCE_LEVELS"
+                  :key="level.value"
+                  class="quiz__importance-btn"
+                  :class="{ 'quiz__importance-btn--selected': isSelected(STEPS[currentStep].importanceKey, STEPS[currentStep].importanceScale![level.value]) }"
+                  @click="selectOption(STEPS[currentStep].importanceKey, STEPS[currentStep].importanceScale![level.value])"
+                >
+                  {{ level.label }}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Navigation -->
       <p v-if="saveError" class="quiz__flat-save-error" style="padding: 0 28px;">
-        <span class="mdi mdi-alert-circle-outline"></span> Couldn't save: {{ saveError }} — your changes are still here, try again.
+        <span class="mdi mdi-alert-circle-outline"></span> Couldn't save: {{ saveError }}. Your changes are still here, try again.
       </p>
 
       <div class="quiz__nav">
@@ -878,6 +903,26 @@ defineExpose({ save, saving, saved });
 }
 
 /* ── Importance dial ── */
+/* Animates the dial away when the answer is "any"/"doesn't matter" — there's nothing left to
+   weight. Uses the CSS grid auto-height trick (animating to/from an unknown content height isn't
+   possible with max-height/height alone). */
+.quiz__importance-collapse {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition: grid-template-rows 0.3s ease, opacity 0.25s ease;
+}
+
+.quiz__importance-collapse--collapsed {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+
+.quiz__importance-collapse-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
 .quiz__importance {
   margin-top: 16px;
   padding-top: 14px;
@@ -1358,6 +1403,8 @@ html:not(.dark) .quiz__flat-save {
 
 .quiz__flat-popup {
   width: min(960px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
   background: var(--bg-card);
   border-radius: 20px;
   border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border-card));
