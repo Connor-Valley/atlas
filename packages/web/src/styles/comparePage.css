@@ -225,11 +225,14 @@ html.dark .cmp-page {
 }
 
 .cmp-table__header-spacer {
-  width: 240px;
+  width: 260px;
   flex: none;
   padding: 18px 16px;
   display: flex;
+  flex-direction: column;
   align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
   transition: padding 0.25s ease;
 }
 
@@ -237,9 +240,29 @@ html.dark .cmp-page {
   padding: 10px 16px;
 }
 
+.cmp-table__header-spacer--compact .cmp-table__header-title {
+  opacity: 0;
+}
+
+.cmp-table__header-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  transition: opacity 0.15s ease;
+}
+
+.cmp-table__header-icon {
+  font-size: 1rem;
+  color: var(--accent);
+}
+
 .cmp-table__header-label {
   font-family: var(--font-mono);
-  font-size: 0.78rem;
+  font-size: 0.84rem;
   letter-spacing: 0.1em;
   color: var(--text-muted);
 }

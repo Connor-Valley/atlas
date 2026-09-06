@@ -68,6 +68,7 @@ const vsUsText = computed(() => {
   gap: 6px;
   padding: 17px 16px;
   min-width: 0;
+  border-left: 1px solid var(--border-subtle);
 }
 
 .cmp-cell__value-row {

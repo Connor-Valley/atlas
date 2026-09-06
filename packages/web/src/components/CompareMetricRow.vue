@@ -60,17 +60,20 @@ const worst = computed(() => {
 }
 
 .cmp-row__label-col {
-  width: 240px;
+  width: 260px;
   flex: none;
   padding: 18px 16px;
   display: flex;
   flex-direction: column;
+  align-items: flex-end;
   gap: 4px;
+  text-align: right;
 }
 
 .cmp-row__label-line {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
 }
 

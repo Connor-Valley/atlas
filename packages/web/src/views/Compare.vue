@@ -460,6 +460,10 @@ watch([headerSentinel, stickyOffset], () => updateHeaderStuck(), { flush: "post"
           :style="{ top: `${stickyOffset}px` }"
         >
           <div class="cmp-table__header-spacer" :class="{ 'cmp-table__header-spacer--compact': headerStuck }">
+            <div class="cmp-table__header-title">
+              <span class="mdi mdi-swap-horizontal cmp-table__header-icon"></span>
+              <span>Comparing {{ bundles.length }} cities</span>
+            </div>
             <span class="cmp-table__header-label">METRIC</span>
           </div>
           <CompareCityColumn
