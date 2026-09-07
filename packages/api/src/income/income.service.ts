@@ -125,24 +125,24 @@ async function fetchCityIncome(city: City, year: number): Promise<CityIncome> {
 // =============================================================================
 
 const INDUSTRY_NAMES = [
-  'Agriculture, Forestry & Mining',
+  'Agriculture, Forestry, & Mining',
   'Construction',
   'Manufacturing',
   'Wholesale Trade',
   'Retail Trade',
   'Transportation & Utilities',
   'Information',
-  'Finance, Insurance & Real Estate',
+  'Finance, Insurance, & Real Estate',
   // Census groups these three under one "Professional...and management, and administrative,
   // and waste management services" subtotal, but they're very different kinds of work — most
   // notably, real tech/R&D/engineering employment (Palo Alto, Bay Area, etc.) lives almost
-  // entirely in "Professional, Scientific & Technical Services" specifically, not in the
+  // entirely in "Professional, Scientific, & Technical Services" specifically, not in the
   // subtotal's other two components, so lumping them together buried that signal.
-  'Professional, Scientific & Technical Services',
+  'Professional, Scientific, & Technical Services',
   'Corporate Management',
   'Administrative & Waste Services',
-  'Education, Health & Social Services',
-  'Arts, Entertainment & Food Services',
+  'Education, Health, & Social Services',
+  'Arts, Entertainment, & Food Services',
   'Other Services',
   'Public Administration',
 ] as const;

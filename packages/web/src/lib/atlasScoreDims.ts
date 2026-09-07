@@ -38,7 +38,7 @@ export const PREF_LABELS: Record<string, string> = {
   manufacturing: 'Manufacturing & Industrial', construction_trades: 'Construction & Trades',
   transportation_logistics: 'Transportation & Logistics', education_healthcare: 'Education & Healthcare',
   government_services: 'Government & Public Services', retail: 'Retail & Consumer Services',
-  hospitality_arts: 'Hospitality, Arts & Entertainment', agriculture: 'Agriculture & Natural Resources',
+  hospitality_arts: 'Hospitality, Arts, & Entertainment', agriculture: 'Agriculture & Natural Resources',
   nonprofit: 'Nonprofit & Community Organizations',
   // air quality
   high: 'Very important', medium: 'Somewhat important', low: 'Not very important',

@@ -13,7 +13,7 @@ const mem = new Map<string, { data: unknown; ts: number; ttlMs: number }>();
 // become unreachable immediately (never read again) and just expire on their own via Redis's
 // TTL, rather than silently serving stale-but-well-formed data to real users for up to 15 days
 // until someone remembers to manually clear the right cache prefix.
-const CACHE_VERSION = 1;
+const CACHE_VERSION = 2;
 
 function versionedKey(key: string): string {
   return `v${CACHE_VERSION}:${key}`;
