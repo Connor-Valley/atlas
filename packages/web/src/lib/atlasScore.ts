@@ -48,6 +48,11 @@ export type AtlasScoreResult = {
   // confident score is misleading, not a real assessment of the city.
   dataCoverage: number;
   hasEnoughData: boolean;
+  // Dimensions marked a deal breaker whose city characteristic matched NONE of the user's
+  // selected preference values — these get capped to a clearly-poor score (see applyDealbreaker)
+  // on top of their weight already dominating the total, and the UI should flag them distinctly
+  // from an ordinarily-low score rather than let them blend into "this city just isn't great."
+  dealbreakerFailures: DealbreakerDim[];
 };
 
 // ── Normalization (used for non-personalized raw scoring) ─────────────────────
@@ -274,47 +279,115 @@ const MATCH_SCORES: Record<string, Record<string, Record<string, number>>> = {
   // mismatch never scores below a neutral baseline. See OPPORTUNITY_FIELD_MATCHES.
 
   climate: {
-    warm: {
-      'Warm & sunny':    100,
-      'Hot & dry':       70,
-      'Mild year-round': 65,
-      'Four seasons':    45,
-      'Cool & crisp':    25,
-    },
     hot_dry: {
-      'Hot & dry':       100,
-      'Warm & sunny':    65,
-      'Mild year-round': 45,
-      'Four seasons':    30,
-      'Cool & crisp':    15,
+      'Desert Heat':     100,
+      'Endless Summer':   55,
+      'Tropical Heat':    55,
+      'Warm Winters':     35,
+      'Mountain Snow':    40,
+      'Four seasons':     25,
+      'Humid Coast':      30,
+      'Foggy Coast':      15,
+      'Rainy & Cool':     15,
     },
-    cool: {
-      'Cool & crisp':    100,
-      'Four seasons':    70,
-      'Mild year-round': 55,
-      'Warm & sunny':    30,
-      'Hot & dry':       15,
-    },
-    mild: {
-      'Mild year-round': 100,
-      'Warm & sunny':    50,
-      'Cool & crisp':    65,
-      'Four seasons':    60,
-      'Hot & dry':       20,
+    mountain_snow: {
+      'Mountain Snow':   100,
+      'Four seasons':     65,
+      'Rainy & Cool':     35,
+      'Warm Winters':     40,
+      'Endless Summer':   35,
+      'Desert Heat':      40,
+      'Foggy Coast':      15,
+      'Humid Coast':      15,
+      'Tropical Heat':    10,
     },
     four_seasons: {
       'Four seasons':    100,
-      'Mild year-round': 65,
-      'Cool & crisp':    65,
-      'Warm & sunny':    55,
-      'Hot & dry':       35,
+      'Warm Winters':     70,
+      'Mountain Snow':    65,
+      'Rainy & Cool':     55,
+      'Humid Coast':      45,
+      'Tropical Heat':    40,
+      'Endless Summer':   30,
+      'Desert Heat':      25,
+      'Foggy Coast':      20,
+    },
+    mild_seasons: {
+      'Warm Winters':    100,
+      'Four seasons':     70,
+      'Tropical Heat':    60,
+      'Humid Coast':      55,
+      'Endless Summer':   45,
+      'Mountain Snow':    40,
+      'Rainy & Cool':     40,
+      'Desert Heat':      35,
+      'Foggy Coast':      20,
+    },
+    hot_humid: {
+      'Tropical Heat':   100,
+      'Humid Coast':      65,
+      'Warm Winters':     60,
+      'Endless Summer':   50,
+      'Desert Heat':      55,
+      'Four seasons':     40,
+      'Rainy & Cool':     25,
+      'Mountain Snow':    10,
+      'Foggy Coast':      15,
+    },
+    humid_coast: {
+      'Humid Coast':     100,
+      'Tropical Heat':    65,
+      'Warm Winters':     55,
+      'Endless Summer':   50,
+      'Rainy & Cool':     45,
+      'Four seasons':     40,
+      'Foggy Coast':      35,
+      'Desert Heat':      25,
+      'Mountain Snow':    15,
+    },
+    sunny_mild: {
+      'Endless Summer':  100,
+      'Foggy Coast':      60,
+      'Desert Heat':      55,
+      'Humid Coast':      50,
+      'Tropical Heat':    50,
+      'Warm Winters':     40,
+      'Rainy & Cool':     35,
+      'Four seasons':     30,
+      'Mountain Snow':    30,
+    },
+    misty: {
+      'Foggy Coast':     100,
+      'Rainy & Cool':     65,
+      'Endless Summer':   60,
+      'Humid Coast':      35,
+      'Four seasons':     20,
+      'Warm Winters':     25,
+      'Desert Heat':      15,
+      'Tropical Heat':    15,
+      'Mountain Snow':    15,
+    },
+    cool_wet: {
+      'Rainy & Cool':    100,
+      'Foggy Coast':      65,
+      'Four seasons':     55,
+      'Humid Coast':      45,
+      'Warm Winters':     40,
+      'Mountain Snow':    35,
+      'Endless Summer':   35,
+      'Tropical Heat':    25,
+      'Desert Heat':      15,
     },
     any: {
-      'Warm & sunny':    100,
-      'Hot & dry':       100,
-      'Cool & crisp':    100,
-      'Mild year-round': 100,
+      'Desert Heat':     100,
+      'Mountain Snow':   100,
       'Four seasons':    100,
+      'Warm Winters':    100,
+      'Tropical Heat':   100,
+      'Humid Coast':     100,
+      'Endless Summer':  100,
+      'Foggy Coast':     100,
+      'Rainy & Cool':    100,
     },
   },
 
@@ -386,13 +459,34 @@ const MATCH_SCORES: Record<string, Record<string, Record<string, number>>> = {
   },
 };
 
+// A city counts as a full match for ANY of the user's selected values — checking two options
+// means "either is fine," not an average of them. Adjacent-but-unselected options still fall
+// through to MATCH_SCORES' own existing partial-credit rows for whichever value scored highest.
 function lookupMatchScore(
   dim: keyof typeof MATCH_SCORES,
-  pref: string,
+  prefs: string[],
   cityChar: string | null,
 ): number | null {
-  if (!cityChar) return null;
-  return MATCH_SCORES[dim]?.[pref]?.[cityChar] ?? null;
+  if (!cityChar || !prefs.length) return null;
+  const scores = prefs
+    .map((pref) => MATCH_SCORES[dim]?.[pref]?.[cityChar])
+    .filter((s): s is number => s != null);
+  return scores.length ? Math.max(...scores) : null;
+}
+
+// Whether a city's classified characteristic satisfies at least one of the user's selected
+// preference values — the definition of "matches" a deal breaker requires, reusing MATCH_SCORES'
+// own exact-match cells (score === 100) rather than any partial-credit threshold. "any" always
+// satisfies (no real preference was expressed), and missing city data can't fail a deal breaker
+// it has no signal for.
+function dealbreakerSatisfied(
+  dim: keyof typeof MATCH_SCORES,
+  prefs: string[],
+  cityChar: string | null,
+): boolean {
+  if (cityChar == null) return true;
+  if (prefs.includes('any')) return true;
+  return prefs.some((pref) => MATCH_SCORES[dim]?.[pref]?.[cityChar] === 100);
 }
 
 // ── City characteristic classifiers ───────────────────────────────────────────
@@ -417,18 +511,86 @@ function cityAffordabilityChar(costOfLiving: any, affordability: any): string | 
   return 'Expensive';
 }
 
+// Classifies a city into one of 9 climate archetypes (see the UserPreferences.climate_preference
+// comment in usePreferences.ts for the full list). Built around summerAvgHighF/winterAvgLowF and
+// precipitation/snowfall/freezing-day counts rather than just the annual average temp — an
+// average blends a city's summer and winter together, which is exactly how very different
+// climates end up looking alike: a hot humid summer averaged against a cold snowy winter reads
+// the same as "just mild" (Minneapolis), and a big hot-summer/cold-winter swing looks identical
+// whether that winter is a dry, sunny, snowy one (Denver) or a wet, gray one (Chicago) unless you
+// also check precipitation.
 function cityClimateChar(climate: any): string | null {
   if (!climate) return null;
-  const avgT = climate.avgTempF;
-  const hotD = climate.hotDaysPerYear;
-  const frzD = climate.freezingDaysPerYear;
+  const avgT     = climate.avgTempF;
+  const summerHi = climate.summerAvgHighF;
+  const winterLo = climate.winterAvgLowF;
+  const precip   = climate.annualPrecipitationInches;
+  const snow     = climate.annualSnowfallInches;
+  const frzD     = climate.freezingDaysPerYear;
   if (avgT == null) return null;
-  if (Math.abs(avgT - 65) < 10 && (hotD ?? 100) < 20 && (frzD ?? 100) < 20) return 'Mild year-round';
-  if (avgT < 52) return 'Cool & crisp';
-  if (avgT > 72 && (hotD ?? 0) > 60 && (frzD ?? 100) < 15) return 'Hot & dry';
-  if (avgT > 65 && (frzD ?? 100) < 25) return 'Warm & sunny';
-  if ((hotD ?? 0) > 20 && (frzD ?? 0) > 30) return 'Four seasons';
-  return 'Mild year-round';
+
+  const gap        = (summerHi != null && winterLo != null) ? summerHi - winterLo : null;
+  const bigSwing    = gap != null && gap > 45;
+  const realWinter  = (frzD ?? 0) >= 40;
+  const dry         = (precip ?? 100) < 25;
+
+  // Extreme, bone-dry summer heat — the desert Southwest (Phoenix, Las Vegas). avgTempF alone
+  // can't tell this apart from a merely warm city, since a scorching, arid summer averaged
+  // against a mild desert winter still lands mid-range on its own.
+  if (summerHi != null && summerHi >= 95 && dry && (frzD ?? 100) < 15) return 'Desert Heat';
+
+  if (bigSwing && realWinter) {
+    // Same hot-summer/cold-winter swing and the same real, sub-freezing winter, but a dry, sunny,
+    // snowy Rocky Mountain winter (Denver, Salt Lake City, Reno) is a different climate from a
+    // wet, gray Midwest/Northeast one (Chicago, Boston, NYC) even with matching temperatures.
+    return dry ? 'Mountain Snow' : 'Four seasons';
+  }
+  // Same big seasonal swing, but a winter that rarely sees real cold (under 40 freezing days) —
+  // the Southeast's version of four seasons (Charlotte, Atlanta, Dallas): a genuinely cooler,
+  // shorter winter than the Northeast/Midwest, without the hard freezes or snow.
+  if (bigSwing) return 'Warm Winters';
+
+  // Whether summer actually gets hot enough, and winter stays mild enough, to count as a warm
+  // climate at all — gating on the annual average alone let San Leandro (Bay Area, fog-cooled
+  // 73°F summer highs) get called "Endless Summer" right alongside Los Angeles (78°F summer
+  // highs), since both average out to a similar-looking ~58–63°F. Requiring the summer AND
+  // winter numbers themselves to clear the bar (not just their average) keeps a genuinely warm
+  // climate distinct from a merely mild one, and also keeps a warm-summer/real-winter-chill place
+  // like Portland (summer highs 81°F, but winter lows 36°F with real freezing days) out of the
+  // warm-climate bucket it would otherwise slip into.
+  // A genuinely hot summer (LA, Miami) qualifies on its own — but so does a merely warm, DRY
+  // summer paired with a mild winter (Santa Barbara: 74°F summer highs, only 14in/yr rain), since
+  // low rainfall despite a cooler summer signals the same dry Mediterranean climate as LA/San
+  // Diego, not the wetter fog belt (San Francisco/Oakland/San Leandro sit at 20–25in/yr) that a
+  // summerHi-only cutoff would otherwise lump it in with. The cutoff sits at 77°F rather than a
+  // rounder 75/76 specifically to keep Berkeley (76°F summer highs, but 22in/yr rain — the same
+  // East Bay fog belt as Oakland at 73°F and Richmond at 74°F) out of this branch: at 76°F it
+  // would clear the bar by pure coincidence and get grouped with LA/San Diego instead of its own
+  // immediate, numerically near-identical neighbors one degree cooler.
+  // The dry-fallback only applies above a 72°F summer-high floor — otherwise a genuinely
+  // fog-suppressed, cool-summer coastal town (Monterey: 72°F summer highs) qualifies purely
+  // because its rainfall is also fog-suppressed, even though it's climatically the same "cool,
+  // stable, minimal swing" coastal fog belt as San Francisco, not a warm Mediterranean one.
+  const warmClimate = winterLo != null && winterLo >= 40 && (
+    (summerHi != null && summerHi >= 77) ||
+    (summerHi != null && summerHi >= 72 && (precip ?? 100) < 18)
+  );
+  if (warmClimate) {
+    if (avgT >= 68) {
+      // Same warm temperature range as coastal Southern California, but wet — Gulf Coast/Florida
+      // humidity instead of a dry Mediterranean climate.
+      return (precip ?? 0) >= 30 ? 'Tropical Heat' : 'Endless Summer';
+    }
+    // Same idea one notch cooler: a warm-but-not-hot, humid coastal climate (Charleston) is a
+    // different climate from LA/San Diego's dry Mediterranean warmth, even at a similar average
+    // temperature.
+    return (precip ?? 0) >= 45 ? 'Humid Coast' : 'Endless Summer';
+  }
+
+  // Not warm enough for the branch above, and no big seasonal swing: split a nearly snow-free,
+  // minimal-swing coastal fog belt (San Francisco, San Leandro) from a genuinely wetter, snowier,
+  // or colder-wintered Pacific climate (Seattle, Portland).
+  return (snow ?? 0) < 2 && gap != null && gap < 32 ? 'Foggy Coast' : 'Rainy & Cool';
 }
 
 // Maps the Census C24030 industry-of-employment sectors (income.industryBreakdown, workers'
@@ -554,13 +716,16 @@ const NO_OPPORTUNITY_MATCH = {
 
 // Looks past just the single dominant sector — finds wherever the user's field actually ranks
 // among this city's sectors, however far down that is, rather than giving up after the top 3.
-export function evaluateOpportunityMatch(preference: string, income: any): OpportunityMatchDetail | null {
+// `preferences` may name more than one field (multi-select) — the match set is the UNION of every
+// selected field's matching industries, so the city is scored against whichever selected field it
+// ranks best in, not an average across all of them.
+export function evaluateOpportunityMatch(preferences: string[], income: any): OpportunityMatchDetail | null {
   const sectors = income?.industryBreakdown as Array<{ name: string; share: number }> | undefined;
   if (!sectors?.length) return null;
-  if (preference === 'any') return { score: 100, tier: 'good', ...NO_OPPORTUNITY_MATCH };
+  if (!preferences.length || preferences.includes('any')) return { score: 100, tier: 'good', ...NO_OPPORTUNITY_MATCH };
 
-  const matches = OPPORTUNITY_FIELD_MATCHES[preference];
-  if (!matches) return { score: 100, tier: 'good', ...NO_OPPORTUNITY_MATCH }; // unrecognized value — don't penalize
+  const matches = preferences.flatMap((pref) => OPPORTUNITY_FIELD_MATCHES[pref] ?? []);
+  if (!matches.length) return { score: 100, tier: 'good', ...NO_OPPORTUNITY_MATCH }; // unrecognized value(s) — don't penalize
 
   const label = (sectorName: string) => INDUSTRY_LABELS[sectorName] ?? sectorName;
   const isMatch = (sectorName: string) => matches.includes(label(sectorName));
@@ -591,8 +756,19 @@ export function evaluateOpportunityMatch(preference: string, income: any): Oppor
   };
 }
 
-function opportunityMatchScore(preference: string, income: any): number | null {
-  return evaluateOpportunityMatch(preference, income)?.score ?? null;
+function opportunityMatchScore(preferences: string[], income: any): number | null {
+  return evaluateOpportunityMatch(preferences, income)?.score ?? null;
+}
+
+// Opportunity's own tiering already stands in for "matches" here — `tier === 'poor'` (field
+// ranks 7th or lower, or wasn't found in the city's data at all) is the deal-breaker fail case.
+// This deliberately overrides Opportunity's usual "bonus, never a penalty" design: that's the
+// point of opting a dimension into deal breaker at all.
+function opportunityDealbreakerSatisfied(preferences: string[], income: any): boolean {
+  if (!preferences.length || preferences.includes('any')) return true;
+  const match = evaluateOpportunityMatch(preferences, income);
+  if (!match) return true; // no industry data for this city — can't fail what we can't measure
+  return match.tier !== 'poor';
 }
 
 function cityLifestyleChar(lifestyle: any, profile: any): string | null {
@@ -684,17 +860,21 @@ export function computeAtlasScore(inputs: ScoreInputs, prefs?: UserPreferences |
   };
 
   let breakdown: DimensionScores;
+  // affordability_preference and air_quality_priority are still single-value (importance
+  // dials, not "type" choices — see MULTI_SELECT_KEYS in usePreferences.ts), so they're wrapped
+  // in a one-element array here to match lookupMatchScore/dealbreakerSatisfied's array signature.
 
   if (isPersonalized) {
     // Personalized: score = how well this city's characteristics match your preferences.
-    // Exact match = 100, similar = ~75, partial = ~55, mismatch = ~25–35.
+    // Exact match = 100, similar = ~75, partial = ~55, mismatch = ~25–35. Multi-select fields
+    // score against whichever selected value the city matches best (see lookupMatchScore).
     breakdown = {
-      affordability:     lookupMatchScore('affordability', p.affordability_preference, cityChars.affordability),
+      affordability:     lookupMatchScore('affordability', [p.affordability_preference], cityChars.affordability),
       jobMarket:         lookupMatchScore('jobMarket',     p.job_market_preference,    cityChars.jobMarket),
       climate:           lookupMatchScore('climate',       p.climate_preference,       cityChars.climate),
       opportunity:       opportunityMatchScore(p.opportunity_preference, inputs.income),
       lifestyleVibrancy: lookupMatchScore('lifestyle',     p.lifestyle_preference,     cityChars.lifestyleVibrancy),
-      airQuality:        lookupMatchScore('airQuality',    p.air_quality_priority,     cityChars.airQuality),
+      airQuality:        lookupMatchScore('airQuality',    [p.air_quality_priority],   cityChars.airQuality),
       safety:            null,
       connectivity:      lookupMatchScore('connectivity',  p.connectivity_preference,  cityChars.connectivity),
     };
@@ -720,6 +900,38 @@ export function computeAtlasScore(inputs: ScoreInputs, prefs?: UserPreferences |
   // dimension is set to Low/Medium/High, marking it a deal breaker always dominates the weight.
   function dimWeight(base: number, dim: DealbreakerDim): number {
     return isDealbreakerDim(raw, dim) ? Math.max(base, DEALBREAKER_WEIGHT) : base;
+  }
+
+  // A deal breaker used to only inflate weight — it never actually penalized a mismatch beyond
+  // that. Now it's a real "must match one of your picks": a dimension marked a deal breaker whose
+  // city characteristic satisfies NONE of the selected preference values gets capped to a clearly-
+  // poor score, on top of the weight bump above, and gets flagged in dealbreakerFailures so the UI
+  // can call it out explicitly rather than let it blend into an ordinarily-low score. Opportunity
+  // is included here too — marking it a deal breaker is an explicit opt-in override of its usual
+  // "bonus, never a penalty" design. Only meaningful when personalized; raw/unpersonalized scoring
+  // has no user preference to satisfy or fail.
+  const dealbreakerFailures: DealbreakerDim[] = [];
+  function applyDealbreaker(score: number | null, dim: DealbreakerDim, satisfied: boolean): number | null {
+    if (score == null || !isPersonalized || !isDealbreakerDim(raw, dim) || satisfied) return score;
+    dealbreakerFailures.push(dim);
+    return Math.min(score, 15);
+  }
+
+  if (isPersonalized) {
+    breakdown.affordability     = applyDealbreaker(breakdown.affordability, 'affordability',
+      dealbreakerSatisfied('affordability', [p.affordability_preference], cityChars.affordability));
+    breakdown.jobMarket         = applyDealbreaker(breakdown.jobMarket, 'job_market',
+      dealbreakerSatisfied('jobMarket', p.job_market_preference, cityChars.jobMarket));
+    breakdown.climate           = applyDealbreaker(breakdown.climate, 'climate',
+      dealbreakerSatisfied('climate', p.climate_preference, cityChars.climate));
+    breakdown.opportunity       = applyDealbreaker(breakdown.opportunity, 'opportunity',
+      opportunityDealbreakerSatisfied(p.opportunity_preference, inputs.income));
+    breakdown.lifestyleVibrancy = applyDealbreaker(breakdown.lifestyleVibrancy, 'lifestyle_vibrancy',
+      dealbreakerSatisfied('lifestyle', p.lifestyle_preference, cityChars.lifestyleVibrancy));
+    breakdown.airQuality        = applyDealbreaker(breakdown.airQuality, 'air_quality',
+      dealbreakerSatisfied('airQuality', [p.air_quality_priority], cityChars.airQuality));
+    breakdown.connectivity      = applyDealbreaker(breakdown.connectivity, 'connectivity',
+      dealbreakerSatisfied('connectivity', p.connectivity_preference, cityChars.connectivity));
   }
 
   const weighted: Array<{ score: number | null; weight: number }> = [
@@ -771,7 +983,7 @@ export function computeAtlasScore(inputs: ScoreInputs, prefs?: UserPreferences |
   const populationTooSmall = population != null && population < MIN_RELIABLE_POPULATION;
   const hasEnoughData = dataCoverage >= 0.5 && !populationTooSmall;
   const finalScore = totalWeight > 0 ? Math.round(total / totalWeight) : 50;
-  return { score: finalScore, breakdown, cityChars, politicalScore, isPersonalized, dataCoverage, hasEnoughData };
+  return { score: finalScore, breakdown, cityChars, politicalScore, isPersonalized, dataCoverage, hasEnoughData, dealbreakerFailures };
 }
 
 export function scoreTier(score: number): { label: string; tier: 'excellent' | 'good' | 'average' | 'below' | 'poor' } {

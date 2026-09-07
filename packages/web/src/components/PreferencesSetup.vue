@@ -4,6 +4,7 @@ import { useAuth } from '../composables/useAuth';
 import {
   usePreferences, DEFAULT_PREFERENCES, hasRealPreferences, type UserPreferences,
   isDealbreakerDim, withDealbreakerToggled, type DealbreakerDim,
+  MULTI_SELECT_KEYS, toggleMultiSelectValue,
 } from '../composables/usePreferences';
 
 const props = defineProps<{ flat?: boolean }>();
@@ -63,20 +64,27 @@ const STEPS: QuizStep[] = [
     importanceKey: 'weight_climate',
     importanceScale: { low: 8, medium: 18, high: 80 },
     dealbreakerDim: 'climate',
+    // Ordered hot → cold by the average annual temp of each type's example cities (Desert Heat's
+    // Phoenix ~74°F down to Mountain Snow's Denver ~50°F), not alphabetically — climate is the
+    // one dimension where a temperature-ordered list is more scannable than an arbitrary one.
     options: [
-      { value: 'warm',         icon: 'mdi-weather-sunny',           label: 'Warm & sunny',    description: 'Hot summers, mild winters, lots of sun',                   tooltip: 'e.g. Florida' },
-      { value: 'hot_dry',      icon: 'mdi-sun-thermometer-outline', label: 'Hot & dry',       description: 'Arid heat with low humidity — desert and inland climates', tooltip: 'e.g. Arizona' },
-      { value: 'cool',         icon: 'mdi-snowflake',               label: 'Cool & crisp',    description: 'Cold winters, mild summers, refreshing air',               tooltip: 'e.g. Minnesota' },
-      { value: 'mild',         icon: 'mdi-weather-partly-cloudy',   label: 'Mild year-round', description: 'Comfortable temps with minimal extremes',                  tooltip: 'e.g. San Diego' },
-      { value: 'four_seasons', icon: 'mdi-leaf',                    label: 'Four seasons',    description: 'Distinct spring, summer, fall, and winter',                tooltip: 'e.g. New York' },
-      { value: 'any',          icon: 'mdi-earth',                   label: 'No preference',   description: 'Climate won\'t heavily influence my score' },
+      { value: 'hot_dry',       icon: 'mdi-sun-thermometer-outline', label: 'Desert Heat',    description: 'Arid heat with low humidity: desert and inland climates', tooltip: 'e.g. Arizona' },
+      { value: 'hot_humid',     icon: 'mdi-weather-sunny',           label: 'Tropical Heat',  description: 'Warm and muggy year-round: Gulf Coast and Southeast heat', tooltip: 'e.g. Miami, Houston' },
+      { value: 'humid_coast',   icon: 'mdi-waves',                   label: 'Humid Coast',    description: 'Warm, not hot, and humid, with mild winters and barely any frost', tooltip: 'e.g. Charleston' },
+      { value: 'sunny_mild',    icon: 'mdi-white-balance-sunny',     label: 'Endless Summer', description: 'Dry, comfortable temps with abundant sunshine, rarely extreme', tooltip: 'e.g. Los Angeles, San Diego' },
+      { value: 'mild_seasons',  icon: 'mdi-leaf-maple',              label: 'Warm Winters',   description: 'A real seasonal swing, but winters that rarely see hard freezes or snow', tooltip: 'e.g. Atlanta, Charlotte' },
+      { value: 'misty',         icon: 'mdi-weather-fog',             label: 'Foggy Coast',    description: 'Cool and steady with coastal fog, barely any seasonal swing', tooltip: 'e.g. San Francisco' },
+      { value: 'cool_wet',      icon: 'mdi-weather-rainy',           label: 'Rainy & Cool',   description: 'Cool with real rain and some snow, plus a noticeable winter chill', tooltip: 'e.g. Seattle' },
+      { value: 'four_seasons',  icon: 'mdi-leaf',                    label: 'Four seasons',   description: 'Distinct spring, summer, fall, and winter, with real snow and cold', tooltip: 'e.g. New York, Chicago' },
+      { value: 'mountain_snow', icon: 'mdi-image-filter-hdr',        label: 'Mountain Snow',  description: 'Cold, dry, and snowy, but lots of sun: real winter without the gray', tooltip: 'e.g. Denver, Salt Lake City' },
+      { value: 'any',           icon: 'mdi-earth',                   label: 'No preference',  description: 'Climate won\'t heavily influence my score' },
     ],
   },
   {
     key: 'affordability_preference',
     title: 'How much does cost of living matter to you?',
     shortTitle: 'Cost of Living',
-    subtitle: 'Cheaper always scores higher — this sets how heavily that pulls on your total score.',
+    subtitle: 'Cheaper always scores higher. This sets how heavily that pulls on your total score.',
     dealbreakerDim: 'affordability',
     options: [
       { value: 'cost_low',    icon: 'mdi-minus-circle-outline', label: 'Not very important', description: "Cost won't heavily influence my score" },
@@ -109,7 +117,7 @@ const STEPS: QuizStep[] = [
     importanceScale: { low: 8, medium: 18, high: 80 },
     dealbreakerDim: 'lifestyle_vibrancy',
     options: [
-      { value: 'urban',      icon: 'mdi-city-variant-outline', label: 'City energy',        description: 'Walkable, vibrant — restaurants, bars, arts, transit' },
+      { value: 'urban',      icon: 'mdi-city-variant-outline', label: 'City energy',        description: 'Walkable and vibrant: restaurants, bars, arts, transit' },
       { value: 'urban_edge', icon: 'mdi-home-city-outline',   label: 'Urban edge',         description: 'Close to the city core, walkable but not fully downtown' },
       { value: 'suburban',   icon: 'mdi-home-outline',        label: 'Quiet & suburban',   description: 'Short commutes, space, and a calmer pace' },
       { value: 'nature',   icon: 'mdi-hiking',               label: 'Outdoors & nature', description: 'Access to parks, trails, and open space' },
@@ -119,7 +127,7 @@ const STEPS: QuizStep[] = [
     key: 'opportunity_preference',
     title: 'What industry are you in?',
     shortTitle: 'Opportunity',
-    subtitle: "A bonus when a city's dominant industry matches your field — never a penalty if it doesn't.",
+    subtitle: "A bonus when a city's dominant industry matches your field, never a penalty if it doesn't.",
     importanceKey: 'weight_opportunity',
     importanceScale: { low: 4, medium: 10, high: 18 },
     dealbreakerDim: 'opportunity',
@@ -135,7 +143,7 @@ const STEPS: QuizStep[] = [
       { value: 'hospitality_arts',         icon: 'mdi-palette-outline',           label: 'Hospitality, Arts & Entertainment',   description: 'Food service, arts, recreation, tourism' },
       { value: 'agriculture',              icon: 'mdi-tractor-variant',           label: 'Agriculture & Natural Resources',     description: 'Farming, forestry, mining' },
       { value: 'nonprofit',                icon: 'mdi-hand-heart-outline',        label: 'Nonprofit & Community Organizations', description: 'Nonprofits, religious orgs, foundations & civic groups' },
-      { value: 'any',                      icon: 'mdi-equal-box',                 label: "Doesn't matter to me",                description: 'Open to any industry — no bonus applied' },
+      { value: 'any',                      icon: 'mdi-equal-box',                 label: "Doesn't matter to me",                description: 'Open to any industry, no bonus applied' },
     ],
   },
   {
@@ -161,8 +169,8 @@ const STEPS: QuizStep[] = [
     options: [
       { value: 'walkable', icon: 'mdi-walk',             label: 'Dense & walkable',       description: 'I want to walk or take transit everywhere' },
       { value: 'balanced', icon: 'mdi-map-marker-radius-outline', label: 'Balanced & accessible', description: 'Good airport, some transit, still drivable' },
-      { value: 'car',      icon: 'mdi-car-outline',      label: 'Suburban & drivable',    description: 'Car-dependent is fine — highways and parking matter' },
-      { value: 'airport',  icon: 'mdi-airplane',         label: 'Airport proximity',      description: 'I travel frequently — being near a major hub is key' },
+      { value: 'car',      icon: 'mdi-car-outline',      label: 'Suburban & drivable',    description: 'Car-dependent is fine: highways and parking matter' },
+      { value: 'airport',  icon: 'mdi-airplane',         label: 'Airport proximity',      description: 'I travel frequently, so being near a major hub is key' },
     ],
   },
   {
@@ -185,6 +193,7 @@ const draft = ref<UserPreferences>({ ...DEFAULT_PREFERENCES });
 const currentStep = ref(0);
 const saving = ref(false);
 const saved = ref(false);
+const saveError = ref<string | null>(null);
 const initialized = ref(false);
 const touchedKeys = ref<Set<keyof UserPreferences>>(new Set());
 
@@ -218,13 +227,29 @@ watch(loaded, (isLoaded) => {
 
 const totalSteps = STEPS.length;
 
+// Multi-select fields (see MULTI_SELECT_KEYS) toggle `value` in/out of the stored array instead
+// of overwriting it — checking a second option keeps the first, rather than replacing it.
 function selectOption(key: keyof UserPreferences, value: string | number) {
-  (draft.value as any)[key] = value;
+  if (MULTI_SELECT_KEYS.has(key)) {
+    (draft.value as any)[key] = toggleMultiSelectValue((draft.value as any)[key], value as string);
+  } else {
+    (draft.value as any)[key] = value;
+  }
   touchedKeys.value.add(key);
 }
 
+// Once a step's answer is "any"/"doesn't matter" (the dedicated card on climate, job market,
+// and opportunity — or just deselecting every specific pick on lifestyle/connectivity, which
+// falls back to "any" too, see toggleMultiSelectValue), there's nothing left to weight, so the
+// "how much should this matter?" dial slides away rather than sitting there moot. Gated on
+// touchedKeys so the untouched default (also "any") still shows the dial normally on first view.
+function isImportanceCollapsed(step: QuizStep): boolean {
+  return !!step.importanceKey && touchedKeys.value.has(step.key) && isSelected(step.key, 'any');
+}
+
 function isSelected(key: keyof UserPreferences, value: string | number): boolean {
-  return (draft.value as any)[key] === value;
+  const current = (draft.value as any)[key];
+  return MULTI_SELECT_KEYS.has(key) ? (current as string[]).includes(value as string) : current === value;
 }
 
 function next() {
@@ -242,8 +267,16 @@ function goToStep(i: number) {
 async function save() {
   saving.value = true;
   saved.value = false;
-  await savePreferences(draft.value);
+  saveError.value = null;
+  const result = await savePreferences(draft.value);
   saving.value = false;
+  if (!result.success) {
+    // Never claim success on a failed write — the old code always showed "Saved!" and switched
+    // to the read-only view regardless of the actual result, which reads as data loss on the
+    // next visit when the failed write never actually persisted anything.
+    saveError.value = result.error ?? 'Something went wrong saving your preferences.';
+    return;
+  }
   saved.value = true;
   hasSavedPreferences.value = true;
   mode.value = 'saved';
@@ -273,7 +306,10 @@ function closeCategory() {
 
 function selectFlatOption(key: keyof UserPreferences, value: string) {
   selectOption(key, value);
-  maybeCloseCategory();
+  // Multi-select fields never auto-close on a single pick — the popup should stay open so the
+  // user can check additional options. It still closes once they set the importance dial (see
+  // selectFlatImportance below), same as today's "everything's been picked" close condition.
+  if (!MULTI_SELECT_KEYS.has(key)) maybeCloseCategory();
 }
 
 function selectFlatImportance(key: keyof UserPreferences, value: number) {
@@ -302,24 +338,35 @@ function resetPreferences() {
 function randomizePreferences() {
   for (const step of STEPS) {
     const random = step.options[Math.floor(Math.random() * step.options.length)];
-    (draft.value as any)[step.key] = random.value;
+    (draft.value as any)[step.key] = MULTI_SELECT_KEYS.has(step.key) ? [random.value] : random.value;
     touchedKeys.value.add(step.key);
   }
 }
 
-function getSelectedOption(step: QuizStep): QuizOption<string> | null {
-  if (!touchedKeys.value.has(step.key)) return null;
-  const val = (draft.value as any)[step.key] as string;
-  return step.options.find(o => o.value === val) ?? null;
+// Multi-select steps can have more than one selected option — this returns all of them (in
+// option-list order) so the flat card can join their labels ("City energy + Urban edge").
+function getSelectedOptions(step: QuizStep): QuizOption<string>[] {
+  if (!touchedKeys.value.has(step.key)) return [];
+  const raw = (draft.value as any)[step.key];
+  const values: string[] = MULTI_SELECT_KEYS.has(step.key) ? (raw as string[]) : [raw as string];
+  return step.options.filter(o => values.includes(o.value));
 }
 
-// "Deal breaker" is fully independent of the importance dial — picking "Very important" does
-// NOT mark something a deal breaker, and marking a deal breaker doesn't change the importance
-// dial's displayed tier. A one-tap shortcut from the card face either way, and any number of
-// dimensions can be a deal breaker at once — nothing here caps it. Political lean is handled
-// separately (weight_safety, a fully dead column otherwise) since it has no importance dial to
-// be independent FROM in the first place; every other dimension uses the shared bitmask in
-// usePreferences.ts (DEALBREAKER_DIMS / isDealbreakerDim / withDealbreakerToggled).
+function getSelectedOption(step: QuizStep): QuizOption<string> | null {
+  return getSelectedOptions(step)[0] ?? null;
+}
+
+// "Deal breaker" is stored independently of the importance dial — picking "Very important" does
+// NOT mark something a deal breaker on its own. But marking something a deal breaker DOES bump
+// its importance dial to "high" (see toggleDealbreaker) — a deal breaker that still visually read
+// "Not very important" was confusing, since under the hood it already scores at DEALBREAKER_WEIGHT
+// regardless of the dial. Unmarking a deal breaker leaves the dial where it is rather than pulling
+// it back down, since the user may have deliberately raised it separately. A one-tap shortcut from
+// the card face either way, and any number of dimensions can be a deal breaker at once — nothing
+// here caps it. Political lean is handled separately (weight_safety, a fully dead column
+// otherwise) since it has no importance dial to begin with — the flag itself already forces
+// DEALBREAKER_WEIGHT when set (see atlasScore.ts). Every other dimension uses the shared bitmask
+// in usePreferences.ts (DEALBREAKER_DIMS / isDealbreakerDim / withDealbreakerToggled).
 function supportsDealbreaker(step: QuizStep): boolean {
   return !!step.dealbreakerDim || step.key === 'political_lean_preference';
 }
@@ -332,11 +379,36 @@ function isDealbreaker(step: QuizStep): boolean {
 
 function toggleDealbreaker(step: QuizStep) {
   if (step.dealbreakerDim) {
+    const turningOn = !isDealbreaker(step);
     draft.value = withDealbreakerToggled(draft.value, step.dealbreakerDim);
     touchedKeys.value.add('weight_education');
+    if (turningOn) {
+      if (step.importanceKey && step.importanceScale) {
+        // Dimensions with a separate dial (climate, job market, lifestyle, opportunity,
+        // connectivity) — snap it to the "high" tier.
+        (draft.value as any)[step.importanceKey] = step.importanceScale.high;
+        touchedKeys.value.add(step.importanceKey);
+      } else if (step.key === 'affordability_preference') {
+        // Affordability's own answer IS its importance dial (cost_low/medium/high) — see the
+        // comment on UserPreferences in usePreferences.ts.
+        draft.value.affordability_preference = 'cost_high';
+        touchedKeys.value.add('affordability_preference');
+      } else if (step.key === 'air_quality_priority') {
+        draft.value.air_quality_priority = 'high';
+        touchedKeys.value.add('air_quality_priority');
+      }
+    }
   } else if (step.key === 'political_lean_preference') {
     selectOption('weight_safety', isDealbreaker(step) ? 0 : 90);
   }
+}
+
+// Deal breaker now actually fails a city that matches none of the selected options (see
+// applyDealbreaker in atlasScore.ts) rather than just weighing the dimension heavily — spell that
+// out once more than one option is checked, so "Deal breaker" doesn't read as "must match my
+// single pick" when it really means "must match at least one of these."
+function dealbreakerLabel(step: QuizStep): string {
+  return getSelectedOptions(step).length > 1 ? 'Must match one of your picks' : 'Deal breaker';
 }
 
 defineExpose({ save, saving, saved });
@@ -379,14 +451,14 @@ defineExpose({ save, saving, saved });
               <label
                 class="quiz__flat-card-dealbreaker-toggle"
                 :class="{ 'quiz__flat-card-dealbreaker-toggle--active': isDealbreaker(step) }"
-                :title="isDealbreaker(step) ? 'Deal breaker — click to unmark' : 'Mark as deal breaker'"
+                :title="isDealbreaker(step) ? `${dealbreakerLabel(step)}: click to unmark` : 'Mark as deal breaker'"
                 @click.stop
               >
                 <input type="checkbox" :checked="isDealbreaker(step)" @change="toggleDealbreaker(step)">
                 <span class="quiz__flat-card-dealbreaker-slider"></span>
               </label>
             </div>
-            <span v-else-if="isDealbreaker(step)" class="quiz__flat-card-dealbreaker-badge" title="Deal breaker"></span>
+            <span v-else-if="isDealbreaker(step)" class="quiz__flat-card-dealbreaker-badge" :title="dealbreakerLabel(step)"></span>
 
             <div class="quiz__flat-card-top">
               <span
@@ -398,11 +470,14 @@ defineExpose({ save, saving, saved });
             <span class="quiz__flat-card-label">{{ step.shortTitle }}</span>
             <span
               class="quiz__flat-card-value"
-              :class="{ 'quiz__flat-card-value--unset': !getSelectedOption(step) }"
-            >{{ getSelectedOption(step)?.label ?? 'No preference set' }}</span>
-            <span class="quiz__flat-card-desc">{{ getSelectedOption(step)?.description ?? 'Tap to set your preference' }}</span>
+              :class="{ 'quiz__flat-card-value--unset': !getSelectedOptions(step).length }"
+            >{{ getSelectedOptions(step).map(o => o.label).join(' + ') || 'No preference set' }}</span>
+            <span class="quiz__flat-card-desc">{{ getSelectedOptions(step).length > 1 ? `${getSelectedOptions(step).length} options selected` : (getSelectedOption(step)?.description ?? 'Tap to set your preference') }}</span>
           </div>
         </div>
+        <p v-if="saveError" class="quiz__flat-save-error">
+          <span class="mdi mdi-alert-circle-outline"></span> Couldn't save: {{ saveError }}. Your changes are still here, try again.
+        </p>
         <div class="quiz__flat-footer">
           <template v-if="mode === 'editing'">
             <button
@@ -469,18 +544,26 @@ defineExpose({ save, saving, saved });
               </button>
             </div>
 
-            <div v-if="activeCategoryStep.importanceKey" class="quiz__importance">
-              <p class="quiz__importance-label">How much should this matter?</p>
-              <div class="quiz__importance-options">
-                <button
-                  v-for="level in IMPORTANCE_LEVELS"
-                  :key="level.value"
-                  class="quiz__importance-btn"
-                  :class="{ 'quiz__importance-btn--selected': isSelected(activeCategoryStep.importanceKey, activeCategoryStep.importanceScale![level.value]) }"
-                  @click="selectFlatImportance(activeCategoryStep.importanceKey, activeCategoryStep.importanceScale![level.value])"
-                >
-                  {{ level.label }}
-                </button>
+            <div
+              v-if="activeCategoryStep.importanceKey"
+              class="quiz__importance-collapse"
+              :class="{ 'quiz__importance-collapse--collapsed': isImportanceCollapsed(activeCategoryStep) }"
+            >
+              <div class="quiz__importance-collapse-inner">
+                <div class="quiz__importance">
+                  <p class="quiz__importance-label">How much should this matter?</p>
+                  <div class="quiz__importance-options">
+                    <button
+                      v-for="level in IMPORTANCE_LEVELS"
+                      :key="level.value"
+                      class="quiz__importance-btn"
+                      :class="{ 'quiz__importance-btn--selected': isSelected(activeCategoryStep.importanceKey, activeCategoryStep.importanceScale![level.value]) }"
+                      @click="selectFlatImportance(activeCategoryStep.importanceKey, activeCategoryStep.importanceScale![level.value])"
+                    >
+                      {{ level.label }}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -547,23 +630,35 @@ defineExpose({ save, saving, saved });
           </button>
         </div>
 
-        <div v-if="STEPS[currentStep].importanceKey" class="quiz__importance">
-          <p class="quiz__importance-label">How much should this matter?</p>
-          <div class="quiz__importance-options">
-            <button
-              v-for="level in IMPORTANCE_LEVELS"
-              :key="level.value"
-              class="quiz__importance-btn"
-              :class="{ 'quiz__importance-btn--selected': isSelected(STEPS[currentStep].importanceKey, STEPS[currentStep].importanceScale![level.value]) }"
-              @click="selectOption(STEPS[currentStep].importanceKey, STEPS[currentStep].importanceScale![level.value])"
-            >
-              {{ level.label }}
-            </button>
+        <div
+          v-if="STEPS[currentStep].importanceKey"
+          class="quiz__importance-collapse"
+          :class="{ 'quiz__importance-collapse--collapsed': isImportanceCollapsed(STEPS[currentStep]) }"
+        >
+          <div class="quiz__importance-collapse-inner">
+            <div class="quiz__importance">
+              <p class="quiz__importance-label">How much should this matter?</p>
+              <div class="quiz__importance-options">
+                <button
+                  v-for="level in IMPORTANCE_LEVELS"
+                  :key="level.value"
+                  class="quiz__importance-btn"
+                  :class="{ 'quiz__importance-btn--selected': isSelected(STEPS[currentStep].importanceKey, STEPS[currentStep].importanceScale![level.value]) }"
+                  @click="selectOption(STEPS[currentStep].importanceKey, STEPS[currentStep].importanceScale![level.value])"
+                >
+                  {{ level.label }}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Navigation -->
+      <p v-if="saveError" class="quiz__flat-save-error" style="padding: 0 28px;">
+        <span class="mdi mdi-alert-circle-outline"></span> Couldn't save: {{ saveError }}. Your changes are still here, try again.
+      </p>
+
       <div class="quiz__nav">
         <button
           class="quiz__nav-btn quiz__nav-btn--prev"
@@ -808,6 +903,26 @@ defineExpose({ save, saving, saved });
 }
 
 /* ── Importance dial ── */
+/* Animates the dial away when the answer is "any"/"doesn't matter" — there's nothing left to
+   weight. Uses the CSS grid auto-height trick (animating to/from an unknown content height isn't
+   possible with max-height/height alone). */
+.quiz__importance-collapse {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition: grid-template-rows 0.3s ease, opacity 0.25s ease;
+}
+
+.quiz__importance-collapse--collapsed {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+
+.quiz__importance-collapse-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
 .quiz__importance {
   margin-top: 16px;
   padding-top: 14px;
@@ -1112,6 +1227,18 @@ defineExpose({ save, saving, saved });
   gap: 8px;
 }
 
+.quiz__flat-save-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 8px 14px 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--danger);
+  flex-shrink: 0;
+}
+
 .quiz__flat-reset {
   display: inline-flex;
   align-items: center;
@@ -1276,6 +1403,8 @@ html:not(.dark) .quiz__flat-save {
 
 .quiz__flat-popup {
   width: min(960px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
   background: var(--bg-card);
   border-radius: 20px;
   border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border-card));
