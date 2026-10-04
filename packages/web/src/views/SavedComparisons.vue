@@ -8,6 +8,7 @@ import { useComparisons, type SavedComparison } from '../composables/useComparis
 import { useRecentSearches } from '../composables/useRecentSearches';
 import { fetchCityPhoto } from '../lib/cityPhotos';
 import { fetchCity } from '../api/cities';
+import { buildCompareUrl } from '../lib/compare';
 import { supabase } from '../lib/supabase';
 import { canViewerAccessProfileContent, getProfileVisibilityNotice, type ProfileVisibility } from '../lib/profilePrivacy';
 
@@ -65,20 +66,27 @@ async function fetchViewingComps() {
   }
   const { data } = await supabase
     .from('saved_comparisons')
-    .select('id, city_a, state_a, city_name_a, city_b, state_b, city_name_b, user_id')
+    .select('id, user_id, created_at, saved_comparison_cities(slot, state, city, city_name)')
     .eq('user_id', profile.id)
     .order('created_at', { ascending: false });
-  viewingComps.value = (data ?? []) as SavedComparison[];
+  viewingComps.value = (data ?? []).map((row: any) => ({
+    id: row.id,
+    user_id: row.user_id,
+    created_at: row.created_at,
+    cities: [...(row.saved_comparison_cities ?? [])].sort((a: any, b: any) => a.slot - b.slot),
+  }));
 }
 
 const displayComparisons = computed(() => isOwnPage.value ? savedComparisons.value : viewingComps.value);
 const pageTitle           = computed(() => isOwnPage.value ? 'Saved Comparisons' : `${viewingName.value}'s Comparisons`);
 
+interface CardCity {
+  photo: string | null;
+  population: number | null;
+}
+
 interface CardData {
-  photoA: string | null;
-  photoB: string | null;
-  popA: number | null;
-  popB: number | null;
+  cities: CardCity[];
   loading: boolean;
 }
 
@@ -97,20 +105,17 @@ function formatPop(n: number) {
 
 async function loadCard(c: SavedComparison) {
   const key = cardKey(c);
-  cardData.value[key] = { photoA: null, photoB: null, popA: null, popB: null, loading: true };
-  const [photoA, photoB, cityA, cityB] = await Promise.all([
-    fetchCityPhoto(c.state_a, c.city_a),
-    fetchCityPhoto(c.state_b, c.city_b),
-    fetchCity(c.state_a, c.city_a).catch(() => null),
-    fetchCity(c.state_b, c.city_b).catch(() => null),
-  ]);
-  cardData.value[key] = {
-    photoA,
-    photoB,
-    popA: cityA?.population ?? null,
-    popB: cityB?.population ?? null,
-    loading: false,
-  };
+  cardData.value[key] = { cities: c.cities.map(() => ({ photo: null, population: null })), loading: true };
+  const loaded = await Promise.all(
+    c.cities.map(async (city) => {
+      const [photo, cityInfo] = await Promise.all([
+        fetchCityPhoto(city.state, city.city),
+        fetchCity(city.state, city.city).catch(() => null),
+      ]);
+      return { photo, population: cityInfo?.population ?? null };
+    }),
+  );
+  cardData.value[key] = { cities: loaded, loading: false };
 }
 
 async function init() {
@@ -135,7 +140,7 @@ function onMouseMove(e: MouseEvent, el: HTMLElement) {
 }
 
 function goToComparison(c: SavedComparison) {
-  router.push({ name: 'compare', params: { stateA: c.state_a, cityA: c.city_a, stateB: c.state_b, cityB: c.city_b } });
+  router.push(buildCompareUrl(c.cities.map((city) => ({ state: city.state, city: city.city }))));
 }
 
 function toggleMobileMenu(e: MouseEvent, comparisonId: string) {
@@ -146,7 +151,7 @@ function toggleMobileMenu(e: MouseEvent, comparisonId: string) {
 async function handleRemove(e: MouseEvent, c: SavedComparison) {
   e.stopPropagation();
   openMobileMenuId.value = null;
-  await removeComparison(c.city_a, c.state_a, c.city_b, c.state_b);
+  await removeComparison(c.cities.map((city) => ({ state: city.state, city: city.city })));
 }
 
 function handleDocumentClick() {
@@ -235,34 +240,23 @@ onBeforeUnmount(() => {
 
         <!-- Photo thumbnails -->
         <div class="cmp-card__photos">
-          <div
-            class="cmp-card__thumb"
-            :class="{ 'cmp-card__thumb--loading': !cardData[cardKey(c)] || cardData[cardKey(c)].loading }"
-            :style="cardData[cardKey(c)]?.photoA ? { backgroundImage: `url(${cardData[cardKey(c)].photoA})` } : {}"
-          >
-            <span class="cmp-card__thumb-badge cmp-card__thumb-badge--a">A</span>
-          </div>
-
-          <div class="cmp-card__vs-sep">VS</div>
-
-          <div
-            class="cmp-card__thumb cmp-card__thumb--b"
-            :class="{ 'cmp-card__thumb--loading': !cardData[cardKey(c)] || cardData[cardKey(c)].loading }"
-            :style="cardData[cardKey(c)]?.photoB ? { backgroundImage: `url(${cardData[cardKey(c)].photoB})` } : {}"
-          >
-            <span class="cmp-card__thumb-badge cmp-card__thumb-badge--b">B</span>
-          </div>
+          <template v-for="(city, i) in c.cities" :key="`${city.state}-${city.city}`">
+            <div v-if="i > 0" class="cmp-card__vs-sep">VS</div>
+            <div
+              class="cmp-card__thumb"
+              :class="{ 'cmp-card__thumb--loading': !cardData[cardKey(c)] || cardData[cardKey(c)].loading }"
+              :style="cardData[cardKey(c)]?.cities[i]?.photo ? { backgroundImage: `url(${cardData[cardKey(c)].cities[i].photo})` } : {}"
+            >
+              <span class="cmp-card__thumb-badge">{{ String.fromCharCode(65 + i) }}</span>
+            </div>
+          </template>
         </div>
 
         <!-- Stats -->
-        <div class="cmp-card__stats">
-          <div class="cmp-card__city-col">
-            <div class="cmp-card__city-name">{{ c.city_name_a }}</div>
-            <div class="cmp-card__city-sub">{{ c.state_a.toUpperCase() }}<template v-if="cardData[cardKey(c)]?.popA"> · {{ formatPop(cardData[cardKey(c)].popA!) }}</template></div>
-          </div>
-          <div class="cmp-card__city-col cmp-card__city-col--b">
-            <div class="cmp-card__city-name">{{ c.city_name_b }}</div>
-            <div class="cmp-card__city-sub">{{ c.state_b.toUpperCase() }}<template v-if="cardData[cardKey(c)]?.popB"> · {{ formatPop(cardData[cardKey(c)].popB!) }}</template></div>
+        <div class="cmp-card__stats" :style="{ gridTemplateColumns: `repeat(${c.cities.length}, 1fr)` }">
+          <div v-for="(city, i) in c.cities" :key="`${city.state}-${city.city}-stat`" class="cmp-card__city-col" :class="{ 'cmp-card__city-col--b': i > 0 }">
+            <div class="cmp-card__city-name">{{ city.city_name }}</div>
+            <div class="cmp-card__city-sub">{{ city.state.toUpperCase() }}<template v-if="cardData[cardKey(c)]?.cities[i]?.population"> · {{ formatPop(cardData[cardKey(c)].cities[i].population!) }}</template></div>
           </div>
         </div>
 

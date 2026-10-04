@@ -7,6 +7,7 @@ import { useFriends } from '../composables/useFriends';
 import { useToast } from '../composables/useToast';
 import { useRecentSearches } from '../composables/useRecentSearches';
 import { supabase } from '../lib/supabase';
+import { buildCompareUrl } from '../lib/compare';
 import { canViewerAccessProfileContent, getProfileVisibilityNotice, type ProfileVisibility } from '../lib/profilePrivacy';
 
 const route  = useRoute();
@@ -44,12 +45,7 @@ interface FavRow {
 
 interface CompRow {
   id: string;
-  city_a: string;
-  state_a: string;
-  city_b: string;
-  state_b: string;
-  city_name_a: string;
-  city_name_b: string;
+  cities: { slot: number; state: string; city: string; city_name: string }[];
 }
 
 // ── State ─────────────────────────────────────────────────────
@@ -132,7 +128,7 @@ async function fetchFriendContent(profileId: string) {
       .limit(5),
     supabase
       .from('saved_comparisons')
-      .select('id, city_a, state_a, city_b, state_b, city_name_a, city_name_b')
+      .select('id, saved_comparison_cities(slot, state, city, city_name)')
       .eq('user_id', profileId)
       .order('created_at', { ascending: false })
       .limit(6),
@@ -146,7 +142,10 @@ async function fetchFriendContent(profileId: string) {
       .eq('user_id', profileId),
   ]);
   friendFavorites.value   = favsRes.data ?? [];
-  friendComparisons.value = compsRes.data ?? [];
+  friendComparisons.value = (compsRes.data ?? []).map((row: any) => ({
+    id: row.id,
+    cities: [...(row.saved_comparison_cities ?? [])].sort((a: any, b: any) => a.slot - b.slot),
+  }));
   friendFavCount.value    = favCountRes.count ?? 0;
   friendCompCount.value   = compCountRes.count ?? 0;
 }
@@ -410,10 +409,10 @@ watch(() => user.value?.id, loadProfile);
               v-for="comp in recentFriendComparisons"
               :key="comp.id"
               class="profile-list__item"
-              @click="router.push({ name: 'compare', params: { stateA: comp.state_a, cityA: comp.city_a, stateB: comp.state_b, cityB: comp.city_b } })"
+              @click="router.push(buildCompareUrl(comp.cities.map((c) => ({ state: c.state, city: c.city }))))"
             >
-              <span class="profile-list__title">{{ comp.city_name_a }} vs {{ comp.city_name_b }}</span>
-              <span class="profile-list__meta">{{ comp.state_a.toUpperCase() }} / {{ comp.state_b.toUpperCase() }}</span>
+              <span class="profile-list__title">{{ comp.cities.map((c) => c.city_name).join(' vs ') }}</span>
+              <span class="profile-list__meta">{{ comp.cities.map((c) => c.state.toUpperCase()).join(' / ') }}</span>
             </button>
           </div>
           <p v-else class="profile-card__empty">No saved comparisons yet.</p>

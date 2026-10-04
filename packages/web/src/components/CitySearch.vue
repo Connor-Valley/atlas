@@ -245,8 +245,11 @@ function cityToSlug(city: string) {
 function submit() {
   if (!localCity.value || !localState.value) return;
 
+  const typed = localCity.value.trim().toLowerCase();
+  const matched = cities.value.find((c) => c.name.trim().toLowerCase() === typed);
+
   emit("search", {
-    city: cityToSlug(localCity.value),
+    city: matched?.slug ?? cityToSlug(localCity.value),
     state: localState.value.trim().toUpperCase(),
   });
 }
