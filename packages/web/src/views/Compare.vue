@@ -316,17 +316,57 @@ onMounted(() => {
 
 // Sticky header shrink
 // A 1px sentinel sits right above the sticky header row. Once its top edge scrolls up
-// past the point where the header row starts sticking (stickyOffset), the header has
-// begun sticking. Shrink it so it doesn't dominate the screen while scrolling through
-// the metric rows below it. Driven directly off scroll position (rather than an
-// IntersectionObserver) so it can't fall out of sync with the dynamic stickyOffset.
+// past the point where the header row starts sticking (stickyOffset), the header shrinks
+// so it doesn't dominate the screen while scrolling through the metric rows below it.
+//
+// The shrink is scroll-linked rather than a toggled class with a timed transition: the
+// header loses one pixel of height per pixel scrolled, over exactly the distance it has
+// to lose, so its bottom edge stays glued to the first metric row and scrolling back and
+// forth across the stick point just scrubs the collapse instead of replaying an animation.
+// Progress is written straight to a CSS variable on the row (not a ref) so a scroll frame
+// doesn't re-render the whole table.
 const headerSentinel = ref<HTMLElement | null>(null);
+const headerRow = ref<HTMLElement | null>(null);
+// True only once fully collapsed. Drives the few discrete bits (removing hidden controls).
 const headerStuck = ref(false);
 let scrollRaf = 0;
 
+// Height a city column loses besides its expand block: 2 x 4px of padding plus the top
+// row's 8px margin. Keep in sync with CompareCityColumn.vue's styles.
+const COLLAPSE_FIXED_PX = 16;
+let collapseDistance = 0;
+
+function measureCollapseDistance() {
+  const row = headerRow.value;
+  if (!row) return;
+  let expand = 0;
+  row.querySelectorAll<HTMLElement>(".cmp-col__expand-inner").forEach((el) => {
+    expand = Math.max(expand, el.offsetHeight);
+  });
+  if (!expand) return;
+  collapseDistance = expand + COLLAPSE_FIXED_PX;
+  row.style.setProperty("--cmp-expand-h", `${expand}px`);
+  row.style.setProperty("--cmp-collapse-dist", `${collapseDistance}px`);
+}
+
 function updateHeaderStuck() {
-  const el = headerSentinel.value;
-  headerStuck.value = !!el && el.getBoundingClientRect().top <= stickyOffset.value;
+  const sentinel = headerSentinel.value;
+  const row = headerRow.value;
+  if (!sentinel || !row) {
+    headerStuck.value = false;
+    return;
+  }
+  if (!collapseDistance) measureCollapseDistance();
+  const scrolled = stickyOffset.value - sentinel.getBoundingClientRect().top;
+  const progress = collapseDistance ? Math.min(1, Math.max(0, scrolled / collapseDistance)) : 0;
+  row.style.setProperty("--cmp-collapse", progress.toFixed(3));
+  headerStuck.value = progress >= 1;
+}
+
+// Column heights can change with the viewport or the set of cities, so re-measure lazily.
+function invalidateCollapseDistance() {
+  collapseDistance = 0;
+  onScroll();
 }
 
 function onScroll() {
@@ -339,19 +379,26 @@ function onScroll() {
 
 onMounted(() => {
   window.addEventListener("scroll", onScroll, { passive: true });
-  window.addEventListener("resize", onScroll, { passive: true });
+  window.addEventListener("resize", invalidateCollapseDistance, { passive: true });
 });
 
 onUnmounted(() => {
   window.removeEventListener("scroll", onScroll);
-  window.removeEventListener("resize", onScroll);
+  window.removeEventListener("resize", invalidateCollapseDistance);
   if (scrollRaf) cancelAnimationFrame(scrollRaf);
   resizeObserver?.disconnect();
 });
 
-// Re-check whenever the sentinel mounts/unmounts (table toggles in/out) or the site
-// header's measured height changes.
-watch([headerSentinel, stickyOffset], () => updateHeaderStuck(), { flush: "post" });
+// Re-check whenever the sentinel mounts/unmounts (table toggles in/out), the site
+// header's measured height changes, or the set of cities changes.
+watch(
+  [headerSentinel, headerRow, stickyOffset, bundles],
+  () => {
+    collapseDistance = 0;
+    updateHeaderStuck();
+  },
+  { flush: "post" },
+);
 </script>
 
 <template>
@@ -359,10 +406,7 @@ watch([headerSentinel, stickyOffset], () => updateHeaderStuck(), { flush: "post"
     <DashboardHeader page-label="City Comparison" @logo-click="resetToSearch" @search="onHeaderSearch" />
 
     <div class="cmp-page__header">
-      <div>
-        <div class="cmp-page__eyebrow">SIDE BY SIDE</div>
-        <h1 class="cmp-page__title">Compare up to four cities</h1>
-      </div>
+      <h1 class="cmp-page__eyebrow">SIDE BY SIDE</h1>
       <div v-if="slots.length >= 2" class="cmp-page__actions">
         <button class="cmp-page__action-btn" @click="share">{{ shareCopied ? "Copied" : "Share" }}</button>
         <button class="cmp-page__action-btn cmp-page__action-btn--primary" @click="toggleSave">
@@ -498,11 +542,11 @@ watch([headerSentinel, stickyOffset], () => updateHeaderStuck(), { flush: "post"
       <div ref="headerSentinel" class="cmp-table__sentinel"></div>
       <div class="cmp-table">
         <div
+          ref="headerRow"
           class="cmp-table__header-row"
-          :class="{ 'cmp-table__header-row--compact': headerStuck }"
           :style="{ top: `${stickyOffset}px` }"
         >
-          <div class="cmp-table__header-spacer" :class="{ 'cmp-table__header-spacer--compact': headerStuck }">
+          <div class="cmp-table__header-spacer">
             <div class="cmp-table__header-title">
               <span class="mdi mdi-swap-horizontal cmp-table__header-icon"></span>
               <span>Comparing {{ bundles.length }} cities</span>

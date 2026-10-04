@@ -18,15 +18,14 @@ defineEmits<{ remove: []; "set-baseline": [] }>();
 
 const letter = computed(() => String.fromCharCode(65 + props.slotIndex));
 const meta = computed(() => `${props.state.toUpperCase()} · ${props.county} · ${props.population.toLocaleString()}`);
-const compactLabel = computed(() => cityLabel(props.name, props.state));
 </script>
 
 <template>
-  <div class="cmp-col" :class="{ 'cmp-col--compact': compact }" :style="{ '--slot-color': `var(--compare-slot-${slotIndex + 1})` }">
+  <div class="cmp-col" :style="{ '--slot-color': `var(--compare-slot-${slotIndex + 1})` }">
     <div class="cmp-col__top">
       <span class="mdi mdi-drag-vertical cmp-col__drag-handle" title="Drag to reorder"></span>
       <span class="cmp-col__badge">{{ letter }}</span>
-      <span class="cmp-col__name" :title="cityLabel(name, state)">{{ compact ? compactLabel : name }}</span>
+      <span class="cmp-col__name" :title="cityLabel(name, state)">{{ name }}<span class="cmp-col__name-state">, {{ state.toUpperCase() }}</span></span>
       <div class="cmp-col__spacer"></div>
       <span
         v-if="atlasScore != null"
@@ -67,26 +66,19 @@ const compactLabel = computed(() => cityLabel(props.name, props.state));
   display: flex;
   flex: 1 1 0;
   flex-direction: column;
-  padding: 14px 16px;
+  /* --cmp-collapse (0 expanded, 1 compact) is set on the header row by Compare.vue from
+     the scroll position. The vertical sizes below that shrink with it (this padding, the
+     top row's margin, and the expand block) must add up to its --cmp-collapse-dist. */
+  padding: calc(14px - 4px * var(--cmp-collapse, 0)) 16px;
   min-width: 0;
   border-left: 1px solid var(--border-subtle);
-  transition: padding 0.25s ease;
-}
-
-.cmp-col--compact {
-  padding: 10px 16px;
 }
 
 .cmp-col__top {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 8px;
-  transition: margin-bottom 0.25s ease;
-}
-
-.cmp-col--compact .cmp-col__top {
-  margin-bottom: 0;
+  margin-bottom: calc(8px * (1 - var(--cmp-collapse, 0)));
 }
 
 .cmp-col__drag-handle {
@@ -106,8 +98,18 @@ const compactLabel = computed(() => cityLabel(props.name, props.state));
   opacity: 0.4;
 }
 
+/* Baseline controls fade and fold away as the header collapses. The negative margin
+   cancels the flex gap they would otherwise leave behind. */
+.cmp-col__baseline-btn,
+.cmp-col__baseline-badge {
+  margin-left: calc(-8px * var(--cmp-collapse, 0));
+  opacity: calc(1 - 2 * var(--cmp-collapse, 0));
+  overflow: hidden;
+}
+
 .cmp-col__baseline-btn {
   flex: none;
+  max-width: calc(22px * (1 - var(--cmp-collapse, 0)));
   width: 22px;
   height: 22px;
   display: flex;
@@ -128,10 +130,11 @@ const compactLabel = computed(() => cityLabel(props.name, props.state));
 
 .cmp-col__baseline-badge {
   flex: none;
+  max-width: calc(90px * (1 - var(--cmp-collapse, 0)));
   font-family: var(--font-mono);
   font-size: 0.6rem;
   letter-spacing: 0.08em;
-  padding: 3px 7px;
+  padding: 3px calc(7px * (1 - var(--cmp-collapse, 0)));
   border-radius: 99px;
   background: color-mix(in srgb, var(--accent) 16%, transparent);
   color: var(--accent);
@@ -140,40 +143,38 @@ const compactLabel = computed(() => cityLabel(props.name, props.state));
 
 .cmp-col__badge {
   flex: none;
-  width: 20px;
-  height: 20px;
+  width: calc(20px - 2px * var(--cmp-collapse, 0));
+  height: calc(20px - 2px * var(--cmp-collapse, 0));
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.68rem;
+  font-size: calc(0.68rem - 0.04rem * var(--cmp-collapse, 0));
   font-weight: 800;
   color: #12100F;
   background: var(--slot-color);
-  transition: width 0.25s ease, height 0.25s ease;
-}
-
-.cmp-col--compact .cmp-col__badge {
-  width: 18px;
-  height: 18px;
-  font-size: 0.64rem;
 }
 
 .cmp-col__name {
   flex: 0 1 auto;
   min-width: 0;
-  font-size: 1rem;
+  font-size: calc(1rem - 0.05rem * var(--cmp-collapse, 0));
   font-weight: 700;
   letter-spacing: -0.01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--text-primary);
-  transition: font-size 0.25s ease;
 }
 
-.cmp-col--compact .cmp-col__name {
-  font-size: 0.95rem;
+/* ", ST" suffix: hidden while expanded (the meta line already shows the state) and
+   unfolded as that meta line collapses away. */
+.cmp-col__name-state {
+  display: inline-block;
+  max-width: calc(3em * var(--cmp-collapse, 0));
+  opacity: calc(2 * var(--cmp-collapse, 0) - 1);
+  overflow: hidden;
+  vertical-align: bottom;
 }
 
 .cmp-col__spacer {
@@ -203,15 +204,8 @@ const compactLabel = computed(() => cityLabel(props.name, props.state));
 
 .cmp-col__expand {
   overflow: hidden;
-  max-height: 160px;
-  opacity: 1;
-  transition: max-height 0.3s ease, opacity 0.2s ease;
-}
-
-.cmp-col--compact .cmp-col__expand {
-  max-height: 0;
-  opacity: 0;
-  transition: max-height 0.3s ease, opacity 0.15s ease;
+  max-height: calc(var(--cmp-expand-h, 160px) * (1 - var(--cmp-collapse, 0)));
+  opacity: calc(1 - 1.5 * var(--cmp-collapse, 0));
 }
 
 .cmp-col__expand-inner {
@@ -247,20 +241,15 @@ const compactLabel = computed(() => cityLabel(props.name, props.state));
   flex: none;
   font-size: 0.86rem;
   line-height: 1;
-  max-width: 0;
-  padding: 4px 0;
+  max-width: calc(80px * var(--cmp-collapse, 0));
+  /* Cancels the flex gap while the pill is folded shut. */
+  margin-left: calc(-8px * (1 - var(--cmp-collapse, 0)));
+  padding: 4px calc(9px * var(--cmp-collapse, 0));
   border-radius: 99px;
   background: color-mix(in srgb, var(--slot-color) 20%, transparent);
-  opacity: 0;
+  opacity: calc(2 * var(--cmp-collapse, 0) - 1);
   overflow: hidden;
   white-space: nowrap;
-  transition: max-width 0.25s ease, padding 0.25s ease, opacity 0.15s ease;
-}
-
-.cmp-col--compact .cmp-col__score--inline {
-  max-width: 80px;
-  padding: 4px 9px;
-  opacity: 1;
 }
 
 .cmp-col__score-max {

@@ -17,34 +17,23 @@ html.dark .cmp-page {
 /* Page header */
 .cmp-page__header {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: 24px;
-  margin-top: 28px;
-  margin-bottom: 22px;
+  /* Holds the row at button height when Share/Save are hidden (fewer than 2 cities). */
+  min-height: 38px;
+  margin-top: 20px;
+  margin-bottom: 16px;
   flex-wrap: wrap;
 }
 
 .cmp-page__eyebrow {
+  margin: 0;
   font-family: var(--font-mono);
   font-size: 0.68rem;
+  font-weight: 400;
   letter-spacing: 0.14em;
   color: var(--text-muted);
-  margin-bottom: 8px;
-}
-
-.cmp-page__title {
-  margin: 0;
-  font-size: 1.7rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  color: var(--text-primary);
-}
-
-.cmp-page__subtitle {
-  margin-top: 8px;
-  font-size: 0.86rem;
-  color: var(--text-secondary);
 }
 
 .cmp-page__actions {
@@ -217,31 +206,24 @@ html.dark .cmp-page {
   background: var(--bg-card-subtle);
   border-bottom: 1px solid var(--border-card);
   border-radius: 18px 18px 0 0;
-  transition: box-shadow 0.25s ease;
-}
-
-.cmp-table__header-row--compact {
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+  /* Scroll-linked collapse: Compare.vue sets --cmp-collapse (0 = fully expanded, 1 = fully
+     compact) from the scroll position, and every size in this row interpolates from it, so
+     the header shrinks in step with the scroll instead of animating on a threshold.
+     The margin gives back exactly the height the row has lost so far, which keeps the page
+     layout constant and the rows below scrolling at normal speed while it collapses. */
+  margin-bottom: calc(var(--cmp-collapse-dist, 0px) * var(--cmp-collapse, 0));
+  box-shadow: 0 6px 16px rgb(0 0 0 / calc(0.18 * var(--cmp-collapse, 0)));
 }
 
 .cmp-table__header-spacer {
   width: 260px;
   flex: none;
-  padding: 18px 16px;
+  padding: calc(18px - 8px * var(--cmp-collapse, 0)) 16px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 8px;
-  transition: padding 0.25s ease, gap 0.25s ease;
-}
-
-/* Stuck: the title collapses out of flow so "METRIC" centers onto the same line as
-   the compact city names instead of sitting alone on a second row. */
-.cmp-table__header-spacer--compact {
-  padding: 10px 16px;
-  justify-content: center;
-  gap: 0;
+  gap: calc(8px * (1 - var(--cmp-collapse, 0)));
 }
 
 .cmp-table__header-cities {
@@ -264,23 +246,20 @@ body.cmp-dragging {
   -webkit-user-select: none;
 }
 
-.cmp-table__header-spacer--compact .cmp-table__header-title {
-  max-height: 0;
-  opacity: 0;
-}
-
 .cmp-table__header-title {
   display: flex;
   align-items: center;
   gap: 7px;
-  max-height: 28px;
+  /* Collapses out of flow as the header sticks, so "METRIC" ends up on the same line
+     as the compact city names instead of alone on a second row. */
+  max-height: calc(28px * (1 - var(--cmp-collapse, 0)));
+  opacity: calc(1 - 2 * var(--cmp-collapse, 0));
   overflow: hidden;
   white-space: nowrap;
   font-size: 1rem;
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--text-primary);
-  transition: max-height 0.25s ease, opacity 0.15s ease;
 }
 
 .cmp-table__header-icon {
@@ -289,6 +268,8 @@ body.cmp-dragging {
 }
 
 .cmp-table__header-label {
+  /* Same height as .cmp-col__top, so the two share a line once collapsed. */
+  line-height: 22px;
   font-family: var(--font-mono);
   font-size: 0.84rem;
   letter-spacing: 0.1em;
