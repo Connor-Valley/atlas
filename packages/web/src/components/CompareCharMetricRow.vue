@@ -5,7 +5,7 @@ defineProps<{
   row: CompareCharRow;
 }>();
 
-// Display-only abbreviations for the compare table's char cells — the full phrases
+// Display-only abbreviations for the compare table's char cells. The full phrases
 // (e.g. "Solid regional job market") are the canonical labels used elsewhere (persona
 // setup, AtlasScoreCard cubes) and stay untouched; this just keeps the 4-column table
 // from getting text-heavy.
@@ -30,7 +30,7 @@ const SHORTHAND: Record<string, string> = {
 };
 
 function shorten(char: string | null): string {
-  if (!char) return "—";
+  if (!char) return "N/A";
   return SHORTHAND[char] ?? char;
 }
 </script>

@@ -1,20 +1,20 @@
-/* City Comparison page (N-city, 2-4). BEM prefix .cmp-* — keyed to --compare-slot-1..4,
+/* City Comparison page (N-city, 2-4). BEM prefix .cmp-*, keyed to --compare-slot-1..4,
    not the old --city-a/-b (those stay in use elsewhere: expanded-view charts, theme toggle). */
 
-/* Sizing/padding come from the shared .container class (layout.css) — DashboardHeader's
+/* Sizing/padding come from the shared .container class (layout.css). DashboardHeader's
    -32px bleed margin only lines up correctly against .container's 32px padding, so this
    page must not override max-width/padding itself (that previously caused the header's
    search box to overflow past the viewport edge). */
 
 /* Dark mode's global --positive (bright mint) and --text-muted (near-black gray) read as
-   too harsh / too low-contrast against this page's dense tables of small text — softened
+   too harsh / too low-contrast against this page's dense tables of small text. Softened
    here rather than in variables.css to avoid touching those tokens site-wide. */
 html.dark .cmp-page {
   --positive: #8FCBA8;
   --text-muted: #86786A;
 }
 
-/* ── Page header ─────────────────────────────────────── */
+/* Page header */
 .cmp-page__header {
   display: flex;
   align-items: flex-end;
@@ -76,7 +76,7 @@ html.dark .cmp-page {
   background: var(--accent-hover);
 }
 
-/* ── Toolbar ─────────────────────────────────────────── */
+/* Toolbar */
 .cmp-toolbar {
   display: flex;
   align-items: center;
@@ -192,12 +192,12 @@ html.dark .cmp-page {
   border-color: color-mix(in srgb, var(--text-primary) 20%, var(--border-card));
 }
 
-/* ── Table shell ─────────────────────────────────────── */
+/* Table shell */
 .cmp-table {
   border: 1px solid var(--border-card);
   border-radius: 18px;
   background: var(--bg-card);
-  /* No overflow: hidden here — it would establish this element as the sticky header's
+  /* No overflow: hidden here, since it would establish this element as the sticky header's
      scrolling ancestor instead of the viewport, breaking/glitching position: sticky.
      Rounded corners are instead applied directly to the first/last child below. */
 }
@@ -230,17 +230,42 @@ html.dark .cmp-page {
   padding: 18px 16px;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
-  transition: padding 0.25s ease;
+  transition: padding 0.25s ease, gap 0.25s ease;
 }
 
+/* Stuck: the title collapses out of flow so "METRIC" centers onto the same line as
+   the compact city names instead of sitting alone on a second row. */
 .cmp-table__header-spacer--compact {
   padding: 10px 16px;
+  justify-content: center;
+  gap: 0;
+}
+
+.cmp-table__header-cities {
+  display: contents;
+}
+
+/* SortableJS (via vuedraggable's forceFallback) creates a cloned element that
+   follows the cursor freely in both axes. We don't want that floating preview,
+   just the in-row placeholder (.cmp-col--sortable-ghost) sliding between columns. */
+.sortable-fallback {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Simulated (forceFallback) drags don't get the browser's automatic text-selection
+   suppression that a native drag would. Without this, moving the mouse across the
+   row during a drag selects the page's text. */
+body.cmp-dragging {
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .cmp-table__header-spacer--compact .cmp-table__header-title {
+  max-height: 0;
   opacity: 0;
 }
 
@@ -248,11 +273,14 @@ html.dark .cmp-page {
   display: flex;
   align-items: center;
   gap: 7px;
+  max-height: 28px;
+  overflow: hidden;
+  white-space: nowrap;
   font-size: 1rem;
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--text-primary);
-  transition: opacity 0.15s ease;
+  transition: max-height 0.25s ease, opacity 0.15s ease;
 }
 
 .cmp-table__header-icon {
@@ -317,7 +345,7 @@ html.dark .cmp-page {
   color: var(--text-muted);
 }
 
-/* ── Empty / loading / error states ─────────────────────── */
+/* Empty / loading / error states */
 .cmp-empty {
   display: flex;
   flex-direction: column;
@@ -347,10 +375,10 @@ html.dark .cmp-page {
   color: var(--text-secondary);
 }
 
-/* ── Loading screen — uncached cities can take a few seconds (multiple Census/FHFA/EPA
-   lookups per city), so this replaces the old flat skeleton with something to actually
+/* Loading screen. Uncached cities can take a few seconds (multiple Census/FHFA/EPA
+   lookups per city), so this shows something to
    look at: bouncing pins for each city slot plus a rotating status line. Covers every
-   load, including the very first city (see the v-else-if ordering in Compare.vue). ── */
+   load, including the very first city (see the v-else-if ordering in Compare.vue). */
 .cmp-loading-screen {
   display: flex;
   flex-direction: column;
@@ -404,7 +432,7 @@ html.dark .cmp-page {
   opacity: 0;
 }
 
-/* ── Staging (one city selected, waiting on a second) ───── */
+/* Staging (one city selected, waiting on a second) */
 .cmp-staging {
   display: flex;
   align-items: stretch;
@@ -598,7 +626,7 @@ html.dark .cmp-page {
   }
 }
 
-/* ── Mobile: horizontal scroll, sticky label column ─────── */
+/* Mobile: horizontal scroll, sticky label column */
 @media (max-width: 900px) {
   .cmp-table {
     overflow-x: auto;

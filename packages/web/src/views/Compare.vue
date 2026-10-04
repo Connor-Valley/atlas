@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import draggable from "vuedraggable";
 import DashboardHeader from "../components/DashboardHeader.vue";
 import AuthModal from "../components/AuthModal.vue";
 import CompareCityColumn from "../components/CompareCityColumn.vue";
@@ -37,7 +38,7 @@ const { preferences, fetchPreferences } = usePreferences();
 void fetchComparisons();
 watch(user, () => void fetchComparisons());
 
-// Wait for auth to finish restoring the session before fetching preferences — mirrors
+// Wait for auth to finish restoring the session before fetching preferences. Mirrors
 // AtlasScoreCard.vue's guard against locking preferences to defaults on a transient null user.
 watch([user, authLoading], ([, isAuthLoading]) => {
   if (!isAuthLoading) void fetchPreferences();
@@ -65,6 +66,15 @@ const shareCopied = ref(false);
 function citiesEqual(a: CompareCityRef[], b: CompareCityRef[]) {
   if (a.length !== b.length) return false;
   return a.every((c, i) => c.state === b[i].state && c.city === b[i].city);
+}
+
+// Same cities, in any order. Used to tell a drag reorder apart from an actual
+// add/remove, so reordering never re-triggers a fetch of already-loaded data.
+function sameCitySet(a: CompareCityRef[], b: CompareCityRef[]) {
+  if (a.length !== b.length) return false;
+  const key = (c: CompareCityRef) => `${c.state}-${c.city}`;
+  const setA = new Set(a.map(key));
+  return b.every((c) => setA.has(key(c)));
 }
 
 watch(
@@ -108,9 +118,9 @@ async function loadBundles() {
   }
 }
 
-// ── Loading tips ─────────────────────────────────────────────────────────────
+// Loading tips
 // Uncached cities can take a few seconds to load (multiple Census/FHFA/EPA lookups per
-// city) — this rotating status line is the loading screen's only content, so it starts
+// city). This rotating status line is the loading screen's only content, so it starts
 // immediately rather than waiting to see if the load is "slow enough to bother".
 const loadingTip = ref("");
 const LOADING_TIPS = [
@@ -152,12 +162,45 @@ function syncRoute() {
 
 watch(
   slots,
-  () => {
+  (newSlots, oldSlots) => {
     syncRoute();
+    if (oldSlots && sameCitySet(newSlots, oldSlots) && !citiesEqual(newSlots, oldSlots)) {
+      // Pure reorder (drag-and-drop or "set as baseline"): bundles are already
+      // reordered locally, just realign them with the new slot order without refetching.
+      bundles.value = newSlots
+        .map((s) => bundles.value.find((b) => b.state === s.state && b.city === s.city))
+        .filter((b): b is CompareCityBundle => !!b);
+      return;
+    }
     void loadBundles();
   },
   { immediate: true, deep: true },
 );
+
+// Reordering & baseline selection
+// forceFallback drags via simulated mousemove rather than native HTML5 drag, which
+// means the browser doesn't automatically suppress text selection like it would for
+// a native drag. Without this, dragging across the row selects the surrounding text.
+function onDragStart() {
+  document.body.classList.add("cmp-dragging");
+}
+
+function onDragEnd() {
+  document.body.classList.remove("cmp-dragging");
+  const newSlots = bundles.value.map((b) => ({ state: b.state, city: b.city }));
+  if (!citiesEqual(newSlots, slots.value)) {
+    slots.value = newSlots;
+  }
+}
+
+function setBaseline(index: number) {
+  if (index === 0) return;
+  const reordered = [...bundles.value];
+  const [item] = reordered.splice(index, 1);
+  reordered.unshift(item);
+  bundles.value = reordered;
+  onDragEnd();
+}
 
 const groups = computed(() => buildCompareGroups(bundles.value));
 const rankedRows = computed(() => groups.value.flatMap((g) => g.rows).filter((r) => r.ranked));
@@ -238,7 +281,7 @@ function resetToSearch() {
   router.push({ name: "search" });
 }
 
-// ── Sticky header offset ────────────────────────────────────────────────────
+// Sticky header offset
 // DashboardHeader is itself sticky (top: 0). If the comparison table's header row
 // also sticks at top: 0, the two fight for the same spot and the table header
 // visually glitches under/behind the site header instead of stacking below it.
@@ -248,7 +291,7 @@ function resetToSearch() {
 // multi-root template (<header> plus a sibling <AuthModal v-if>), so its component
 // instance's $el resolves to Vue's internal fragment anchor (a comment node, no
 // getBoundingClientRect) rather than the actual <header> element.
-// 60 matches .dashboard-hdr's fixed desktop height (see comparePage.css) — used as the
+// 60 matches .dashboard-hdr's fixed desktop height (see comparePage.css), used as the
 // correct value up front instead of 0, in case the live measurement below is ever delayed
 // or unavailable (e.g. SSR, ResizeObserver support). Updated to the real height once measured.
 const stickyOffset = ref(60);
@@ -256,7 +299,7 @@ const stickyOffset = ref(60);
 function measureStickyOffset() {
   const el = document.querySelector<HTMLElement>(".dashboard-hdr");
   const height = el?.getBoundingClientRect().height;
-  // Ignore 0/undefined reads (element not yet laid out) — keep the last-known-good value
+  // Ignore 0/undefined reads (element not yet laid out) and keep the last-known-good value
   // rather than collapsing the offset to 0, which would re-introduce the header overlap bug.
   if (height) stickyOffset.value = height;
 }
@@ -271,10 +314,10 @@ onMounted(() => {
   if (el) resizeObserver?.observe(el);
 });
 
-// ── Sticky header shrink ────────────────────────────────────────────────────
+// Sticky header shrink
 // A 1px sentinel sits right above the sticky header row. Once its top edge scrolls up
 // past the point where the header row starts sticking (stickyOffset), the header has
-// begun sticking — shrink it so it doesn't dominate the screen while scrolling through
+// begun sticking. Shrink it so it doesn't dominate the screen while scrolling through
 // the metric rows below it. Driven directly off scroll position (rather than an
 // IntersectionObserver) so it can't fall out of sync with the dynamic stickyOffset.
 const headerSentinel = ref<HTMLElement | null>(null);
@@ -466,18 +509,34 @@ watch([headerSentinel, stickyOffset], () => updateHeaderStuck(), { flush: "post"
             </div>
             <span class="cmp-table__header-label">METRIC</span>
           </div>
-          <CompareCityColumn
-            v-for="(b, i) in bundles"
-            :key="`${b.state}-${b.city}`"
-            :slot-index="i"
-            :name="b.name"
-            :state="b.state"
-            :county="b.county"
-            :population="b.population"
-            :atlas-score="b.atlasScore"
-            :compact="headerStuck"
-            @remove="removeSlot(i)"
-          />
+          <draggable
+            v-model="bundles"
+            :item-key="(b: CompareCityBundle) => `${b.state}-${b.city}`"
+            tag="div"
+            class="cmp-table__header-cities"
+            handle=".cmp-col__drag-handle"
+            :animation="180"
+            :force-fallback="true"
+            ghost-class="cmp-col--sortable-ghost"
+            @start="onDragStart"
+            @end="onDragEnd"
+          >
+            <template #item="{ element: b, index: i }">
+              <CompareCityColumn
+                :slot-index="i"
+                :name="b.name"
+                :state="b.state"
+                :county="b.county"
+                :population="b.population"
+                :atlas-score="b.atlasScore"
+                :compact="headerStuck"
+                :is-baseline="i === 0"
+                :show-baseline-action="mode === 'delta'"
+                @remove="removeSlot(i)"
+                @set-baseline="setBaseline(i)"
+              />
+            </template>
+          </draggable>
         </div>
 
         <CompareMetricGroup

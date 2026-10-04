@@ -1,4 +1,4 @@
-// Pure rank/bar/delta math for the N-city comparison table. No Vue or API imports — operates
+// Pure rank/bar/delta math for the N-city comparison table. No Vue or API imports; operates
 // only on the CompareCell/CompareRow shapes defined in compare.ts.
 
 export type MetricDirection = "higher" | "lower";
@@ -7,12 +7,12 @@ export type CompareCell = {
   value: number | null;
   display: string;
   // Explains why a cell has no value (e.g. only lower-fidelity data was available), shown as a
-  // tooltip on the "—" placeholder. Null when the cell simply has no explanation to offer.
+  // tooltip on the "N/A" placeholder. Null when the cell simply has no explanation to offer.
   note: string | null;
 };
 
 // Fraction below which a delta-vs-first is treated as "no real difference" rather than a
-// good/bad swing — avoids painting green/red pills over noise-level gaps.
+// good/bad swing. Avoids painting green/red pills over noise-level gaps.
 const FLAT_THRESHOLD = 0.02;
 
 /**
@@ -54,7 +54,7 @@ export function worstIndex(cells: CompareCell[], direction: MetricDirection): nu
 }
 
 /**
- * Proportional bar width (0–1) for a cell relative to the rest of the row. For "higher" metrics
+ * Proportional bar width (0-1) for a cell relative to the rest of the row. For "higher" metrics
  * this is value/max; for "lower" metrics it's inverted (min/value) so the best (lowest) value
  * still draws the fullest bar.
  */

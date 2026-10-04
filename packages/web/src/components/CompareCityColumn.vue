@@ -10,9 +10,11 @@ const props = defineProps<{
   population: number;
   atlasScore: number | null;
   compact?: boolean;
+  isBaseline?: boolean;
+  showBaselineAction?: boolean;
 }>();
 
-defineEmits<{ remove: [] }>();
+defineEmits<{ remove: []; "set-baseline": [] }>();
 
 const letter = computed(() => String.fromCharCode(65 + props.slotIndex));
 const meta = computed(() => `${props.state.toUpperCase()} · ${props.county} · ${props.population.toLocaleString()}`);
@@ -22,10 +24,27 @@ const compactLabel = computed(() => cityLabel(props.name, props.state));
 <template>
   <div class="cmp-col" :class="{ 'cmp-col--compact': compact }" :style="{ '--slot-color': `var(--compare-slot-${slotIndex + 1})` }">
     <div class="cmp-col__top">
+      <span class="mdi mdi-drag-vertical cmp-col__drag-handle" title="Drag to reorder"></span>
       <span class="cmp-col__badge">{{ letter }}</span>
       <span class="cmp-col__name" :title="cityLabel(name, state)">{{ compact ? compactLabel : name }}</span>
-      <span v-if="atlasScore != null" class="cmp-col__score cmp-col__score--inline">{{ atlasScore }}</span>
       <div class="cmp-col__spacer"></div>
+      <span
+        v-if="atlasScore != null"
+        class="cmp-col__score cmp-col__score--inline"
+        :title="`Atlas Score: ${atlasScore}/100`"
+      >{{ atlasScore }}<span class="cmp-col__score-max">/100</span></span>
+      <span
+        v-if="!compact && isBaseline && showBaselineAction"
+        class="cmp-col__baseline-badge"
+        title="Baseline for the delta comparison"
+      >BASELINE</span>
+      <button
+        v-else-if="!compact && showBaselineAction"
+        class="cmp-col__baseline-btn"
+        type="button"
+        title="Set as baseline for the delta comparison"
+        @click="$emit('set-baseline')"
+      ><span class="mdi mdi-flag-outline"></span></button>
       <button class="cmp-col__remove" type="button" aria-label="Remove city" @click="$emit('remove')">×</button>
     </div>
     <div class="cmp-col__expand">
@@ -70,6 +89,55 @@ const compactLabel = computed(() => cityLabel(props.name, props.state));
   margin-bottom: 0;
 }
 
+.cmp-col__drag-handle {
+  flex: none;
+  font-size: 1.2rem;
+  line-height: 1;
+  margin-left: -6px;
+  color: var(--text-muted);
+  cursor: grab;
+}
+
+.cmp-col__drag-handle:active {
+  cursor: grabbing;
+}
+
+.cmp-col--sortable-ghost {
+  opacity: 0.4;
+}
+
+.cmp-col__baseline-btn {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.cmp-col__baseline-btn:hover {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+}
+
+.cmp-col__baseline-badge {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  padding: 3px 7px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent);
+  white-space: nowrap;
+}
+
 .cmp-col__badge {
   flex: none;
   width: 20px;
@@ -86,9 +154,9 @@ const compactLabel = computed(() => cityLabel(props.name, props.state));
 }
 
 .cmp-col--compact .cmp-col__badge {
-  width: 16px;
-  height: 16px;
-  font-size: 0.58rem;
+  width: 18px;
+  height: 18px;
+  font-size: 0.64rem;
 }
 
 .cmp-col__name {
@@ -105,7 +173,7 @@ const compactLabel = computed(() => cityLabel(props.name, props.state));
 }
 
 .cmp-col--compact .cmp-col__name {
-  font-size: 0.86rem;
+  font-size: 0.95rem;
 }
 
 .cmp-col__spacer {
@@ -177,17 +245,30 @@ const compactLabel = computed(() => cityLabel(props.name, props.state));
 
 .cmp-col__score--inline {
   flex: none;
-  font-size: 0.92rem;
+  font-size: 0.86rem;
+  line-height: 1;
   max-width: 0;
+  padding: 4px 0;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--slot-color) 20%, transparent);
   opacity: 0;
   overflow: hidden;
   white-space: nowrap;
-  transition: max-width 0.25s ease, opacity 0.15s ease;
+  transition: max-width 0.25s ease, padding 0.25s ease, opacity 0.15s ease;
 }
 
 .cmp-col--compact .cmp-col__score--inline {
-  max-width: 48px;
+  max-width: 80px;
+  padding: 4px 9px;
   opacity: 1;
+}
+
+.cmp-col__score-max {
+  margin-left: 1px;
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--text-muted);
 }
 
 .cmp-col__score-label {
