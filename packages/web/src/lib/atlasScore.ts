@@ -598,7 +598,7 @@ function cityClimateChar(climate: any): string | null {
 // educational attainment — a well-educated bedroom suburb with no local employer base isn't a
 // "knowledge economy," it just has residents who commute elsewhere or work remotely.
 const INDUSTRY_LABELS: Record<string, string> = {
-  'Agriculture, Forestry & Mining':      'Agriculture & Natural Resources',
+  'Agriculture, Forestry, & Mining':      'Agriculture & Natural Resources',
   'Construction':                        'Construction & Trades',
   'Manufacturing':                       'Manufacturing',
   'Wholesale Trade':                     'Wholesale & Distribution',
@@ -606,15 +606,15 @@ const INDUSTRY_LABELS: Record<string, string> = {
   'Transportation & Utilities':          'Transportation & Logistics',
   // "Information" (NAICS 51 — publishing, telecom, data processing) is narrower than
   // colloquial "tech": most software/R&D/engineering employment (Palo Alto, the Bay Area,
-  // etc.) is coded under "Professional, Scientific & Technical Services" instead, which is
+  // etc.) is coded under "Professional, Scientific, & Technical Services" instead, which is
   // why that's the one labeled "Tech" below, not this one.
   'Information':                                  'Media & Telecom',
-  'Finance, Insurance & Real Estate':             'Finance & Real Estate',
-  'Professional, Scientific & Technical Services': 'Tech & Professional Services',
+  'Finance, Insurance, & Real Estate':             'Finance & Real Estate',
+  'Professional, Scientific, & Technical Services': 'Tech & Professional Services',
   'Corporate Management':                          'Corporate Headquarters',
   'Administrative & Waste Services':               'Administrative & Support Services',
-  'Education, Health & Social Services': 'Education & Healthcare',
-  'Arts, Entertainment & Food Services': 'Hospitality & Entertainment',
+  'Education, Health, & Social Services': 'Education & Healthcare',
+  'Arts, Entertainment, & Food Services': 'Hospitality & Entertainment',
   'Other Services':                      'Local Services',
   'Public Administration':               'Government & Public Sector',
 };
