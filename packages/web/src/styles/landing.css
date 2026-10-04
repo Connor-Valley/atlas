@@ -525,6 +525,14 @@ html:not(.dark) .dashboard-panel {
   gap: 8px;
 }
 
+/* Income page's snapshot sits as a regular item inside housing-exp__grid (so
+   the next panel fills the row beside it instead of leaving it stretched
+   across an empty row) — at one column's width, 3 across is too narrow for
+   its metric tiles, so drop to 2. */
+.housing-exp__grid .housing-exp__snapshot-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .snap-metric {
   display: flex;
   flex-direction: column;
@@ -838,9 +846,12 @@ html:not(.dark) .snap-metric--secondary {
 
 .bar-list__label {
   flex: 1;
+  min-width: 0;
   font-size: 0.81rem;
   color: var(--text-secondary);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .bar-list__track {

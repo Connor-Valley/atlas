@@ -141,6 +141,8 @@ All data comes from the **US Census ACS 5-year API**. The `places/place-resolver
 
 **FHFA House Price Index** data is loaded from a flat file into memory at startup via `initializeHpiCache()` in `housing.service.ts` — it does not hit an external API at request time.
 
+**`income-by-industry`** (salary by industry + seniority, `GET /income-by-industry/:state/:city/:industry`) is the one domain not sourced from Census ACS data directly — it queries the **BLS OEWS** API, mapping the 11 `opportunity_preference` industry categories to representative SOC occupation major groups (`soc-mapping.ts`, verified against the live API). Geography resolution is metro-first: the city's lat/lon is reverse-geocoded to its real Metropolitan Statistical Area via the **Census Geocoder** (`geocoding.geo.census.gov`, free/keyless), then checked against `msa-codes.ts`'s list of CBSAs actually verified to have BLS data (139, as of writing) — this correctly covers every city inside a metro, not just the 1-3 "principal cities" a CBSA's title names (San Leandro resolves to the same San Francisco-Oakland-Fremont metro as Oakland, for example). Falls back to statewide OEWS data when the geocoded CBSA isn't in the verified set, or when the city has no lat/lon. BLS blocks bot access to its own nonmetro area-definitions file, so a nonmetro-region tier (between metro and statewide) isn't wired up yet — small towns outside any metro jump straight to state-level.
+
 ### Auth & database
 
 Supabase handles auth (email/password). Row-level security enforces data ownership. The anon key is safe in frontend code — RLS is the security layer. The service role key must never appear in frontend code.
@@ -159,6 +161,7 @@ VITE_TURNSTILE_SITE_KEY=
 **API** (`.env` or `.env.development` at repo root):
 ```
 CENSUS_API_KEY=               # optional — requests still work without it, but rate-limited
+BLS_API_KEY=                  # BLS OEWS salary-by-industry data (income-by-industry domain). Required — no key means 25 req/day (v1), too low to be usable.
 PORT=                         # defaults to 3000
 SUPABASE_URL=                 # same value as VITE_SUPABASE_URL
 SUPABASE_SERVICE_ROLE_KEY=    # service role key (never expose client-side)

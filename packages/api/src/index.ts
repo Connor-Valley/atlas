@@ -6,6 +6,7 @@ import cors from "cors";
 import citiesRouter from "./cities/cities.route.js";
 import housingRouter from "./housing/housing.route.js";
 import incomeRouter from "./income/income.route.js"
+import incomeByIndustryRouter from "./income-by-industry/income-by-industry.route.js"
 import affordabilityRouter from "./affordability/affordability.route.js"
 import statesRouter from "./states/states.route.js"
 import shareRouter from "./share/share.route.js";
@@ -49,6 +50,7 @@ app.get('/health', (_req, res) => {
 app.use('/cities', citiesRouter);
 app.use('/housing', housingRouter);
 app.use('/income', incomeRouter);
+app.use('/income-by-industry', incomeByIndustryRouter);
 app.use('/affordability', affordabilityRouter);
 app.use('/states', statesRouter);
 app.use('/share', shareRouter);

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from "vue";
 import { fetchDetailedIncome } from "../api/income";
+import { fetchIndustrySalary, type IndustrySalaryData } from "../api/incomeByIndustry";
+import { useAuth } from "../composables/useAuth";
+import { usePreferences } from "../composables/usePreferences";
 
 const props = defineProps<{ city: string; state: string }>();
 const emit = defineEmits<{ (e: 'close'): void }>();
@@ -8,6 +11,112 @@ const emit = defineEmits<{ (e: 'close'): void }>();
 const data    = ref<any>(null);
 const loading = ref(false);
 const error   = ref<string | null>(null);
+
+// ── Salary by industry ─────────────────────────────────────────────────────────
+
+const INDUSTRY_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: 'tech_media_pro',           label: 'Tech, Media, & Professional Services' },
+  { value: 'corporate_finance',        label: 'Corporate & Finance' },
+  { value: 'manufacturing',            label: 'Manufacturing & Industrial' },
+  { value: 'construction_trades',      label: 'Construction & Trades' },
+  { value: 'transportation_logistics', label: 'Transportation, Logistics, & Distribution' },
+  { value: 'education_healthcare',     label: 'Education & Healthcare' },
+  { value: 'government_services',      label: 'Government & Public Services' },
+  { value: 'retail',                   label: 'Retail & Consumer Services' },
+  { value: 'hospitality_arts',         label: 'Hospitality, Arts, & Entertainment' },
+  { value: 'agriculture',              label: 'Agriculture & Natural Resources' },
+  { value: 'nonprofit',                label: 'Nonprofit & Community Organizations' },
+];
+
+const TIER_LABELS: Record<string, string> = { entry: 'Entry Level', mid: 'Mid Level', senior: 'Senior Level' };
+
+const selectedIndustry     = ref<string>('');
+const industryData         = ref<IndustrySalaryData | null>(null);
+const industryLoading      = ref(false);
+const industryError        = ref<string | null>(null);
+
+// Default the picker to the user's own saved industry from personalization, if they have one —
+// same source AtlasScoreCard's opportunity dimension reads (opportunity_preference), so picking
+// a city shows their own field first rather than an empty dropdown they have to fill in again.
+const { user, loading: authLoading } = useAuth();
+const { preferences, fetchPreferences } = usePreferences();
+let industryAutoSelected = false;
+
+watch([user, authLoading], ([, isAuthLoading]) => {
+  if (!isAuthLoading) fetchPreferences();
+}, { immediate: true });
+
+watch(preferences, (p) => {
+  if (industryAutoSelected || selectedIndustry.value) return;
+  // opportunity_preference is multi-select now — this dropdown is single-select, so just take
+  // the first specific (non-"any") industry the user picked.
+  const preferred = p.opportunity_preference.find((v) => v !== 'any');
+  if (preferred && INDUSTRY_OPTIONS.some((opt) => opt.value === preferred)) {
+    selectedIndustry.value = preferred;
+    industryAutoSelected = true;
+  }
+}, { immediate: true, deep: true });
+
+async function loadIndustrySalary() {
+  if (!selectedIndustry.value || !props.city || !props.state) return;
+  industryLoading.value = true;
+  industryError.value   = null;
+  industryData.value    = null;
+  try {
+    industryData.value = await fetchIndustrySalary(props.state, props.city, selectedIndustry.value);
+    if (!industryData.value) industryError.value = "No salary data available for this area/industry";
+  } catch {
+    industryError.value = "Failed to load salary data";
+  } finally {
+    industryLoading.value = false;
+  }
+}
+
+// Combined into one watcher (rather than separate watchers on selectedIndustry and on
+// [city, state]) so it self-heals regardless of which becomes ready first — the auto-select
+// above can set selectedIndustry before props.city/state have arrived (or vice versa), and a
+// watcher on selectedIndustry alone would fire once, see empty props, bail via the guard in
+// loadIndustrySalary, and never retry once props actually populate.
+watch(
+  [selectedIndustry, () => props.city, () => props.state],
+  ([industry, city, state]) => {
+    if (!industry || !city || !state) return;
+    loadIndustrySalary();
+  },
+  { immediate: true },
+);
+
+const industryTierBars = computed(() => {
+  const tiers = industryData.value?.tiers;
+  if (!tiers?.length) return [];
+  const max = Math.max(...tiers.map((t) => t.annualWage ?? 0));
+  return tiers.map((t) => ({
+    label: TIER_LABELS[t.level] ?? t.level,
+    value: t.annualWage,
+    pct: t.annualWage != null && max > 0 ? (t.annualWage / max) * 100 : 0,
+  }));
+});
+
+// Location Quotient: local employment share of this industry vs. its national share.
+// 1.0 = exactly proportional to the national average.
+const locationQuotientLabel = computed(() => {
+  const lq = industryData.value?.locationQuotient;
+  if (lq == null) return null;
+  if (lq >= 1.5) return 'Highly concentrated';
+  if (lq >= 1.1) return 'Above average';
+  if (lq >= 0.9) return 'About average';
+  return 'Below average';
+});
+
+// How much pay typically grows from entry to senior in this field, here — computed from the
+// tiers already fetched, no extra request. A steep climb (tech) reads very differently from a
+// flat one (retail), which the three tiles alone don't say directly.
+const payGrowthPct = computed(() => {
+  const entry = industryData.value?.tiers.find((t) => t.level === 'entry')?.annualWage;
+  const senior = industryData.value?.tiers.find((t) => t.level === 'senior')?.annualWage;
+  if (entry == null || senior == null || entry <= 0) return null;
+  return Math.round(((senior - entry) / entry) * 100);
+});
 
 async function load() {
   if (!props.city || !props.state) return;
@@ -190,7 +299,10 @@ const topIndustries = computed(() => {
   const sectors = data.value?.industryBreakdown;
   if (!sectors?.length) return [];
   const maxShare = sectors[0].share;
-  return sectors.slice(0, 5).map((s: any) => ({
+  // 7 rows fills the card's original fixed height (matches its neighbor panel) without growing
+  // it — showing all 13 (industryBreakdown is pre-sorted descending) made this panel visibly
+  // taller than everything next to it. "View all" still covers the rest.
+  return sectors.filter((s: any) => s.share > 0).slice(0, 7).map((s: any) => ({
     ...s,
     barPct: maxShare > 0 ? (s.share / maxShare) * 100 : 0,
   }));
@@ -275,73 +387,27 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- Snapshot card -->
-    <div class="data-card housing-exp__snapshot">
-      <div class="housing-exp__snapshot-header">
-        <span class="mdi mdi-chart-box-outline housing-exp__snapshot-icon"></span>
-        <span class="housing-exp__snapshot-title">Income Snapshot</span>
-      </div>
-
-      <div v-if="loading" class="housing-exp__snapshot-skeleton" aria-hidden="true">
-        <div class="housing-exp__snapshot-grid">
-          <div v-for="i in 3" :key="i" class="snap-metric snap-metric--primary snap-metric--skeleton">
-            <span class="snap-metric__label snap-metric__label--skeleton skeleton-line"></span>
-            <span class="snap-metric__value snap-metric__value--skeleton snap-metric__value--skeleton-lg skeleton-line"></span>
-          </div>
-          <div v-for="i in 3" :key="i" class="snap-metric snap-metric--secondary snap-metric--skeleton">
-            <span class="snap-metric__label snap-metric__label--skeleton skeleton-line"></span>
-            <span class="snap-metric__value snap-metric__value--skeleton skeleton-line"></span>
-          </div>
-        </div>
-      </div>
-      <div v-else-if="error" class="housing-exp__state">
-        <p class="muted">{{ error }}</p>
-      </div>
-
-      <template v-else-if="data">
-        <div class="housing-exp__snapshot-grid">
-          <div class="snap-metric snap-metric--primary">
-            <span class="snap-metric__label">
-              <span class="mdi mdi-home-account snap-metric__icon"></span>Household Income
-            </span>
-            <span class="snap-metric__value">${{ data.medianHouseholdIncome.toLocaleString() }}</span>
-          </div>
-          <div class="snap-metric snap-metric--primary">
-            <span class="snap-metric__label">
-              <span class="mdi mdi-account-outline snap-metric__icon"></span>Per Capita Income
-            </span>
-            <span class="snap-metric__value">${{ data.perCapitaIncome.toLocaleString() }}</span>
-          </div>
-          <div class="snap-metric snap-metric--primary">
-            <span class="snap-metric__label">
-              <span class="mdi mdi-key-outline snap-metric__icon"></span>Renter Income
-            </span>
-            <span class="snap-metric__value">{{ data.medianRenterIncome ? `$${data.medianRenterIncome.toLocaleString()}` : "—" }}</span>
-          </div>
-          <div v-if="data.medianOwnerIncome" class="snap-metric snap-metric--secondary">
-            <span class="snap-metric__label">
-              <span class="mdi mdi-home-outline snap-metric__icon"></span>Owner Income
-            </span>
-            <span class="snap-metric__value">${{ data.medianOwnerIncome.toLocaleString() }}</span>
-          </div>
-          <div v-if="povertyRate != null" class="snap-metric snap-metric--secondary">
-            <span class="snap-metric__label">
-              <span class="mdi mdi-alert-outline snap-metric__icon"></span>Poverty Rate
-            </span>
-            <span class="snap-metric__value">{{ povertyRate.toFixed(1) }}%</span>
-          </div>
-          <div v-if="data.giniCoefficient != null" class="snap-metric snap-metric--secondary">
-            <span class="snap-metric__label">
-              <span class="mdi mdi-scale-balance snap-metric__icon"></span>Gini Index
-            </span>
-            <span class="snap-metric__value">{{ data.giniCoefficient.toFixed(3) }}</span>
-          </div>
-        </div>
-      </template>
-    </div>
-
     <!-- Panels grid (loading) -->
     <div v-if="loading" class="housing-exp__grid" aria-hidden="true">
+      <section class="data-card housing-exp__snapshot housing-exp__panel--compact">
+        <div class="housing-exp__snapshot-header">
+          <span class="mdi mdi-chart-box-outline housing-exp__snapshot-icon"></span>
+          <span class="housing-exp__snapshot-title">Income Snapshot</span>
+        </div>
+        <div class="housing-exp__snapshot-skeleton">
+          <div class="housing-exp__snapshot-grid">
+            <div v-for="i in 3" :key="i" class="snap-metric snap-metric--primary snap-metric--skeleton">
+              <span class="snap-metric__label snap-metric__label--skeleton skeleton-line"></span>
+              <span class="snap-metric__value snap-metric__value--skeleton snap-metric__value--skeleton-lg skeleton-line"></span>
+            </div>
+            <div v-for="i in 3" :key="i" class="snap-metric snap-metric--secondary snap-metric--skeleton">
+              <span class="snap-metric__label snap-metric__label--skeleton skeleton-line"></span>
+              <span class="snap-metric__value snap-metric__value--skeleton skeleton-line"></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section class="data-card housing-exp__panel housing-exp__panel--compact housing-exp__panel--affordability">
         <div class="housing-exp__panel-head">
           <span class="data-card__icon mdi mdi-scale-balance"></span>
@@ -406,36 +472,57 @@ onUnmounted(() => {
       </section>
     </div>
 
+    <div v-else-if="error" class="housing-exp__state">
+      <p class="muted">{{ error }}</p>
+    </div>
+
     <!-- Panels grid (data) -->
     <div v-else-if="data" class="housing-exp__grid">
 
-      <!-- Affordability bridge -->
-      <section class="data-card housing-exp__panel housing-exp__panel--compact housing-exp__panel--affordability housing-exp__panel--bridge">
-        <div class="housing-exp__panel-head">
-          <span class="data-card__icon mdi mdi-scale-balance"></span>
-          <span class="housing-exp__panel-title">Affordability Bridge</span>
+      <!-- Income snapshot -->
+      <section class="data-card housing-exp__snapshot housing-exp__panel--compact">
+        <div class="housing-exp__snapshot-header">
+          <span class="mdi mdi-chart-box-outline housing-exp__snapshot-icon"></span>
+          <span class="housing-exp__snapshot-title">Income Snapshot</span>
         </div>
-        <div class="housing-exp__panel-metrics housing-exp__panel-metrics--bridge">
-          <div v-if="data.affordabilityMetrics?.incomeNeededForRent" class="metric bridge-metric">
-            <span class="metric__label">Income Needed</span>
-            <span class="metric__value">${{ Math.round(data.affordabilityMetrics.incomeNeededForRent).toLocaleString() }}/yr</span>
-          </div>
-          <div v-if="data.affordabilityMetrics?.affordabilityGap != null" class="metric bridge-metric">
-            <span class="metric__label">Affordability Gap</span>
-            <span class="metric__value" :class="data.affordabilityMetrics.affordabilityGap >= 0 ? 'positive' : 'status-warning'">
-              {{ data.affordabilityMetrics.affordabilityGap >= 0 ? '+' : '−' }}${{ Math.abs(data.affordabilityMetrics.affordabilityGap).toLocaleString() }}
+        <div class="housing-exp__snapshot-grid">
+          <div class="snap-metric snap-metric--primary">
+            <span class="snap-metric__label">
+              <span class="mdi mdi-home-account snap-metric__icon"></span>Household Income
             </span>
+            <span class="snap-metric__value">${{ data.medianHouseholdIncome.toLocaleString() }}</span>
           </div>
-          <div v-if="data.affordabilityMetrics?.priceToIncomeRatio != null" class="metric bridge-metric">
-            <span class="metric__label">Price / Income</span>
-            <span class="metric__value">{{ data.affordabilityMetrics.priceToIncomeRatio }}×</span>
+          <div class="snap-metric snap-metric--primary">
+            <span class="snap-metric__label">
+              <span class="mdi mdi-account-outline snap-metric__icon"></span>Per Capita Income
+            </span>
+            <span class="snap-metric__value">${{ data.perCapitaIncome.toLocaleString() }}</span>
           </div>
-          <div v-if="data.affordabilityMetrics?.downPaymentSavingsYears != null" class="metric bridge-metric">
-            <span class="metric__label">Down Payment Years</span>
-            <span class="metric__value">{{ data.affordabilityMetrics.downPaymentSavingsYears }} yrs</span>
+          <div class="snap-metric snap-metric--primary">
+            <span class="snap-metric__label">
+              <span class="mdi mdi-key-outline snap-metric__icon"></span>Renter Income
+            </span>
+            <span class="snap-metric__value">{{ data.medianRenterIncome ? `$${data.medianRenterIncome.toLocaleString()}` : "—" }}</span>
+          </div>
+          <div v-if="data.medianOwnerIncome" class="snap-metric snap-metric--secondary">
+            <span class="snap-metric__label">
+              <span class="mdi mdi-home-outline snap-metric__icon"></span>Owner Income
+            </span>
+            <span class="snap-metric__value">${{ data.medianOwnerIncome.toLocaleString() }}</span>
+          </div>
+          <div v-if="povertyRate != null" class="snap-metric snap-metric--secondary">
+            <span class="snap-metric__label">
+              <span class="mdi mdi-alert-outline snap-metric__icon"></span>Poverty Rate
+            </span>
+            <span class="snap-metric__value">{{ povertyRate.toFixed(1) }}%</span>
+          </div>
+          <div v-if="data.giniCoefficient != null" class="snap-metric snap-metric--secondary">
+            <span class="snap-metric__label">
+              <span class="mdi mdi-scale-balance snap-metric__icon"></span>Gini Index
+            </span>
+            <span class="snap-metric__value">{{ data.giniCoefficient.toFixed(3) }}</span>
           </div>
         </div>
-        <p class="muted housing-exp__note housing-exp__note--bridge">30% rent threshold · 20% down · 10% annual savings rate</p>
       </section>
 
       <!-- Earnings by education -->
@@ -478,10 +565,67 @@ onUnmounted(() => {
         </div>
         <div class="housing-exp__note" style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px;">
           <span class="muted">Share of civilian employed residents 16+</span>
-          <button class="data-card__link" style="font-size: 0.78rem;" @click="industryModalOpen = true">
+          <button v-if="allIndustries.length > topIndustries.length" class="data-card__link" style="font-size: 0.78rem;" @click="industryModalOpen = true">
             View all →
           </button>
         </div>
+      </section>
+
+      <!-- Salary by industry -->
+      <section class="data-card housing-exp__panel housing-exp__panel--compact">
+        <div class="housing-exp__panel-head">
+          <span class="data-card__icon mdi mdi-cash-multiple"></span>
+          <span class="housing-exp__panel-title">Salary by Industry</span>
+        </div>
+        <select v-model="selectedIndustry" class="income-industry__select">
+          <option value="" disabled>Choose an industry…</option>
+          <option v-for="opt in INDUSTRY_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+        </select>
+
+        <div v-if="industryLoading" class="housing-exp__panel-metrics" style="margin-top: 12px;">
+          <div v-for="i in 3" :key="i" class="metric skeleton-block">
+            <span class="metric__label skeleton-line skeleton-line--label"></span>
+            <span class="metric__value skeleton-line skeleton-line--value-sm"></span>
+          </div>
+        </div>
+        <p v-else-if="industryError" class="muted" style="margin-top: 12px;">{{ industryError }}</p>
+
+        <template v-else-if="industryData">
+          <div class="bar-list" style="margin-top: 12px;">
+            <div v-for="bar in industryTierBars" :key="bar.label" class="bar-list__row">
+              <span class="bar-list__label">{{ bar.label }}</span>
+              <div class="bar-list__track">
+                <div class="bar-list__fill" :style="{ width: bar.pct + '%' }"></div>
+              </div>
+              <span class="bar-list__value">{{ bar.value != null ? `$${bar.value.toLocaleString()}` : '—' }}</span>
+            </div>
+          </div>
+
+          <div class="housing-exp__panel-metrics" style="margin-top: 12px;">
+            <div v-if="industryData.employment != null" class="metric">
+              <span class="metric__label">Jobs in Field</span>
+              <span class="metric__value">{{ industryData.employment.toLocaleString() }}</span>
+              <span v-if="industryData.employmentPerThousand != null" class="muted" style="display: block; font-size: 0.74rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                {{ industryData.employmentPerThousand }} per 1,000 local jobs
+              </span>
+            </div>
+            <div v-if="industryData.locationQuotient != null" class="metric">
+              <span class="metric__label">Concentration</span>
+              <span class="metric__value">{{ industryData.locationQuotient.toFixed(2) }}×</span>
+              <span class="muted" style="display: block; font-size: 0.74rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ locationQuotientLabel }}</span>
+            </div>
+            <div v-if="payGrowthPct != null" class="metric">
+              <span class="metric__label">Entry → Senior Growth</span>
+              <span class="metric__value">+{{ payGrowthPct }}%</span>
+              <span class="muted" style="display: block; font-size: 0.74rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Typical for this field</span>
+            </div>
+          </div>
+          <p class="muted housing-exp__note">
+            {{ industryData.geographyLevel === 'msa' ? industryData.geographyName : `Statewide (${industryData.geographyName}) — no metro-level data for this city` }}
+            · BLS OEWS {{ industryData.year }}
+          </p>
+        </template>
+        <p v-else class="muted housing-exp__note">Pick an industry to see entry, mid, and senior-level pay here.</p>
       </section>
 
       <!-- Income distribution donut -->
@@ -514,6 +658,35 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
+      </section>
+
+      <!-- Affordability bridge -->
+      <section class="data-card housing-exp__panel housing-exp__panel--compact housing-exp__panel--affordability housing-exp__panel--bridge">
+        <div class="housing-exp__panel-head">
+          <span class="data-card__icon mdi mdi-scale-balance"></span>
+          <span class="housing-exp__panel-title">Affordability Bridge</span>
+        </div>
+        <div class="housing-exp__panel-metrics housing-exp__panel-metrics--bridge">
+          <div v-if="data.affordabilityMetrics?.incomeNeededForRent" class="metric bridge-metric">
+            <span class="metric__label">Income Needed</span>
+            <span class="metric__value">${{ Math.round(data.affordabilityMetrics.incomeNeededForRent).toLocaleString() }}/yr</span>
+          </div>
+          <div v-if="data.affordabilityMetrics?.affordabilityGap != null" class="metric bridge-metric">
+            <span class="metric__label">Affordability Gap</span>
+            <span class="metric__value" :class="data.affordabilityMetrics.affordabilityGap >= 0 ? 'positive' : 'status-warning'">
+              {{ data.affordabilityMetrics.affordabilityGap >= 0 ? '+' : '−' }}${{ Math.abs(data.affordabilityMetrics.affordabilityGap).toLocaleString() }}
+            </span>
+          </div>
+          <div v-if="data.affordabilityMetrics?.priceToIncomeRatio != null" class="metric bridge-metric">
+            <span class="metric__label">Price / Income</span>
+            <span class="metric__value">{{ data.affordabilityMetrics.priceToIncomeRatio }}×</span>
+          </div>
+          <div v-if="data.affordabilityMetrics?.downPaymentSavingsYears != null" class="metric bridge-metric">
+            <span class="metric__label">Down Payment Years</span>
+            <span class="metric__value">{{ data.affordabilityMetrics.downPaymentSavingsYears }} yrs</span>
+          </div>
+        </div>
+        <p class="muted housing-exp__note housing-exp__note--bridge">30% rent threshold · 20% down · 10% annual savings rate</p>
       </section>
 
     </div>
